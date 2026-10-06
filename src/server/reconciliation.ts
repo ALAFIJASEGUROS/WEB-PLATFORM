@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { applyPaymentUpdate } from "./orders";
+import { applyPaymentUpdate, processIssuanceQueue } from "./orders";
 import { paymentProvider } from "./payments";
 
 /** Tiempo tras el cual un pago pendiente se considera atascado. */
@@ -11,6 +11,7 @@ export type IssueKind =
   | "sin_aceptacion"
   | "aprobada_sin_poliza"
   | "error_emision"
+  | "emision_en_reintento"
   | "cuota_pendiente";
 
 export interface ReconciliationIssue {
@@ -38,8 +39,9 @@ export async function reconcilePayments(now = Date.now()): Promise<Reconciliatio
   const d = db();
   const provider = paymentProvider();
   const issues: ReconciliationIssue[] = [];
-  let updated = 0;
   let checked = 0;
+  // Primero se reintentan las emisiones que ya les toca.
+  let { processed: updated } = await processIssuanceQueue(now);
 
   for (const order of d.orders.values()) {
     checked++;
@@ -61,7 +63,12 @@ export async function reconcilePayments(now = Date.now()): Promise<Reconciliatio
         );
       }
     } else if (order.status === "aprobada" && !order.policyId) {
-      issues.push({ reference: order.reference, kind: "aprobada_sin_poliza", detail: "Pago aprobado sin póliza emitida." });
+      const job = d.issuanceJobs.get(order.id);
+      issues.push(
+        job?.status === "pendiente"
+          ? { reference: order.reference, kind: "emision_en_reintento", detail: `Emisión en reintento (${job.attempts} intentos). Último error: ${job.lastError ?? "—"}` }
+          : { reference: order.reference, kind: "aprobada_sin_poliza", detail: "Pago aprobado sin póliza emitida." },
+      );
     } else if (order.status === "error") {
       issues.push({ reference: order.reference, kind: "error_emision", detail: "Error al emitir o monto no coincide. Revisar y reembolsar si aplica." });
     }

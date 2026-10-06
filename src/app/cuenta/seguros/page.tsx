@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Bike, CarFront, Trash2 } from "lucide-react";
 import { getCurrentUser } from "@/server/auth";
-import { daysUntil, userPolicies, userVehicles } from "@/server/queries";
+import { daysUntil, overdueInstallment, userPolicies, userVehicles } from "@/server/queries";
 import type { Policy } from "@/server/db";
 import { formatCOP } from "@/domain/labels";
 import { Badge, Button, ButtonLink, Card, Field, InsurerLogo, inputClass } from "@/components/ui";
@@ -19,8 +19,16 @@ function InstallmentPlan({ policy }: { policy: Policy }) {
   const list = policy.installments!;
   const paid = list.filter((i) => i.status === "pagada").length;
   const next = list.find((i) => i.status === "pendiente");
+  const overdue = overdueInstallment(policy);
   return (
     <div className="space-y-2 rounded-2xl bg-canvas p-3">
+      {overdue && (
+        <p role="alert" className="rounded-xl bg-coral-soft p-3 text-sm text-coral">
+          <strong>Cuota {overdue.n} vencida desde el {overdue.dueDate}.</strong> Si no la pagas, el seguro
+          puede terminar por mora (art. 1068 del Código de Comercio) y quedarías sin cobertura. Pagar
+          después no lo reactiva.
+        </p>
+      )}
       <div className="flex items-center justify-between text-sm">
         <span className="font-semibold text-heading">Cuotas pagadas {paid} de {list.length}</span>
         {next && <span className="text-muted">Próxima: {next.dueDate}</span>}
@@ -69,7 +77,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta/seguros"
                     <p className="font-bold text-heading">{p.planName}</p>
                     <p className="text-sm text-muted">{p.insurerName} · {p.vehicle.plate}</p>
                   </div>
-                  {p.status === "retractada" ? <Badge tone="neutral">Retractada</Badge> : left < 0 ? <Badge tone="coral">Vencida</Badge> : left <= 30 ? <Badge tone="sun">Vence en {left} días</Badge> : <Badge tone="mint">Vigente</Badge>}
+                  {p.status === "retractada" ? <Badge tone="neutral">Retractada</Badge> : overdueInstallment(p) ? <Badge tone="coral">En mora</Badge> : left < 0 ? <Badge tone="coral">Vencida</Badge> : left <= 30 ? <Badge tone="sun">Vence en {left} días</Badge> : <Badge tone="mint">Vigente</Badge>}
                 </div>
                 <p className="text-sm text-muted">Nº {p.number} · {p.startDate} a {p.endDate}</p>
                 {p.installments && p.status !== "retractada" && <InstallmentPlan policy={p} />}

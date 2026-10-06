@@ -6,6 +6,20 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 [docs/versionamiento.md](docs/versionamiento.md).
 
 ## [No publicado]
+
+## [0.8.0] - 2026-10-06 · Sprint 6
+### Agregado
+- Elegibilidad antes del puntaje: se descartan los planes que no aceptan el uso declarado (por ejemplo, domicilios o plataformas) o que no cumplen lo que exige el banco si el vehículo está financiado. Los resultados muestran cuáles quedaron por fuera y por qué, y el checkout los rechaza.
+- Empate técnico: si las dos mejores opciones quedan a menos de 2 puntos se marca como empate y se recomienda la más económica.
+- Versión del algoritmo de recomendación en cada cotización y en *Cómo funciona*.
+- Resumen editable al final del cuestionario, con "Editar" por sección.
+- Máquina de estados de la orden con transiciones monótonas e historial.
+- Emisión asíncrona con reintentos (1, 2, 4 y 8 minutos), clave de idempotencia por orden y alerta al cliente y a los administradores si falla tras 5 intentos. La conciliación diaria procesa los reintentos pendientes.
+- Revalidación del precio en el checkout: si la tarifa cambió desde la cotización, se muestra el precio nuevo y se pide confirmar.
+- Avisos de mora: la cuota vencida se avisa una vez (respetando la Ley 2300) explicando la terminación por mora del art. 1068 del Código de Comercio, y "Mis seguros" muestra la póliza en mora.
+### Cambiado
+- El precio se puntúa frente a la opción más barata (curva relativa) en lugar de la escala mínimo–máximo, para que diferencias pequeñas no muevan el ranking.
+- La financiación pasa de penalización a requisito.
 ### Documentación
 - Investigación completa de pagos, recomendador, integraciones, UX y cuenta en `docs/investigacion/`, resumida en `docs/01-investigacion.md`.
 - Épica E17 del backlog con las funcionalidades derivadas y Sprint 6 sugerido.
@@ -70,7 +84,8 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Cotización por placa, motor de recomendación explicable, adaptadores simulados de SURA y Seguros Bolívar, resultados y comparador.
 
-[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.7.0...HEAD
+[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.4.0...v0.5.0

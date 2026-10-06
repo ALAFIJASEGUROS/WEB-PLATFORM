@@ -6,6 +6,8 @@ export interface IssueRequest {
   holder: { documentType: string; documentNumber: string; fullName: string };
   kyc: Record<string, string | boolean>;
   startDate: string;
+  /** Repetir la emisión con la misma clave devuelve la misma póliza. */
+  idempotencyKey: string;
 }
 
 /** Figura contractual bajo la que la plataforma comercializa los productos. */

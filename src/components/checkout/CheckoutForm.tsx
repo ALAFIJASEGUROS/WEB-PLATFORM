@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { startCheckout } from "@/lib/api-client";
+import { changedPrice, startCheckout } from "@/lib/api-client";
 import { kycFieldsFor, validateKyc } from "@/insurers/registry";
 import { AcceptanceDialog } from "./AcceptanceDialog";
 import { analyticsSessionId, track } from "@/lib/analytics";
@@ -49,6 +49,8 @@ export function CheckoutForm({
   const [kycErrors, setKycErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  /** Precio revalidado por el servidor cuando cambió desde la cotización. */
+  const [repriced, setRepriced] = useState<{ plan: "anual" | "mensual"; amount: number } | null>(null);
 
   if (!hydrated) return <div className="min-h-[60vh]" aria-busy />;
 
@@ -104,6 +106,7 @@ export function CheckoutForm({
         quote: request!,
         offerId,
         paymentPlan: plan,
+        expectedAmount: amount,
         policyholder: parsed.data,
         consents: { terms, dataProcessing: data, marketing },
         kyc: kycCheck.clean,
@@ -115,12 +118,15 @@ export function CheckoutForm({
         goToPayment(result.redirectUrl);
       }
     } catch (err) {
+      const current = changedPrice(err);
+      if (current !== undefined) setRepriced({ plan, amount: current });
       setServerError(err instanceof Error ? err.message : "No pudimos iniciar el pago.");
       setSubmitting(false);
     }
   }
 
-  const amount = plan === "anual" ? offer.annualPremium : offer.monthlyPremium;
+  const quoted = plan === "anual" ? offer.annualPremium : offer.monthlyPremium;
+  const amount = repriced?.plan === plan ? repriced.amount : quoted;
   const v = request.vehicle;
 
   return (

@@ -1,6 +1,6 @@
 import { checkoutSchema } from "@/domain/schemas";
 import { getCurrentUser, otpShownOnScreen } from "@/server/auth";
-import { CheckoutError, createOrder, startAcceptance } from "@/server/orders";
+import { CheckoutError, createOrder, PriceChangedError, startAcceptance } from "@/server/orders";
 
 export async function POST(request: Request) {
   const parsed = checkoutSchema.safeParse(await request.json().catch(() => null));
@@ -18,6 +18,12 @@ export async function POST(request: Request) {
     const { demoCode } = startAcceptance(order, otpShownOnScreen());
     return Response.json({ reference: order.reference, token: order.accessToken, acceptance: true, demoCode });
   } catch (e) {
+    if (e instanceof PriceChangedError) {
+      return Response.json(
+        { error: e.message, priceChanged: { previous: e.previous, current: e.current } },
+        { status: 409 },
+      );
+    }
     if (e instanceof CheckoutError) {
       return Response.json({ error: e.message }, { status: 409 });
     }

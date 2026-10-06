@@ -13,6 +13,7 @@ const LABELS = {
   recomendado: { text: "Recomendado para ti", tone: "brand" },
   menorPrecio: { text: "Menor precio", tone: "mint" },
   mayorCobertura: { text: "Mayor cobertura", tone: "sun" },
+  empate: { text: "Empate técnico", tone: "neutral" },
 } as const;
 
 export function OfferCard({

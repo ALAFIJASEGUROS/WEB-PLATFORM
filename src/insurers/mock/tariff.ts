@@ -4,6 +4,7 @@ import type {
   QuoteRequest,
   ServiceKey,
   VehicleType,
+  VehicleUse,
 } from "@/domain/types";
 import { InsurerUnavailableError, type InsurerAdapter, type RegulatoryInfo } from "../adapter";
 
@@ -23,6 +24,8 @@ export interface MockPlan {
   services: ServiceKey[];
   substituteCarDays: number;
   exclusions: string[];
+  /** Usos aceptados. Si se omite, el plan acepta todos. */
+  allowedUses?: VehicleUse[];
 }
 
 export interface MockInsurerConfig {
@@ -34,6 +37,8 @@ export interface MockInsurerConfig {
   plans: MockPlan[];
   /** Placas que fuerzan error, para probar resultados parciales. */
   failPlatePrefix?: string;
+  /** Placas cuya primera emisión falla, para probar los reintentos. */
+  failIssuePlatePrefix?: string;
   regulatory: RegulatoryInfo;
 }
 
@@ -145,9 +150,15 @@ export function priceOffers(
         exclusions: [...COMMON_EXCLUSIONS, ...plan.exclusions],
         conditionsUrl: `/condicionado/${config.id}/${plan.code}`,
         validUntil,
+        ...(plan.allowedUses && { allowedUses: plan.allowedUses }),
       };
     });
 }
+
+// Estado de la aseguradora simulada: emisiones hechas por clave de idempotencia.
+const g = globalThis as unknown as { __safMockIssued?: Map<string, string>; __safMockIssueAttempts?: Map<string, number> };
+const mockIssued = () => (g.__safMockIssued ??= new Map());
+const mockIssueAttempts = () => (g.__safMockIssueAttempts ??= new Map());
 
 function sleep(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -181,13 +192,23 @@ export function createMockAdapter(config: MockInsurerConfig): InsurerAdapter {
       return priceOffers(req, config);
     },
     async issue(req) {
+      const issued = mockIssued();
+      const prev = issued.get(req.idempotencyKey);
+      if (prev) return { policyNumber: prev };
+      const attempts = (mockIssueAttempts().get(req.idempotencyKey) ?? 0) + 1;
+      mockIssueAttempts().set(req.idempotencyKey, attempts);
+      if (config.failIssuePlatePrefix && req.quote.vehicle.plate?.startsWith(config.failIssuePlatePrefix) && attempts === 1) {
+        throw new InsurerUnavailableError(`${config.name} no pudo emitir en este momento.`);
+      }
       const serial = Math.floor(
         hash(`${req.offer.id}|${req.holder.documentNumber}|${req.startDate}|${Date.now()}`) * 1e8,
       )
         .toString()
         .padStart(8, "0");
       const line = req.offer.vehicleType === "auto" ? "AU" : "MO";
-      return { policyNumber: `${config.id.toUpperCase().slice(0, 3)}-${line}-${serial}` };
+      const policyNumber = `${config.id.toUpperCase().slice(0, 3)}-${line}-${serial}`;
+      issued.set(req.idempotencyKey, policyNumber);
+      return { policyNumber };
     },
   };
 }

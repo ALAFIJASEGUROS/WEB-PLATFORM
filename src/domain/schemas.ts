@@ -55,6 +55,8 @@ export const checkoutSchema = z.object({
   offerId: z.string().min(3).max(60),
   analyticsSid: z.string().max(64).optional(),
   paymentPlan: z.enum(["anual", "mensual"]),
+  /** Valor (COP) que vio el usuario; si la tarifa cambió, se le pide confirmar. */
+  expectedAmount: z.number().int().positive().max(1_000_000_000).optional(),
   policyholder: policyholderSchema,
   /** Respuestas de conocimiento del cliente; se validan contra la aseguradora. */
   kyc: z

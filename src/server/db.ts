@@ -2,6 +2,7 @@ import "server-only";
 import type { CheckoutInput } from "@/domain/schemas";
 import type { ConsentRecord } from "@/domain/consents";
 import type { Offer, QuoteRequest, Vehicle, VehicleType } from "@/domain/types";
+import type { StatusChange } from "./order-state";
 
 // Persistencia EN MEMORIA para el MVP/demo. Las funciones de este módulo son
 // el único punto de acceso a datos, de modo que reemplazarlo por PostgreSQL
@@ -40,6 +41,21 @@ export interface Order {
   kyc: Record<string, string | boolean>;
   /** Evidencia de las autorizaciones otorgadas en el checkout. */
   consentEvidence: ConsentRecord[];
+  /** Historial de cambios de estado (ver order-state.ts). */
+  history?: StatusChange[];
+}
+
+/**
+ * Trabajo de emisión pendiente (patrón outbox): el pago aprobado lo encola y
+ * un proceso lo ejecuta con reintentos. La clave de idempotencia es la orden.
+ */
+export interface IssuanceJob {
+  orderId: string;
+  attempts: number;
+  nextAttemptAt: number;
+  status: "pendiente" | "completada" | "fallida";
+  running?: boolean;
+  lastError?: string;
 }
 
 export interface Policy {
@@ -72,6 +88,8 @@ export interface Installment {
   amount: number;
   status: "pagada" | "pendiente";
   paidAt?: string;
+  /** Fecha (hora Colombia) en que se avisó que la cuota está en mora. */
+  moraNotifiedAt?: string;
 }
 
 /** Pago de una cuota en curso (referencia → póliza y número de cuota). */
@@ -185,6 +203,7 @@ interface Db {
   processedEvents: Set<string>;
   installmentPayments: Map<string, InstallmentPayment>;
   pqrs: Map<string, Pqr>;
+  issuanceJobs: Map<string, IssuanceJob>;
 }
 
 function seed(db: Db) {
@@ -234,6 +253,7 @@ export function db(): Db {
       processedEvents: new Set(),
       installmentPayments: new Map(),
       pqrs: new Map(),
+      issuanceJobs: new Map(),
     };
     seed(g.__safDb);
   }

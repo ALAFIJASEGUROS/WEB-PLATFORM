@@ -13,6 +13,7 @@ import {
   Briefcase,
   Building2,
   Package,
+  Pencil,
   Scale,
   ShieldCheck,
   Sparkles,
@@ -28,7 +29,7 @@ import type {
   VehicleType,
 } from "@/domain/types";
 import { SERVICE_KEYS } from "@/domain/types";
-import { CITIES, formatCOP, SERVICE_LABELS } from "@/domain/labels";
+import { CITIES, formatCOP, PRIORITY_LABELS, SERVICE_LABELS, USE_LABELS } from "@/domain/labels";
 import {
   CATALOG,
   CURRENT_YEAR,
@@ -52,7 +53,9 @@ const STEPS = [
   { title: "¿Cómo lo usas?", subtitle: "El uso y dónde lo parqueas cambian el riesgo." },
   { title: "¿Qué es más importante para ti?", subtitle: "Ordenamos las opciones según tu respuesta. Igual verás todas." },
   { title: "Últimos detalles", subtitle: "Ajustamos la recomendación a lo que valoras." },
+  { title: "Revisa tus respuestas", subtitle: "Corrige lo que necesites antes de ver tus opciones." },
 ];
+const SUMMARY_STEP = STEPS.length - 1;
 
 const DEFAULT_ANSWERS: Answers = {
   priority: "equilibrio",
@@ -87,6 +90,8 @@ function Wizard({ type }: { type: VehicleType }) {
   });
   const noun = type === "auto" ? "carro" : "moto";
   const [step, setStep] = useState(0);
+  /** Si se llegó a un paso desde el resumen, "Continuar" vuelve al resumen. */
+  const [fromSummary, setFromSummary] = useState(false);
 
   // Paso 1
   const [plate, setPlate] = useState(prev?.vehicle.plate ?? "");
@@ -156,13 +161,15 @@ function Wizard({ type }: { type: VehicleType }) {
     true,
     true,
     true,
+    true,
   ][step];
 
   function next() {
     if (step === 0) track("vehiculo_identificado", { tipo: type, metodo: manual ? "manual" : "placa" });
     if (step === 0 && manual && manualVehicle) setVehicle(manualVehicle);
     if (step < STEPS.length - 1) {
-      setStep(step + 1);
+      setStep(fromSummary ? SUMMARY_STEP : step + 1);
+      setFromSummary(false);
       window.scrollTo({ top: 0 });
       return;
     }
@@ -194,7 +201,11 @@ function Wizard({ type }: { type: VehicleType }) {
     <div className="mx-auto max-w-xl lg:max-w-5xl px-4 py-6">
       <button
         type="button"
-        onClick={() => (step > 0 ? setStep(step - 1) : router.push("/cotizar"))}
+        onClick={() => {
+          setFromSummary(false);
+          if (step > 0) setStep(step - 1);
+          else router.push("/cotizar");
+        }}
         className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading"
       >
         <ArrowLeft className="size-4" aria-hidden /> Volver
@@ -222,10 +233,13 @@ function Wizard({ type }: { type: VehicleType }) {
         {STEPS[step].title}
       </h1>
       <p className="mb-4 mt-1 text-muted">{STEPS[step].subtitle}</p>
-      {step > 0 && vehicle && (
+      {step > 0 && step < SUMMARY_STEP && vehicle && (
         <button
           type="button"
-          onClick={() => setStep(0)}
+          onClick={() => {
+            setFromSummary(false);
+            setStep(0);
+          }}
           className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-heading shadow-sm"
         >
           {type === "auto" ? <CarFront className="size-4 text-brand" aria-hidden /> : <Bike className="size-4 text-brand" aria-hidden />}
@@ -463,11 +477,24 @@ function Wizard({ type }: { type: VehicleType }) {
               </OptionGroup>
             </>
           )}
+          {step === SUMMARY_STEP && (manual ? manualVehicle : vehicle) && (
+            <Summary
+              vehicle={(manual ? manualVehicle : vehicle)!}
+              birthdate={birthdate}
+              city={city}
+              answers={answers}
+              onEdit={(s) => {
+                setFromSummary(true);
+                setStep(s);
+                window.scrollTo({ top: 0 });
+              }}
+            />
+          )}
         </Card>
 
         <div className="pb-safe sticky bottom-16 mt-6 bg-gradient-to-t from-canvas via-canvas pt-3 md:static md:bg-none">
           <Button type="submit" className="w-full" disabled={!canContinue}>
-            {step < STEPS.length - 1 ? "Continuar" : "Ver mis opciones"}
+            {step === SUMMARY_STEP ? "Ver mis opciones" : fromSummary ? "Guardar y volver al resumen" : "Continuar"}
           </Button>
         </div>
       </form>
@@ -483,7 +510,94 @@ const WHY = [
   { title: "¿Por qué el uso?", text: "Un vehículo que se parquea en la calle o recorre muchos kilómetros tiene más riesgo de hurto o choque. Así priorizamos las coberturas que de verdad necesitas." },
   { title: "¿Para qué tu prioridad?", text: "Define el peso del precio, la cobertura y los servicios en tu puntaje de afinidad. Igual verás todas las opciones." },
   { title: "¿Y los servicios?", text: "Si eliges servicios, premiamos las opciones que los incluyen. El deducible que prefieres ajusta la recomendación." },
+  { title: "¿Por qué revisar?", text: "El uso y la financiación descartan planes que no te sirven: un error aquí puede dejarte con una póliza que no cubre lo que necesitas." },
 ];
+
+const DEDUCTIBLE_TEXT = { bajo: "Lo mínimo posible (0% a 5%)", medio: "Algo razonable (hasta 10%)", alto: "Acepto un deducible alto" } as const;
+const MILEAGE_TEXT = { bajo: "Menos de 500 km al mes", medio: "Entre 500 y 1.500 km al mes", alto: "Más de 1.500 km al mes" } as const;
+
+function Summary({
+  vehicle: v,
+  birthdate,
+  city,
+  answers: a,
+  onEdit,
+}: {
+  vehicle: Vehicle;
+  birthdate: string;
+  city: string;
+  answers: Answers;
+  onEdit: (step: number) => void;
+}) {
+  const sections: { title: string; step: number; rows: [string, string][] }[] = [
+    {
+      title: "Vehículo",
+      step: 0,
+      rows: [
+        ["Modelo", `${v.brand} ${v.model} ${v.year}`],
+        ...(v.plate ? [["Placa", v.plate] as [string, string]] : []),
+        ["Valor comercial", formatCOP(v.commercialValue)],
+      ],
+    },
+    { title: "Sobre ti", step: 1, rows: [["Nacimiento", birthdate], ["Ciudad", city]] },
+    {
+      title: "Uso",
+      step: 2,
+      rows: [
+        ["Uso", USE_LABELS[a.use].replace(/^./, (c) => c.toUpperCase())],
+        ["Parqueo", a.parking === "calle" ? "En la calle" : "Parqueadero cerrado"],
+        ["Recorrido", MILEAGE_TEXT[a.mileage]],
+        ["Conductores", a.drivers === "solo" ? "Solo yo" : "Varias personas"],
+        ["Financiado", a.financed ? "Sí" : "No"],
+      ],
+    },
+    {
+      title: "Prioridad",
+      step: 3,
+      rows: [
+        a.weights
+          ? ["Pesos", `Precio ${a.weights.price}% · Cobertura ${a.weights.coverage}% · Servicios ${a.weights.services}%`]
+          : ["Prioridad", PRIORITY_LABELS[a.priority]],
+      ],
+    },
+    {
+      title: "Detalles",
+      step: 4,
+      rows: [
+        ["Deducible", DEDUCTIBLE_TEXT[a.deductibleTolerance]],
+        ["Servicios", a.services.length ? a.services.map((s) => SERVICE_LABELS[s]).join(", ") : "Sin preferencia"],
+        ["Reclamaciones (3 años)", a.claimsLast3Years >= 2 ? "2 o más" : String(a.claimsLast3Years)],
+      ],
+    },
+  ];
+  return (
+    <div className="divide-y divide-line">
+      {sections.map((sec) => (
+        <section key={sec.title} aria-labelledby={`sum-${sec.step}`} className="py-4 first:pt-0 last:pb-0">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id={`sum-${sec.step}`} className="font-bold text-heading">{sec.title}</h2>
+            <button
+              type="button"
+              onClick={() => onEdit(sec.step)}
+              className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft"
+              aria-label={`Editar ${sec.title.toLowerCase()}`}
+            >
+              <Pencil className="size-4" aria-hidden /> Editar
+            </button>
+          </div>
+          <dl className="mt-2 space-y-1.5 text-sm">
+            {sec.rows.map(([k, val]) => (
+              <div key={k} className="flex justify-between gap-3">
+                <dt className="text-muted">{k}</dt>
+                <dd className="text-right font-semibold text-ink">{val}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 function WhyWeAsk({
   step,
@@ -500,8 +614,8 @@ function WhyWeAsk({
   const summary = [
     vehicle && `${vehicle.brand} ${vehicle.model} ${vehicle.year}`,
     step > 1 && city,
-    step > 2 && `Uso ${answers.use}, ${answers.parking === "calle" ? "parquea en la calle" : "parqueadero cerrado"}`,
-    step > 3 && `Prioridad: ${answers.priority}`,
+    step > 2 && `Uso ${USE_LABELS[answers.use]}, ${answers.parking === "calle" ? "parquea en la calle" : "parqueadero cerrado"}`,
+    step > 3 && `Prioridad: ${PRIORITY_LABELS[answers.priority].toLowerCase()}`,
   ].filter(Boolean) as string[];
   return (
     <aside className="hidden lg:block" aria-label="Información">

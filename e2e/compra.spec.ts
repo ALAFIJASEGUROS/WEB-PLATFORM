@@ -15,6 +15,8 @@ async function cotizar(page: Page, opts: { weights?: boolean } = {}) {
     await page.getByRole("slider", { name: "Precio" }).fill("100");
   }
   await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByRole("heading", { name: "Revisa tus respuestas" })).toBeVisible();
   await page.getByRole("button", { name: "Ver mis opciones" }).click();
   await expect(page.getByText("Nuestra recomendación")).toBeVisible({ timeout: 15_000 });
 }
@@ -67,6 +69,27 @@ test("con 100% al precio recomienda la opción más barata", async ({ page }) =>
   await expect(page.getByText(/precio 100%/)).toBeVisible();
   const recommended = page.locator("section", { hasText: "Nuestra recomendación" });
   await expect(recommended.getByText("Menor precio")).toBeVisible();
+});
+
+test("edita una respuesta desde el resumen y descarta los planes que no aplican", async ({ page }) => {
+  await page.goto("/cotizar/moto");
+  await page.getByLabel("Placa de tu moto").fill("ABC12D");
+  await page.getByRole("button", { name: "Buscar" }).click();
+  await expect(page.getByText("Encontramos tu moto")).toBeVisible();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByLabel("Fecha de nacimiento").fill("1995-03-03");
+  await page.getByLabel("Ciudad donde circula").selectOption("Cali");
+  for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "Continuar" }).click();
+
+  await page.getByRole("button", { name: "Editar uso" }).click();
+  await page.getByText("Domicilios o plataformas").click();
+  await page.getByRole("button", { name: "Guardar y volver al resumen" }).click();
+  await expect(page.getByText("En domicilios o plataformas", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Ver mis opciones" }).click();
+
+  await expect(page.getByText("Nuestra recomendación")).toBeVisible({ timeout: 15_000 });
+  await page.getByText(/planes no aplican para tu caso/).click();
+  await expect(page.getByText(/No cubre el uso en domicilios o plataformas/).first()).toBeVisible();
 });
 
 test("el condicionado está disponible desde la oferta", async ({ page }) => {

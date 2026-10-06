@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { CheckoutInput } from "@/domain/schemas";
 import { claimGuestPurchases, db, getOrCreateUser } from "./db";
-import { applyPaymentUpdate, buildInstallments, canRetract, createOrder, CheckoutError, retractPolicy, startInstallmentPayment } from "./orders";
+import { applyPaymentUpdate, buildInstallments, canRetract, createOrder, CheckoutError, issuanceBackoffMs, ISSUANCE_MAX_ATTEMPTS, PriceChangedError, processIssuanceQueue, retractPolicy, startInstallmentPayment } from "./orders";
+import { canTransition } from "./order-state";
 import { parseWompiEvent, wompiIntegritySignature } from "./payments";
 import { dispatchDueReminders, withinContactHours } from "./reminders";
 
@@ -235,7 +236,8 @@ describe("re-cotización al renovar", () => {
     const { renewalSuggestions } = await import("./renewals");
     (globalThis as { __safQuoteCache?: unknown }).__safQuoteCache = undefined;
     const user = getOrCreateUser("r@example.com");
-    const order = await createOrder({ ...input, offerId: "bolivar:moto-basico" }, user.id);
+    const particular = { ...input.quote, answers: { ...input.quote.answers, use: "particular" as const } };
+    const order = await createOrder({ ...input, quote: particular, offerId: "bolivar:moto-basico" }, user.id);
     await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "ren1" });
     const policy = [...db().policies.values()].find((p) => p.orderId === order.id)!;
     const now = new Date();
@@ -325,4 +327,89 @@ describe("conciliación", () => {
     expect(kinds[ok.reference]).toBeUndefined();
     expect(report.checked).toBe(4);
   }, 20_000);
+});
+
+describe("estados de la orden", () => {
+  it("solo permite transiciones monótonas y guarda el historial", async () => {
+    expect(canTransition("emitida", "pendiente")).toBe(false);
+    expect(canTransition("aprobada", "rechazada")).toBe(false);
+    expect(canTransition("rechazada", "aprobada")).toBe(true);
+    const order = await createOrder(input);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t1", status: "DECLINED", amountInCents: order.amountInCents, eventId: "s1" });
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t2", status: "APPROVED", amountInCents: order.amountInCents, eventId: "s2" });
+    // Un evento tardío de rechazo no deshace la emisión.
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t1", status: "DECLINED", amountInCents: order.amountInCents, eventId: "s3" });
+    expect(order.status).toBe("emitida");
+    expect(order.history?.map((h) => h.status)).toEqual(["pendiente", "rechazada", "aprobada", "emitida"]);
+  });
+});
+
+describe("emisión asíncrona", () => {
+  const emi = { ...input, quote: { ...input.quote, vehicle: { ...input.quote.vehicle, plate: "EMI12A" } } };
+
+  it("si la aseguradora falla, reintenta sin volver a cobrar y emite una sola póliza", async () => {
+    const order = await createOrder(emi);
+    const t0 = Date.now();
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "e1" });
+    expect(order.status).toBe("aprobada");
+    const job = db().issuanceJobs.get(order.id)!;
+    expect(job).toMatchObject({ attempts: 1, status: "pendiente" });
+    expect(job.lastError).toMatch(/no pudo emitir/);
+
+    expect((await processIssuanceQueue(t0)).processed).toBe(0); // aún no le toca
+    await processIssuanceQueue(t0 + issuanceBackoffMs(1) + 1000);
+    await processIssuanceQueue(t0 + issuanceBackoffMs(2) * 10);
+    expect(order.status).toBe("emitida");
+    expect(job).toMatchObject({ attempts: 2, status: "completada" });
+    expect([...db().policies.values()].filter((p) => p.orderId === order.id)).toHaveLength(1);
+  });
+
+  it("tras el máximo de intentos marca error y avisa al cliente y a los administradores", async () => {
+    process.env.ADMIN_EMAILS = "ops@e2e.test:admin";
+    const order = await createOrder(input);
+    order.offer = { ...order.offer, insurerId: "inexistente" };
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "e2" });
+    let now = Date.now();
+    for (let i = 1; i < ISSUANCE_MAX_ATTEMPTS; i++) {
+      now += issuanceBackoffMs(i) + 1000;
+      await processIssuanceQueue(now);
+    }
+    expect(db().issuanceJobs.get(order.id)?.status).toBe("fallida");
+    expect(order.status).toBe("error");
+    expect(db().outbox.some((m) => m.to === "ops@e2e.test" && /Emisión fallida/.test(m.subject))).toBe(true);
+    expect(db().outbox.some((m) => m.to === "ana@example.com" && /devolveremos/.test(m.body))).toBe(true);
+    delete process.env.ADMIN_EMAILS;
+  });
+});
+
+describe("revalidación del checkout", () => {
+  it("pide confirmar si el precio cambió desde que se cotizó", async () => {
+    const probe = await createOrder(input);
+    const real = probe.amountInCents / 100;
+    await expect(createOrder({ ...input, expectedAmount: real - 5000 })).rejects.toBeInstanceOf(PriceChangedError);
+    await expect(createOrder({ ...input, expectedAmount: real })).resolves.toMatchObject({ amountInCents: real * 100 });
+  });
+
+  it("rechaza planes que no aplican para el uso declarado", async () => {
+    await expect(createOrder({ ...input, offerId: "bolivar:moto-basico" })).rejects.toThrow(/domicilios/);
+  });
+});
+
+describe("avisos de mora", () => {
+  it("avisa una sola vez por cuota vencida, explicando la terminación por mora", async () => {
+    const user = getOrCreateUser("mora@example.com");
+    const order = await createOrder({ ...input, paymentPlan: "mensual", policyholder: { ...input.policyholder, email: "mora@example.com" } }, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "m1" });
+    const policy = [...db().policies.values()].find((p) => p.orderId === order.id)!;
+    const now = new Date("2026-10-06T15:00:00Z"); // martes, 10:00 en Colombia
+    policy.installments![1].dueDate = "2026-10-01";
+    const { overdueInstallment } = await import("./queries");
+    expect(overdueInstallment(policy, now)?.n).toBe(2);
+
+    expect((await dispatchDueReminders(now)).sent).toBe(1);
+    expect(db().outbox[0].subject).toMatch(/cuota vencida/);
+    expect(db().outbox[0].body).toMatch(/art\. 1068/);
+    (globalThis as { __safLastContact?: unknown }).__safLastContact = undefined;
+    expect((await dispatchDueReminders(new Date("2026-10-07T15:00:00Z"))).sent).toBe(0);
+  });
 });

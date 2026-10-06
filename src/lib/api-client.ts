@@ -9,20 +9,36 @@ import type { QuoteRequest, QuoteResponse, Vehicle } from "@/domain/types";
  */
 export const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === "1";
 
+/** Error de la API con el cuerpo de la respuesta (p. ej. `priceChanged`). */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly body: Record<string, unknown>,
+  ) {
+    super(message);
+  }
+}
+
 async function json<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+  if (!res.ok) throw new ApiError(body.error ?? `HTTP ${res.status}`, body);
   return body as T;
+}
+
+/** Si la orden se rechazó porque el precio cambió, devuelve el precio nuevo. */
+export function changedPrice(err: unknown): number | undefined {
+  const p = err instanceof ApiError ? (err.body.priceChanged as { current?: unknown } | undefined) : undefined;
+  return typeof p?.current === "number" ? p.current : undefined;
 }
 
 export async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
   if (STATIC_DEMO) {
-    const [{ quoteAll }, { scoreOffers }] = await Promise.all([
+    const [{ quoteAll }, { buildQuoteResponse }] = await Promise.all([
       import("@/insurers/aggregator"),
       import("@/recommendation/scoring"),
     ]);
     const { offers, errors } = await quoteAll(req);
-    return { quoteId: crypto.randomUUID(), offers: scoreOffers(offers, req.answers), errors };
+    return buildQuoteResponse(offers, errors, req.answers);
   }
   return json(
     await fetch("/api/cotizaciones", {
