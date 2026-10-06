@@ -23,7 +23,7 @@ function InstallmentPlan({ policy }: { policy: Policy }) {
   return (
     <div className="space-y-2 rounded-2xl bg-canvas p-3">
       {overdue && (
-        <p role="alert" className="rounded-xl bg-coral-soft p-3 text-sm text-coral">
+        <p role="alert" className="rounded-xl bg-coral-soft p-3 text-sm text-coral-ink">
           <strong>Cuota {overdue.n} vencida desde el {overdue.dueDate}.</strong> Si no la pagas, el seguro
           puede terminar por mora (art. 1068 del Código de Comercio) y quedarías sin cobertura. Pagar
           después no lo reactiva.

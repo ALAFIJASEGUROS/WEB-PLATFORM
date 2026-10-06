@@ -3,6 +3,7 @@ import type { CheckoutInput } from "@/domain/schemas";
 import type { ConsentRecord } from "@/domain/consents";
 import type { Offer, QuoteRequest, Vehicle, VehicleType } from "@/domain/types";
 import type { StatusChange } from "./order-state";
+import { DEFAULT_PREFERENCES, type MessageType, type Preferences } from "@/domain/messaging";
 
 // Persistencia EN MEMORIA para el MVP/demo. Las funciones de este módulo son
 // el único punto de acceso a datos, de modo que reemplazarlo por PostgreSQL
@@ -101,6 +102,8 @@ export interface InstallmentPayment {
   status: "pendiente" | "aprobada" | "fallida";
   createdAt: number;
   redirectUrl?: string;
+  /** Pasarela con la que se creó el cobro. */
+  provider?: string;
 }
 
 export interface User {
@@ -110,7 +113,8 @@ export interface User {
   phone?: string;
   createdAt: string;
   marketingConsent: boolean;
-  channels: { email: boolean; whatsapp: boolean };
+  /** Canales por tipo de mensaje (centro de preferencias). */
+  preferences: Preferences;
   /** Historial de otorgamientos y revocaciones. */
   consentLog: ConsentRecord[];
 }
@@ -179,6 +183,8 @@ export interface OutboxMessage {
   id: string;
   to: string;
   channel: "email" | "whatsapp";
+  /** Tipo de mensaje, para auditar que se respetaron las preferencias. */
+  kind?: MessageType;
   subject: string;
   body: string;
   createdAt: string;
@@ -282,7 +288,7 @@ export function getOrCreateUser(email: string): User {
     email: email.toLowerCase(),
     createdAt: new Date().toISOString(),
     marketingConsent: false,
-    channels: { email: true, whatsapp: false },
+    preferences: structuredClone(DEFAULT_PREFERENCES),
     consentLog: [],
   };
   db().users.set(user.id, user);

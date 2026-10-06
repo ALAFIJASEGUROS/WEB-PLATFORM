@@ -1,4 +1,4 @@
-# Estado del proyecto · v0.8.0 (2026-10-06)
+# Estado del proyecto · v0.9.0 (2026-10-06)
 
 Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está en el
 [backlog](04-backlog.md) y el historial de cambios en el [CHANGELOG](../CHANGELOG.md).
@@ -16,14 +16,14 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Aseguradoras | Adaptadores simulados de SURA y Seguros Bolívar detrás de `InsurerAdapter`. Agregador con timeouts y resultados parciales. Caché de 15 min | Pruebas unitarias del agregador y la caché |
 | Recomendación | Elegibilidad (uso y financiación) antes del puntaje, puntaje de afinidad (precio relativo, cobertura, servicios) con pesos editables, empate técnico, explicaciones y versión del algoritmo. Página "Cómo funciona" | Pruebas de puntaje y E2E |
 | Resultados | Recomendación destacada, filtros, comparador de 3 con "Mejor" por fila, ficha con exclusiones, IVA y condicionado. Compartir por enlace o WhatsApp | E2E y axe |
-| Compra | Checkout sin registro, revalidación del precio, preguntas SARLAFT por aseguradora, aceptación con código por correo, consentimientos separados con evidencia, Wompi (Web Checkout + webhook firmado) o pasarela simulada, pago anual o 12 cuotas | Pruebas de órdenes y E2E |
+| Compra | Checkout sin registro, revalidación del precio, preguntas SARLAFT por aseguradora, aceptación con código por correo, consentimientos separados con evidencia, Wompi (Web Checkout + webhook firmado) detrás de un registro de pasarelas, o pasarela simulada, pago anual o 12 cuotas | Pruebas de órdenes y E2E |
 | Póliza | Estados de orden monótonos, emisión asíncrona con reintentos e idempotencia, certificado imprimible, retracto en 5 días hábiles | Pruebas de emisión y retracto |
 | Cuenta | Acceso con código por correo, reclamación de compras como invitado, billetera de pólizas y vehículos, pago de cuotas, sugerencia de renovación con ahorro | Pruebas y E2E |
-| Comunicaciones | Recordatorios de póliza, SOAT, tecnomecánica y cuotas, y avisos de mora (Ley 2300: horario, festivos, un contacto al día). Centro de ofertas con consentimiento | Pruebas de recordatorios |
-| Atención | PQR con radicado y plazo de 15 días hábiles. Sección del Defensor del Consumidor Financiero | Pruebas de PQR |
+| Comunicaciones | Centro de preferencias por tipo de mensaje y canal. Recordatorios de póliza, SOAT, tecnomecánica y cuotas, y avisos de mora (Ley 2300: horario, festivos, un contacto al día). Centro de ofertas con consentimiento | Pruebas de recordatorios |
+| Atención | Guía de siniestros por aseguradora. PQR con radicado y plazo de 15 días hábiles. Sección del Defensor del Consumidor Financiero | Pruebas de PQR |
 | Administración | Roles `admin` y `analista` por correo, órdenes, recaudo, conciliación de pagos, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
-| Calidad | CI con lint, typecheck, 56 pruebas unitarias, build, 25 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
-| Diseño | Mobile-first, modo oscuro con selector, tokens de color con contraste AA, versión visible en el footer | axe |
+| Calidad | CI con lint, typecheck, 58 pruebas unitarias, build, 29 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
+| Diseño | Mobile-first, app instalable (PWA) con página sin conexión, modo oscuro con selector, tokens de color con contraste AA, versión visible en el footer | axe |
 
 ## Lo pendiente
 
@@ -42,13 +42,12 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Marca | HU-13.6 | Logos oficiales con autorización |
 
 ### Solo código (siguientes candidatos)
-- Sprint 7 sugerido (épica E17): interfaz para una segunda pasarela, centro de preferencias de mensajes, guía de siniestros y PWA instalable.
 - HU-04.4: pruebas A/B de pesos del recomendador.
 - HU-09.4: lectura automática de pólizas en PDF.
 - Habilitar una nueva línea (hogar o viaje) siguiendo [nuevas-lineas.md](nuevas-lineas.md). SOAT depende del RUNT.
 
 ### Investigación
-Los 7 frentes terminaron (ver [01-investigacion.md](01-investigacion.md) y [investigacion/](investigacion/)). De ahí salen las historias de la épica E17 del backlog; el Sprint 6 implementó las de robustez y el Sprint 7 sugerido toma las siguientes. Quedan pendientes las pruebas con usuarios reales.
+Los 7 frentes terminaron (ver [01-investigacion.md](01-investigacion.md) y [investigacion/](investigacion/)). De ahí salen las historias de la épica E17 del backlog; los Sprints 6 y 7 implementaron las de solo código. Quedan pendientes las pruebas con usuarios reales.
 
 ## Riesgos conocidos
 - **Datos en memoria:** no apto para usuarios reales hasta tener Supabase.

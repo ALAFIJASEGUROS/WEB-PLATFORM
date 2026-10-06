@@ -6,7 +6,7 @@ import { ButtonLink, Card } from "@/components/ui";
 import { formatCOP } from "@/domain/labels";
 import { getCurrentUser } from "@/server/auth";
 import { applyPaymentUpdate, getOrderForViewer, processIssuance } from "@/server/orders";
-import { paymentProvider } from "@/server/payments";
+import { paymentProvider, providerById } from "@/server/payments";
 import { AutoRefresh } from "./AutoRefresh";
 
 export const metadata = { title: "Estado del pago", robots: { index: false } };
@@ -19,8 +19,8 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
   // Regreso desde Wompi tras pagar una cuota.
   const installment = db().installmentPayments.get(ref);
   if (installment) {
-    const provider = paymentProvider();
-    if (typeof id === "string" && provider.fetchTransaction) {
+    const provider = installment.provider ? providerById(installment.provider) : paymentProvider();
+    if (typeof id === "string" && provider?.fetchTransaction) {
       const update = await provider.fetchTransaction(id);
       if (update?.reference === ref) await applyPaymentUpdate(update);
     }
@@ -44,8 +44,8 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
 
   // Al volver de Wompi llega ?id=<transacción>. Consultamos su estado por si el
   // webhook aún no ha llegado (la actualización es idempotente).
-  const provider = paymentProvider();
-  if (order.status === "pendiente" && typeof id === "string" && provider.fetchTransaction) {
+  const provider = providerById(order.provider);
+  if (order.status === "pendiente" && typeof id === "string" && provider?.fetchTransaction) {
     const update = await provider.fetchTransaction(id);
     if (update && update.reference === order.reference) {
       order = (await applyPaymentUpdate(update)) ?? order;

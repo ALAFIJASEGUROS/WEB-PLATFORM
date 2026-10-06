@@ -14,11 +14,20 @@ export interface PaymentUpdate {
   eventId: string;
 }
 
+/**
+ * Contrato de una pasarela. El checkout, la conciliación y los webhooks solo
+ * usan esta interfaz, así que sumar una pasarela (p. ej. PayU) es escribir un
+ * adaptador y registrarlo en `configuredProviders` (ver docs/pasarelas.md).
+ */
 export interface PaymentProvider {
-  id: "simulado" | "wompi";
+  id: string;
+  /** Nombre visible para el usuario. */
+  label: string;
   createCheckout(order: Order, baseUrl: string): Promise<{ redirectUrl: string }>;
-  /** Consulta el estado de una transacción (al volver del checkout). */
+  /** Consulta el estado de una transacción (al volver del checkout y al conciliar). */
   fetchTransaction?(transactionId: string): Promise<PaymentUpdate | null>;
+  /** Valida la firma de un evento de la pasarela y lo normaliza; null si no es válido. */
+  parseWebhook?(body: unknown, headers: Headers): PaymentUpdate | null;
 }
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -27,6 +36,7 @@ const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 const simulated: PaymentProvider = {
   id: "simulado",
+  label: "Pasarela simulada",
   async createCheckout(order, baseUrl) {
     return {
       redirectUrl: `${baseUrl}/pago/simulado?ref=${encodeURIComponent(order.reference)}&t=${order.accessToken}`,
@@ -73,6 +83,8 @@ function wompiStatus(s: string): PaymentStatus {
 function createWompi(cfg: WompiConfig): PaymentProvider {
   return {
     id: "wompi",
+    label: "Wompi",
+    parseWebhook: (body) => parseWompiEvent(body, cfg.eventsSecret),
     async createCheckout(order, baseUrl) {
       const currency = "COP";
       const p = order.policyholder;
@@ -141,7 +153,32 @@ export function parseWompiEvent(body: unknown, eventsSecret: string): PaymentUpd
   };
 }
 
+// ── Registro ───────────────────────────────────────────────────────────────
+
+/**
+ * Pasarelas con credenciales, en orden de preferencia. La simulada solo existe
+ * si no hay ninguna real: así nunca puede aprobar un cobro en producción.
+ */
+export function configuredProviders(): PaymentProvider[] {
+  const list: PaymentProvider[] = [];
+  const wompi = wompiConfig();
+  if (wompi) list.push(createWompi(wompi));
+  return list.length ? list : [simulated];
+}
+
+/**
+ * Pasarela para nuevos cobros: la de `PAYMENT_PROVIDER` si está configurada;
+ * si no, la primera con credenciales.
+ */
 export function paymentProvider(): PaymentProvider {
-  const cfg = wompiConfig();
-  return cfg ? createWompi(cfg) : simulated;
+  const list = configuredProviders();
+  return list.find((p) => p.id === process.env.PAYMENT_PROVIDER) ?? list[0];
+}
+
+/**
+ * Pasarela con la que se creó un cobro. Las consultas y los webhooks de una
+ * orden siempre van a su pasarela de origen, aunque la predeterminada cambie.
+ */
+export function providerById(id: string): PaymentProvider | undefined {
+  return configuredProviders().find((p) => p.id === id);
 }

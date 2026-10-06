@@ -43,7 +43,7 @@ export default config;
 execSync("npx next build", {
   cwd: build,
   stdio: "inherit",
-  env: { ...process.env, NEXT_PUBLIC_STATIC_DEMO: "1", NEXT_PUBLIC_SITE_URL: process.env.SITE_URL ?? "" },
+  env: { ...process.env, NEXT_PUBLIC_STATIC_DEMO: "1", NEXT_PUBLIC_SITE_URL: process.env.SITE_URL ?? "", NEXT_PUBLIC_BASE_PATH: basePath },
 });
 
 const out = join(root, "out");

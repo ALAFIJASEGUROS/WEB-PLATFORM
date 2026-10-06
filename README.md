@@ -56,7 +56,7 @@ regístrala en el agregador. Para agregar otra línea de seguro, extiende
 ### Pagos con Wompi
 
 - Se usa Web Checkout con firma de integridad: `SHA256(referencia + centavos + moneda + secreto)`.
-- Configura el webhook `https://<dominio>/api/webhooks/wompi`. Los eventos se validan con
+- Configura el webhook `https://<dominio>/api/webhooks/wompi` (la ruta es genérica: `/api/webhooks/<pasarela>`, ver `docs/pasarelas.md`). Los eventos se validan con
   `WOMPI_EVENTS_SECRET` y se procesan de forma idempotente.
 - La orden siempre se recotiza en el servidor, así que el cliente no puede alterar el precio.
 

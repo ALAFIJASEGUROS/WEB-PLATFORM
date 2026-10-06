@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Info, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, ShieldCheck, XCircle } from "lucide-react";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
 import { COVERAGE_KEYS } from "@/domain/types";
@@ -129,6 +129,9 @@ export const PolicyPage = withSuspense(function Policy() {
           <ul className="space-y-1 text-sm">{COVERAGE_KEYS.filter((k) => offer.coverages[k]).map((k) => <li key={k}>• {COVERAGE_LABELS[k]}</li>)}</ul>
           <ul className="space-y-1 text-sm">{offer.services.map((s) => <li key={s}>• {SERVICE_LABELS[s]}</li>)}</ul>
         </div>
+        <Link href={`/siniestros#${offer.insurerId}`} className="flex min-h-11 items-center gap-2 rounded-2xl bg-coral-soft px-4 py-3 text-sm font-semibold text-coral-ink hover:underline">
+          <AlertTriangle className="size-4 shrink-0" aria-hidden /> ¿Tuviste un choque o un hurto? Mira qué hacer
+        </Link>
         <p className="text-xs text-muted">Documento de demostración. No constituye una póliza real.</p>
       </Card>
     </div>

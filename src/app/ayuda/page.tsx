@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MessageCircle } from "lucide-react";
+import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 
 export const metadata: Metadata = {
@@ -31,12 +32,11 @@ export default function Page() {
       </div>
 
       <h2 id="siniestros">¿Tuviste un accidente?</h2>
-      <ul>
-        <li>Si hay heridos, llama al 123 y no muevas los vehículos hasta que llegue la autoridad.</li>
-        <li>Toma fotos de los vehículos, las placas y el lugar.</li>
-        <li>Llama a la línea de asistencia de tu aseguradora con tu número de póliza (lo encuentras en tu cuenta o en el correo de confirmación).</li>
-        <li>Si solo hay daños materiales, pueden llegar a un acuerdo y retirar los vehículos.</li>
-      </ul>
+      <p>
+        Si hay heridos, llama al 123. Luego sigue la{" "}
+        <Link href="/siniestros">guía de siniestros</Link>: qué hacer en un choque o un hurto, qué documentos
+        tener a mano y cómo contactar a tu aseguradora.
+      </p>
 
       <h2>¿Necesitas hablar con alguien?</h2>
       <a

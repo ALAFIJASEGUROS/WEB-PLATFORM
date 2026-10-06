@@ -4,7 +4,7 @@ import type { CheckoutInput } from "@/domain/schemas";
 import { claimGuestPurchases, db, getOrCreateUser } from "./db";
 import { applyPaymentUpdate, buildInstallments, canRetract, createOrder, CheckoutError, issuanceBackoffMs, ISSUANCE_MAX_ATTEMPTS, PriceChangedError, processIssuanceQueue, retractPolicy, startInstallmentPayment } from "./orders";
 import { canTransition } from "./order-state";
-import { parseWompiEvent, wompiIntegritySignature } from "./payments";
+import { configuredProviders, parseWompiEvent, paymentProvider, providerById, wompiIntegritySignature } from "./payments";
 import { dispatchDueReminders, withinContactHours } from "./reminders";
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -44,6 +44,24 @@ describe("Wompi", () => {
     expect(parseWompiEvent(event, "events_secret")).toMatchObject({ reference: "SAF-1", status: "APPROVED", amountInCents: 5000000 });
     const tampered = { ...event, data: { transaction: { ...transaction, amount_in_cents: 100 } } };
     expect(parseWompiEvent(tampered, "events_secret")).toBeNull();
+  });
+});
+
+describe("registro de pasarelas", () => {
+  const env = { WOMPI_PUBLIC_KEY: "pub_test_x", WOMPI_INTEGRITY_SECRET: "i", WOMPI_EVENTS_SECRET: "e" };
+
+  it("usa la simulada solo si no hay pasarelas reales", () => {
+    expect(configuredProviders().map((p) => p.id)).toEqual(["simulado"]);
+    Object.assign(process.env, env);
+    try {
+      expect(configuredProviders().map((p) => p.id)).toEqual(["wompi"]);
+      expect(paymentProvider().id).toBe("wompi");
+      expect(providerById("simulado")).toBeUndefined();
+      // El webhook genérico delega en el adaptador, que valida su propia firma.
+      expect(providerById("wompi")?.parseWebhook?.({ event: "x" }, new Headers())).toBeNull();
+    } finally {
+      for (const k of Object.keys(env)) delete process.env[k];
+    }
   });
 });
 
@@ -411,5 +429,32 @@ describe("avisos de mora", () => {
     expect(db().outbox[0].body).toMatch(/art\. 1068/);
     (globalThis as { __safLastContact?: unknown }).__safLastContact = undefined;
     expect((await dispatchDueReminders(new Date("2026-10-07T15:00:00Z"))).sent).toBe(0);
+  });
+});
+
+describe("centro de preferencias", () => {
+  it("respeta los tipos apagados pero siempre avisa la mora", async () => {
+    const { normalizePreferences, channelFor, DEFAULT_PREFERENCES } = await import("@/domain/messaging");
+    const off = normalizePreferences({ ...DEFAULT_PREFERENCES, transaccional: { email: false, whatsapp: true }, vencimientos: { email: false, whatsapp: false } }, false);
+    expect(off.transaccional).toEqual({ email: true, whatsapp: false }); // obligatorio y sin celular
+    expect(channelFor(off, "vencimientos", false)).toBeNull();
+    expect(channelFor({ ...off, renovacion: { email: true, whatsapp: true } }, "renovacion", true)).toBe("whatsapp");
+
+    const user = getOrCreateUser("pref@example.com");
+    user.preferences = off;
+    const order = await createOrder({ ...input, paymentPlan: "mensual", policyholder: { ...input.policyholder, email: "pref@example.com" } }, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "p1" });
+    const policy = [...db().policies.values()].find((p) => p.orderId === order.id)!;
+    const now = new Date("2026-10-06T15:00:00Z");
+    // Cuota por vencer en 2 días: es un vencimiento y está apagado.
+    policy.installments![1].dueDate = "2026-10-08";
+    const { syncInstallmentReminder } = await import("./db");
+    syncInstallmentReminder(policy);
+    expect((await dispatchDueReminders(now)).sent).toBe(0);
+
+    // Vencida: es transaccional y se envía por correo aunque los vencimientos estén apagados.
+    policy.installments![1].dueDate = "2026-10-01";
+    expect((await dispatchDueReminders(now)).sent).toBe(1);
+    expect(db().outbox[0]).toMatchObject({ channel: "email", kind: "transaccional" });
   });
 });

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { baseUrl } from "@/server/auth";
 import { CheckoutError, confirmAcceptance } from "@/server/orders";
-import { paymentProvider } from "@/server/payments";
+import { paymentProvider, providerById } from "@/server/payments";
 
 const schema = z.object({
   reference: z.string().max(60),
@@ -19,7 +19,11 @@ export async function POST(request: Request) {
       ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
-    const { redirectUrl } = await paymentProvider().createCheckout(order, await baseUrl());
+    // La orden se cobra con la pasarela que quedó registrada al crearla; si ya
+    // no está configurada, con la predeterminada.
+    const provider = providerById(order.provider) ?? paymentProvider();
+    order.provider = provider.id;
+    const { redirectUrl } = await provider.createCheckout(order, await baseUrl());
     return Response.json({ redirectUrl });
   } catch (e) {
     if (e instanceof CheckoutError) return Response.json({ error: e.message }, { status: 409 });

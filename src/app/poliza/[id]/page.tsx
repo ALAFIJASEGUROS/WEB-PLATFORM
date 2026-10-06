@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui";
 import { PrintButton } from "@/components/PrintButton";
 import { COVERAGE_KEYS } from "@/domain/types";
@@ -71,6 +71,12 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
               </ul>
             </div>
           </div>
+        )}
+
+        {policy.status !== "retractada" && (
+          <Link href={`/siniestros#${policy.insurerId}`} className="flex min-h-11 items-center gap-2 rounded-2xl bg-coral-soft px-4 py-3 text-sm font-semibold text-coral-ink hover:underline print:hidden">
+            <AlertTriangle className="size-4 shrink-0" aria-hidden /> ¿Tuviste un choque o un hurto? Mira qué hacer
+          </Link>
         )}
 
         {policy.status === "retractada" && (

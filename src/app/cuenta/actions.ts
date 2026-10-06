@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { CHANNELS, MESSAGE_TYPE_KEYS, normalizePreferences, type Preferences } from "@/domain/messaging";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { baseUrl, logout, requestContext, requestOtp, requireUser, verifyOtp } from "@/server/auth";
@@ -60,10 +61,12 @@ export async function updateProfileAction(_: FormState, form: FormData): Promise
   if (!parsed.success) return { error: "Revisa el celular (10 dígitos, empieza por 3)." };
   user.name = parsed.data.name || undefined;
   user.phone = parsed.data.phone || undefined;
-  user.channels = {
-    email: form.get("ch_email") === "on",
-    whatsapp: form.get("ch_whatsapp") === "on" && !!user.phone,
-  };
+  user.preferences = normalizePreferences(
+    Object.fromEntries(
+      MESSAGE_TYPE_KEYS.map((t) => [t, Object.fromEntries(CHANNELS.map((c) => [c, form.get(`pref_${t}_${c}`) === "on"]))]),
+    ) as Preferences,
+    !!user.phone,
+  );
   const marketing = form.get("marketing") === "on";
   if (marketing !== user.marketingConsent) {
     user.consentLog.push(consentRecord("marketing", marketing, "perfil", await requestContext()));

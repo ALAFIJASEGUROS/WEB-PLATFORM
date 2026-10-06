@@ -51,6 +51,9 @@ test("cotiza, compra sin cuenta, recibe la póliza y la guarda en su cuenta", as
   await page.getByRole("link", { name: "Ver mi póliza" }).click();
   await expect(page.getByText("Número de póliza", { exact: true })).toBeVisible();
   await expect(page.getByText(/Derecho de retracto/).first()).toBeVisible();
+  await page.getByRole("link", { name: /Tuviste un choque o un hurto/ }).click();
+  await expect(page.getByRole("heading", { name: "Si tuviste un choque" })).toBeVisible();
+  await page.goBack();
 
   await page.goto(`/cuenta?email=${encodeURIComponent(email)}`);
   await page.getByRole("button", { name: "Enviarme el código" }).click();
@@ -114,4 +117,18 @@ test("el footer muestra la versión desplegada", async ({ page }) => {
   const { version } = JSON.parse(readFileSync("package.json", "utf8"));
   await page.goto("/");
   await expect(page.getByTestId("app-version")).toHaveText(`v${version}`);
+});
+
+test("es instalable y muestra una página sin conexión", async ({ page, context }) => {
+  const manifest = await (await page.request.get("/manifest.webmanifest")).json();
+  expect(manifest.icons.map((i: { sizes: string; purpose?: string }) => `${i.sizes}${i.purpose ? `:${i.purpose}` : ""}`)).toEqual(
+    expect.arrayContaining(["192x192", "512x512", "512x512:maskable"]),
+  );
+  await page.goto("/");
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
+  await page.reload();
+  await context.setOffline(true);
+  await page.goto("/ayuda").catch(() => {});
+  await expect(page.getByRole("heading", { name: "Estás sin conexión" })).toBeVisible();
+  await context.setOffline(false);
 });

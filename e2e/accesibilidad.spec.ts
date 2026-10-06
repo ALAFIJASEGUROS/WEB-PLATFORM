@@ -10,7 +10,7 @@ async function audit(page: Page, name: string) {
   expect(summary, `Violaciones en ${name}`).toEqual([]);
 }
 
-const PAGES = ["/", "/cotizar", "/cotizar/auto", "/como-funciona", "/ayuda", "/pqr", "/cuenta", "/condicionado/sura/auto-global", "/legal/privacidad"];
+const PAGES = ["/", "/cotizar", "/cotizar/auto", "/como-funciona", "/ayuda", "/siniestros", "/pqr", "/cuenta", "/condicionado/sura/auto-global", "/legal/privacidad"];
 
 for (const scheme of ["light", "dark"] as const) {
   test.describe(`accesibilidad (${scheme})`, () => {
