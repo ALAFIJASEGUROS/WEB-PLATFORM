@@ -1,0 +1,82 @@
+import { notFound } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
+import { Card } from "@/components/ui";
+import { PrintButton } from "@/components/PrintButton";
+import { COVERAGE_KEYS } from "@/domain/types";
+import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
+import { getCurrentUser } from "@/server/auth";
+import { db } from "@/server/db";
+import { getPolicyForViewer } from "@/server/orders";
+
+export const metadata = { title: "Póliza", robots: { index: false } };
+
+export default async function Page({ params, searchParams }: PageProps<"/poliza/[id]">) {
+  const { id } = await params;
+  const { t } = await searchParams;
+  const user = await getCurrentUser();
+  const policy = getPolicyForViewer(id, typeof t === "string" ? t : undefined, user?.id);
+  if (!policy) notFound();
+  const order = policy.orderId ? db().orders.get(policy.orderId) : undefined;
+  const offer = order?.offer;
+  const v = policy.vehicle;
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 print:py-0">
+      <Card className="space-y-6 p-6 print:shadow-none">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-mint">
+              <ShieldCheck className="size-4" aria-hidden /> Póliza vigente
+            </p>
+            <h1 className="mt-1 text-2xl font-extrabold text-navy">{policy.planName}</h1>
+            <p className="text-muted">{policy.insurerName}</p>
+          </div>
+          <PrintButton />
+        </div>
+
+        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+          <div><dt className="text-muted">Número de póliza</dt><dd className="font-bold">{policy.number}</dd></div>
+          <div><dt className="text-muted">Vigencia</dt><dd className="font-bold">{policy.startDate} a {policy.endDate}</dd></div>
+          <div><dt className="text-muted">Tomador y asegurado</dt><dd className="font-bold">{policy.holderName}</dd></div>
+          {order && <div><dt className="text-muted">Documento</dt><dd className="font-bold">{order.policyholder.documentType} {order.policyholder.documentNumber}</dd></div>}
+          <div><dt className="text-muted">Vehículo</dt><dd className="font-bold">{v.brand} {v.model} {v.year}</dd></div>
+          <div><dt className="text-muted">Placa</dt><dd className="font-bold">{v.plate ?? "Por asignar"}</dd></div>
+          <div><dt className="text-muted">Valor asegurado</dt><dd className="font-bold">{formatCOP(v.commercialValue)}</dd></div>
+          {policy.annualPremium && <div><dt className="text-muted">Prima anual</dt><dd className="font-bold">{formatCOP(policy.annualPremium)}</dd></div>}
+        </dl>
+
+        {offer && (
+          <div className="grid gap-6 border-t border-line pt-6 sm:grid-cols-2">
+            <div>
+              <h2 className="mb-2 font-bold text-navy">Coberturas</h2>
+              <ul className="space-y-1 text-sm">
+                {COVERAGE_KEYS.filter((k) => offer.coverages[k]).map((k) => (
+                  <li key={k}>• {COVERAGE_LABELS[k]}{k === "rc" && ` (${formatMillions(offer.rcLimit)})`}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-sm text-muted">
+                Deducible: {offer.deductiblePct ? `${offer.deductiblePct}% mín. ${offer.deductibleMinSmmlv} SMMLV` : "sin deducible"}
+              </p>
+            </div>
+            <div>
+              <h2 className="mb-2 font-bold text-navy">Asistencias</h2>
+              <ul className="space-y-1 text-sm">
+                {offer.services.map((s) => <li key={s}>• {SERVICE_LABELS[s]}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-xl bg-brand-soft p-4 text-sm text-navy">
+          <p className="font-bold">¿Tuviste un accidente?</p>
+          <p>Llama a la línea de asistencia de {policy.insurerName} y ten a mano tu número de póliza. Revisa la guía en <a className="font-semibold underline" href="/ayuda#siniestros">Ayuda</a>.</p>
+        </div>
+
+        <p className="text-xs text-muted">
+          Documento de demostración generado por SeguAlaFija. No constituye una póliza real
+          ni es emitido por {policy.insurerName}.
+        </p>
+      </Card>
+    </div>
+  );
+}

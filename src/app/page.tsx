@@ -77,7 +77,7 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4">
-        <Card className="flex flex-col items-start gap-4 bg-navy p-8 text-white md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col items-start gap-4 rounded-[var(--radius-card)] bg-navy p-8 text-white md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-2xl font-extrabold">Ten tus seguros en un solo lugar</h2>
             <p className="mt-1 text-white/80">
@@ -87,7 +87,7 @@ export default function Home() {
           <ButtonLink href="/cuenta" variant="accent">
             Crear mi cuenta
           </ButtonLink>
-        </Card>
+        </div>
       </section>
 
       <Footer />

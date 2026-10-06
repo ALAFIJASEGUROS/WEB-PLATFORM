@@ -159,5 +159,14 @@ export function createMockAdapter(config: MockInsurerConfig): InsurerAdapter {
       }
       return priceOffers(req, config);
     },
+    async issue(req) {
+      const serial = Math.floor(
+        hash(`${req.offer.id}|${req.holder.documentNumber}|${req.startDate}|${Date.now()}`) * 1e8,
+      )
+        .toString()
+        .padStart(8, "0");
+      const line = req.offer.vehicleType === "auto" ? "AU" : "MO";
+      return { policyNumber: `${config.id.toUpperCase().slice(0, 3)}-${line}-${serial}` };
+    },
   };
 }

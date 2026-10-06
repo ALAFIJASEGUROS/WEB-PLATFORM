@@ -4,6 +4,10 @@ import { MOCK_INSURERS } from "./mock/insurers";
 
 const DEFAULT_TIMEOUT_MS = 4000;
 
+export function getAdapter(insurerId: string, adapters = MOCK_INSURERS) {
+  return adapters.find((a) => a.id === insurerId);
+}
+
 /**
  * Consulta todas las aseguradoras en paralelo. Si alguna falla o se demora
  * más que el timeout, se devuelven los resultados parciales y el error.
