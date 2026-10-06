@@ -97,3 +97,29 @@ describe("quoteAll", () => {
     expect(errors[0].message).toMatch(/tardó/);
   });
 });
+
+describe("pesos personalizados", () => {
+  it("rebalance mantiene la suma en 100", async () => {
+    const { rebalance } = await import("./scoring");
+    const w = rebalance({ price: 40, coverage: 40, services: 20 }, "price", 70);
+    expect(w.price).toBe(70);
+    expect(w.price + w.coverage + w.services).toBe(100);
+    expect(w.coverage).toBeGreaterThan(w.services);
+  });
+
+  it("100% precio recomienda la opción más barata aunque la prioridad diga cobertura", () => {
+    const [top] = scoreOffers(offers, { ...answers, priority: "cobertura", weights: { price: 100, coverage: 0, services: 0 } });
+    expect(top.annualPremium).toBe(Math.min(...offers.map((o) => o.annualPremium)));
+  });
+});
+
+describe("ficha de la oferta", () => {
+  it("desglosa la prima con IVA del 19% y trae exclusiones y condicionado", () => {
+    for (const o of offers) {
+      expect(o.netPremium + o.iva).toBe(o.annualPremium);
+      expect(Math.abs(o.iva - o.netPremium * 0.19)).toBeLessThanOrEqual(1);
+      expect(o.exclusions.length).toBeGreaterThan(3);
+      expect(o.conditionsUrl).toMatch(/^\/condicionado\//);
+    }
+  });
+});

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { baseUrl, logout, requestOtp, requireUser, verifyOtp } from "@/server/auth";
+import { baseUrl, logout, requestContext, requestOtp, requireUser, verifyOtp } from "@/server/auth";
+import { consentRecord } from "@/domain/consents";
 import { CheckoutError, startInstallmentPayment } from "@/server/orders";
 import {
   attachPolicyToUser,
@@ -61,13 +62,20 @@ export async function updateProfileAction(_: FormState, form: FormData): Promise
     email: form.get("ch_email") === "on",
     whatsapp: form.get("ch_whatsapp") === "on" && !!user.phone,
   };
-  user.marketingConsent = form.get("marketing") === "on";
+  const marketing = form.get("marketing") === "on";
+  if (marketing !== user.marketingConsent) {
+    user.consentLog.push(consentRecord("marketing", marketing, "perfil", await requestContext()));
+  }
+  user.marketingConsent = marketing;
   revalidatePath("/cuenta", "layout");
   return { ok: true };
 }
 
 export async function setMarketingConsentAction(value: boolean) {
   const user = await requireUser();
+  if (value !== user.marketingConsent) {
+    user.consentLog.push(consentRecord("marketing", value, "ofertas", await requestContext()));
+  }
   user.marketingConsent = value;
   revalidatePath("/cuenta", "layout");
 }

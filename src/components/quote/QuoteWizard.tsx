@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type {
   Answers,
+  Priority,
   QuoteRequest,
   ServiceKey,
   Vehicle,
@@ -42,6 +43,8 @@ import { track } from "@/lib/analytics";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { OptionCard, OptionGroup } from "./OptionCard";
 import { PlateInput } from "./PlateInput";
+import { WeightSliders } from "./WeightSliders";
+import { weightsFromPriority } from "@/recommendation/scoring";
 
 const STEPS = [
   { title: "Tu vehículo", subtitle: "Con la placa lo encontramos más rápido." },
@@ -170,6 +173,10 @@ function Wizard({ type }: { type: VehicleType }) {
     track("cuestionario_completado", { tipo: type, prioridad: answers.priority });
     router.push("/resultados");
   }
+
+  // Elegir una prioridad reinicia los pesos personalizados a los de esa prioridad.
+  const choosePriority = (p: Priority) =>
+    setAnswers((a) => ({ ...a, priority: p, weights: a.weights ? weightsFromPriority(p) : undefined }));
 
   const toggleService = (s: ServiceKey) =>
     set(
@@ -414,11 +421,25 @@ function Wizard({ type }: { type: VehicleType }) {
 
           {step === 3 && (
             <OptionGroup legend="Elige una opción">
-              <OptionCard name="priority" checked={answers.priority === "precio"} onChange={() => set("priority", "precio")} icon={<BadgePercent />} title="Pagar lo menos posible" description="Cumplir con lo esencial al mejor precio." />
-              <OptionCard name="priority" checked={answers.priority === "cobertura"} onChange={() => set("priority", "cobertura")} icon={<ShieldCheck />} title="Estar bien protegido" description="La mayor cobertura y el menor deducible, aunque cueste más." />
-              <OptionCard name="priority" checked={answers.priority === "servicios"} onChange={() => set("priority", "servicios")} icon={<Sparkles />} title="Servicios y asistencias" description="Grúa, vehículo de reemplazo, conductor elegido, asistencia jurídica." />
-              <OptionCard name="priority" checked={answers.priority === "equilibrio"} onChange={() => set("priority", "equilibrio")} icon={<Scale />} title="Un buen equilibrio" description="Buena protección a un precio razonable." />
+              <OptionCard name="priority" checked={answers.priority === "precio"} onChange={() => choosePriority("precio")} icon={<BadgePercent />} title="Pagar lo menos posible" description="Cumplir con lo esencial al mejor precio." />
+              <OptionCard name="priority" checked={answers.priority === "cobertura"} onChange={() => choosePriority("cobertura")} icon={<ShieldCheck />} title="Estar bien protegido" description="La mayor cobertura y el menor deducible, aunque cueste más." />
+              <OptionCard name="priority" checked={answers.priority === "servicios"} onChange={() => choosePriority("servicios")} icon={<Sparkles />} title="Servicios y asistencias" description="Grúa, vehículo de reemplazo, conductor elegido, asistencia jurídica." />
+              <OptionCard name="priority" checked={answers.priority === "equilibrio"} onChange={() => choosePriority("equilibrio")} icon={<Scale />} title="Un buen equilibrio" description="Buena protección a un precio razonable." />
             </OptionGroup>
+          )}
+          {step === 3 && (
+            <div className="space-y-3">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold text-heading">
+                <input
+                  type="checkbox"
+                  className="size-5 accent-[var(--color-brand)]"
+                  checked={!!answers.weights}
+                  onChange={(e) => set("weights", e.target.checked ? weightsFromPriority(answers.priority) : undefined)}
+                />
+                Ajustar los pesos a mi medida
+              </label>
+              {answers.weights && <WeightSliders value={answers.weights} onChange={(w) => set("weights", w)} />}
+            </div>
           )}
 
           {step === 4 && (

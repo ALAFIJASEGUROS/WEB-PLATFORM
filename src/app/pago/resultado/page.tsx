@@ -25,7 +25,18 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
       if (update?.reference === ref) await applyPaymentUpdate(update);
     }
     const paid = db().policies.get(installment.policyId)?.installments?.find((i) => i.n === installment.n)?.status === "pagada";
-    redirect(paid ? `/cuenta/seguros?cuota=${installment.n}` : `/cuenta/seguros?error=${encodeURIComponent("El pago de la cuota no se completó.")}`);
+    if (paid) redirect(`/cuenta/seguros?cuota=${installment.n}`);
+    if (installment.status === "fallida") {
+      redirect(`/cuenta/seguros?error=${encodeURIComponent("El pago de la cuota no fue aprobado. No se hizo ningún cobro.")}`);
+    }
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <AutoRefresh />
+        <Clock className="mx-auto size-16 text-brand" aria-hidden />
+        <h1 className="mt-4 text-2xl font-extrabold text-heading">Estamos confirmando el pago de tu cuota</h1>
+        <p className="mt-2 text-muted">Algunos pagos por PSE tardan unos minutos. Esta página se actualiza sola.</p>
+      </div>
+    );
   }
 
   let order = getOrderForViewer(ref, typeof t === "string" ? t : undefined, user?.id);

@@ -5,6 +5,7 @@ import type {
   OfferLabel,
   Priority,
   ScoredOffer,
+  Weights,
 } from "@/domain/types";
 import { SERVICE_KEYS } from "@/domain/types";
 import { formatCOP, SERVICE_LABELS } from "@/domain/labels";
@@ -57,9 +58,31 @@ export function meetsFinancingRequirements(o: Offer) {
   return o.coverages.perdidaTotalDanos && o.coverages.perdidaTotalHurto;
 }
 
+/** Pesos efectivos: los personalizados (0–100) o los de la prioridad elegida. */
+export function effectiveWeights(answers: Answers) {
+  const w = answers.weights;
+  if (!w) return PRIORITY_WEIGHTS[answers.priority];
+  return { price: w.price / 100, coverage: w.coverage / 100, services: w.services / 100 };
+}
+
+/** Reparte 100 puntos cambiando uno y ajustando los otros dos en proporción. */
+export function rebalance(w: Weights, key: keyof Weights, value: number): Weights {
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  const others = (Object.keys(w) as (keyof Weights)[]).filter((k) => k !== key);
+  const rest = 100 - v;
+  const sum = others.reduce((s, k) => s + w[k], 0);
+  const a = sum === 0 ? Math.round(rest / 2) : Math.round((w[others[0]] / sum) * rest);
+  return { ...w, [key]: v, [others[0]]: a, [others[1]]: rest - a } as Weights;
+}
+
+export function weightsFromPriority(p: Priority): Weights {
+  const w = PRIORITY_WEIGHTS[p];
+  return { price: Math.round(w.price * 100), coverage: Math.round(w.coverage * 100), services: Math.round(w.services * 100) };
+}
+
 export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
   if (offers.length === 0) return [];
-  const weights = PRIORITY_WEIGHTS[answers.priority];
+  const weights = effectiveWeights(answers);
   const cw = coverageWeights(answers);
   const cwTotal = Object.values(cw).reduce((s, n) => s + n, 0);
 

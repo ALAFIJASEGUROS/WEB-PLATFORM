@@ -7,8 +7,11 @@
   --color-heading: #0b3d91;
   --color-sun-ink: #8a5a00;
   --color-navy-dark: #082d6e;
-  --color-brand: #1e88e5;
+  /* brand: enlaces e íconos (≥4.5:1 sobre blanco). brand-fill: fondos con texto blanco. */
+  --color-brand: #1872d3;
   --color-brand-strong: #1565c0;
+  --color-brand-fill: #1565c0;
+  --color-brand-fill-hover: #0d4f9e;
   --color-brand-soft: #e8f3fe;
   --color-mint: #14a38b;
   --color-mint-soft: #e3f7f3;
@@ -31,13 +34,15 @@ html {
   color-scheme: light;
 }
 
-/* Modo oscuro según la preferencia del sistema. */
+/* Modo oscuro: sigue al sistema salvo que la persona elija un tema (data-theme). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --color-navy: #13306b;
     --color-heading: #e8efff;
     --color-brand: #3d97f0;
+    --color-brand-fill: #1d6fd6;
+    --color-brand-fill-hover: #175bb3;
     --color-brand-strong: #79b8ff;
     --color-brand-soft: #142a4a;
     --color-mint: #34c9ad;
@@ -53,6 +58,33 @@ html {
     --color-line: #27354e;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-navy: #13306b;
+  --color-heading: #e8efff;
+  --color-brand: #3d97f0;
+  --color-brand-fill: #1d6fd6;
+  --color-brand-fill-hover: #175bb3;
+  --color-brand-strong: #79b8ff;
+  --color-brand-soft: #142a4a;
+  --color-mint: #34c9ad;
+  --color-mint-soft: #0f2e2a;
+  --color-sun-soft: #33290f;
+  --color-sun-ink: #f3c867;
+  --color-coral: #ff7f83;
+  --color-coral-soft: #3a1b1e;
+  --color-canvas: #0b1220;
+  --color-surface: #131d31;
+  --color-ink: #dfe7f3;
+  --color-muted: #9aabc4;
+  --color-line: #27354e;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 body {

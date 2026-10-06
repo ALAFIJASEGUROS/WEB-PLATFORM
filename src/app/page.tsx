@@ -102,7 +102,7 @@ export default function Home() {
                   href={o.href}
                   className="group flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:ring-2 hover:ring-brand"
                 >
-                  <span className="flex size-11 items-center justify-center rounded-xl bg-brand text-white">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-brand-fill text-white">
                     <o.icon className="size-6" aria-hidden />
                   </span>
                   <span>

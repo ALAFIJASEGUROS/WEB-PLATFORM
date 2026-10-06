@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { CheckoutInput } from "@/domain/schemas";
 import { claimGuestPurchases, db, getOrCreateUser } from "./db";
-import { applyPaymentUpdate, buildInstallments, createOrder, CheckoutError, startInstallmentPayment } from "./orders";
+import { applyPaymentUpdate, buildInstallments, canRetract, createOrder, CheckoutError, retractPolicy, startInstallmentPayment } from "./orders";
 import { parseWompiEvent, wompiIntegritySignature } from "./payments";
 import { dispatchDueReminders, withinContactHours } from "./reminders";
 
@@ -141,5 +141,83 @@ describe("analítica", () => {
     expect(start.sessions).toBe(2);
     expect(vehicle.sessions).toBe(1);
     expect(vehicle.fromPrevious).toBe(0.5);
+  });
+});
+
+describe("evidencia de consentimientos", () => {
+  it("guarda versión, fecha e IP de cada autorización del checkout", async () => {
+    const order = await createOrder(input, undefined, { ip: "1.2.3.4", userAgent: "test" });
+    expect(order.consentEvidence.map((c) => [c.purpose, c.granted])).toEqual([
+      ["terms", true],
+      ["dataProcessing", true],
+      ["marketing", true],
+    ]);
+    expect(order.consentEvidence[0]).toMatchObject({ ip: "1.2.3.4", source: "checkout", version: "terminos-2026-10" });
+  });
+});
+
+describe("retracto", () => {
+  async function issued() {
+    const user = getOrCreateUser("ana@example.com");
+    const order = await createOrder({ ...input, paymentPlan: "mensual" }, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: `r-${order.reference}` });
+    return { user, order, policy: [...db().policies.values()].find((p) => p.orderId === order.id)! };
+  }
+
+  it("anula la póliza dentro del plazo, quita recordatorios y bloquea cuotas", async () => {
+    const { user, order, policy } = await issued();
+    expect(canRetract(policy)).toBe(true);
+    const { refund } = retractPolicy(policy.id, { userId: user.id });
+    expect(refund).toBe(order.amountInCents / 100);
+    expect(policy.status).toBe("retractada");
+    expect(order.status).toBe("retractada");
+    expect([...db().reminders.values()].some((r) => r.policyId === policy.id)).toBe(false);
+    await expect(startInstallmentPayment(policy.id, user.id, "http://x")).rejects.toBeInstanceOf(CheckoutError);
+  });
+
+  it("no permite retracto fuera del plazo ni a terceros", async () => {
+    const { user, policy } = await issued();
+    expect(canRetract(policy, "2099-01-01")).toBe(false);
+    expect(() => retractPolicy(policy.id, { userId: "otro" })).toThrow(CheckoutError);
+    expect(() => retractPolicy(policy.id, { userId: user.id })).not.toThrow();
+  });
+});
+
+describe("cuotas con Wompi", () => {
+  it("reutiliza el intento activo en lugar de crear otro cobro", async () => {
+    const user = getOrCreateUser("ana@example.com");
+    const order = await createOrder({ ...input, paymentPlan: "mensual" }, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "w1" });
+    const policy = [...db().policies.values()][0];
+    Object.assign(process.env, { WOMPI_PUBLIC_KEY: "pub_test_x", WOMPI_INTEGRITY_SECRET: "i", WOMPI_EVENTS_SECRET: "e" });
+    try {
+      const a = await startInstallmentPayment(policy.id, user.id, "http://x");
+      const b = await startInstallmentPayment(policy.id, user.id, "http://x");
+      expect(a.redirectUrl).toBe(b.redirectUrl);
+      expect(db().installmentPayments.size).toBe(1);
+      const [attempt] = db().installmentPayments.values();
+      await applyPaymentUpdate({ reference: attempt.reference, transactionId: "t2", status: "DECLINED", amountInCents: attempt.amountInCents, eventId: "w2" });
+      const c = await startInstallmentPayment(policy.id, user.id, "http://x");
+      expect(c.redirectUrl).not.toBe(a.redirectUrl);
+    } finally {
+      delete process.env.WOMPI_PUBLIC_KEY;
+      delete process.env.WOMPI_INTEGRITY_SECRET;
+      delete process.env.WOMPI_EVENTS_SECRET;
+    }
+  });
+});
+
+describe("recordatorios: festivos y un contacto al día", () => {
+  it("no contacta en festivos y agrupa varios avisos en un solo mensaje", () => {
+    (globalThis as { __safLastContact?: unknown }).__safLastContact = undefined;
+    expect(withinContactHours(new Date("2026-10-12T15:00:00Z"))).toBe(false); // lunes festivo
+    const user = getOrCreateUser("c@example.com");
+    for (const id of ["a", "b"]) {
+      db().reminders.set(id, { id, userId: user.id, kind: "soat", title: `Aviso ${id}`, dueDate: "2026-10-14", daysBefore: 15, auto: true });
+    }
+    const before = db().outbox.length;
+    expect(dispatchDueReminders(new Date("2026-10-06T15:00:00Z")).sent).toBe(1);
+    expect(db().outbox.length - before).toBe(1);
+    expect(db().outbox[0].body).toMatch(/Aviso a[\s\S]*Aviso b/);
   });
 });

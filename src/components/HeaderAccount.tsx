@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserRound } from "lucide-react";
 import { STATIC_DEMO } from "@/lib/api-client";
+import { SESSION_EVENT } from "./SessionSync";
 
 type Session = { name: string | null; email: string } | null;
 
@@ -25,6 +26,12 @@ export function HeaderAccount() {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    const onSession = (e: Event) => setSession((e as CustomEvent<Session>).detail);
+    window.addEventListener(SESSION_EVENT, onSession);
+    return () => window.removeEventListener(SESSION_EVENT, onSession);
+  }, []);
+
   const label = session ? (session.name?.split(" ")[0] ?? session.email.split("@")[0]) : "Mi cuenta";
   const initial = label.charAt(0).toUpperCase();
 
@@ -35,7 +42,7 @@ export function HeaderAccount() {
       className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line bg-surface pl-1.5 pr-4 text-sm font-semibold text-heading hover:border-brand"
     >
       {session ? (
-        <span aria-hidden className="flex size-8 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
+        <span aria-hidden className="flex size-8 items-center justify-center rounded-full bg-brand-fill text-sm font-bold text-white">
           {initial}
         </span>
       ) : (

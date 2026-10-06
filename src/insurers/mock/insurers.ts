@@ -23,6 +23,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
       deductibleMinSmmlv: 0,
       services: ["grua"],
       substituteCarDays: 0,
+      exclusions: ["Daños a tu propio vehículo", "Hurto del vehículo"],
     },
     {
       code: "auto-global",
@@ -42,6 +43,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
       deductibleMinSmmlv: 1,
       services: ["grua", "conductorElegido", "cerrajeria", "llantas"],
       substituteCarDays: 7,
+      exclusions: ["Hurto de partes", "Llantas y rines por desgaste"],
     },
     {
       code: "auto-clasico",
@@ -71,6 +73,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
         "llantas",
       ],
       substituteCarDays: 15,
+      exclusions: ["Desgaste mecánico normal"],
     },
     {
       code: "moto-rc",
@@ -84,6 +87,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
       deductibleMinSmmlv: 0,
       services: ["grua"],
       substituteCarDays: 0,
+      exclusions: ["Daños a tu propia moto", "Hurto de la moto"],
     },
     {
       code: "moto-integral",
@@ -103,6 +107,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
       deductibleMinSmmlv: 1,
       services: ["grua", "asistenciaJuridica"],
       substituteCarDays: 0,
+      exclusions: ["Hurto de partes", "Accesorios no declarados"],
     },
   ],
 };
@@ -125,6 +130,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
       deductibleMinSmmlv: 2,
       services: ["grua", "cerrajeria"],
       substituteCarDays: 0,
+      exclusions: ["Pérdidas parciales por daños", "Hurto de partes", "Eventos de la naturaleza"],
     },
     {
       code: "auto-plus",
@@ -151,6 +157,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
         "cerrajeria",
       ],
       substituteCarDays: 10,
+      exclusions: ["Accidentes personales del conductor"],
     },
     {
       code: "moto-basico",
@@ -164,6 +171,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
       deductibleMinSmmlv: 1,
       services: ["grua"],
       substituteCarDays: 0,
+      exclusions: ["Daños a tu propia moto", "Hurto de partes"],
     },
     {
       code: "moto-plus",
@@ -184,6 +192,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
       deductibleMinSmmlv: 0.5,
       services: ["grua", "asistenciaJuridica", "llantas", "cerrajeria"],
       substituteCarDays: 0,
+      exclusions: ["Accesorios no declarados", "Desgaste de llantas"],
     },
   ],
 };

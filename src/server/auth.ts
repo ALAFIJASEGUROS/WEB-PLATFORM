@@ -99,3 +99,12 @@ export async function baseUrl() {
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return `${proto}://${host}`;
 }
+
+/** IP y navegador de la solicitud actual, para la evidencia de consentimientos. */
+export async function requestContext() {
+  const h = await headers();
+  return {
+    ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? undefined,
+    userAgent: h.get("user-agent") ?? undefined,
+  };
+}

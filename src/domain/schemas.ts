@@ -26,6 +26,14 @@ export const quoteRequestSchema = z.object({
     deductibleTolerance: z.enum(["bajo", "medio", "alto"]),
     services: z.array(z.enum(SERVICE_KEYS)).max(SERVICE_KEYS.length),
     claimsLast3Years: z.number().int().min(0).max(10),
+    weights: z
+      .object({
+        price: z.number().int().min(0).max(100),
+        coverage: z.number().int().min(0).max(100),
+        services: z.number().int().min(0).max(100),
+      })
+      .refine((w) => w.price + w.coverage + w.services === 100, "Los pesos deben sumar 100")
+      .optional(),
   }),
 });
 
