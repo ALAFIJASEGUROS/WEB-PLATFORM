@@ -7,6 +7,17 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 
+## [0.7.0] - 2026-10-06 · Sprint 5
+### Agregado
+- Metadatos regulatorios por aseguradora: figura contractual y campos de conocimiento del cliente (`regulatory` en `InsurerAdapter`).
+- Checkout con preguntas SARLAFT según la aseguradora (ocupación, ingresos, PEP), validadas también en el servidor.
+- Aceptación de condiciones con un código enviado al correo antes de pagar, con evidencia (fecha, IP, navegador). La pasarela solo se habilita tras aceptar.
+- Conciliación de pagos: panel en `/admin` y cron diario (`/api/cron/conciliacion`) que reporta pagos atascados, órdenes sin aceptar y errores de emisión.
+- Registro de líneas de seguro (`src/domain/lines.ts`) con SOAT, hogar y viaje como "próximamente", y guía en `docs/nuevas-lineas.md`.
+### Cambiado
+- `POST /api/ordenes` ya no devuelve la URL de pago: devuelve los datos para la aceptación. El pago se obtiene en `POST /api/ordenes/aceptar`.
+- Flujo de ramas documentado: la rama de desarrollo → PR → `main`.
+
 ## [0.6.0] - 2026-10-06 · Sprint 4
 ### Agregado
 - Caché de cotizaciones de 15 minutos. La clave usa solo los datos que cambian la tarifa.
@@ -56,7 +67,8 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Cotización por placa, motor de recomendación explicable, adaptadores simulados de SURA y Seguros Bolívar, resultados y comparador.
 
-[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.6.0...HEAD
+[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.3.0...v0.4.0

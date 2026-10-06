@@ -1,6 +1,42 @@
 // Aseguradoras con nombres reales pero planes, precios y condiciones SIMULADOS.
 // No representan la oferta comercial real de estas compañías.
+import type { KycField } from "../adapter";
 import { createMockAdapter, type MockInsurerConfig } from "./tariff";
+
+// Campos de conocimiento del cliente (SARLAFT). Cada aseguradora define los suyos;
+// estos son ilustrativos y deben confirmarse con cada compañía.
+const OCCUPATION: KycField = {
+  key: "ocupacion",
+  label: "Ocupación",
+  type: "select",
+  required: true,
+  options: [
+    { value: "empleado", label: "Empleado" },
+    { value: "independiente", label: "Independiente" },
+    { value: "pensionado", label: "Pensionado" },
+    { value: "estudiante", label: "Estudiante" },
+    { value: "hogar", label: "Hogar" },
+  ],
+};
+const PEP: KycField = {
+  key: "pep",
+  label: "¿Eres persona expuesta políticamente (PEP)?",
+  type: "boolean",
+  required: true,
+  help: "Por ejemplo, si ocupas o ocupaste en los últimos 2 años un cargo público de alto nivel.",
+};
+const INCOME: KycField = {
+  key: "ingresos",
+  label: "Ingresos mensuales",
+  type: "select",
+  required: true,
+  options: [
+    { value: "hasta-2smmlv", label: "Hasta 2 SMMLV" },
+    { value: "2-5smmlv", label: "Entre 2 y 5 SMMLV" },
+    { value: "5-10smmlv", label: "Entre 5 y 10 SMMLV" },
+    { value: "mas-10smmlv", label: "Más de 10 SMMLV" },
+  ],
+};
 
 const M = 1_000_000;
 
@@ -9,6 +45,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
   name: "SURA",
   latencyMs: [400, 1200],
   failPlatePrefix: "ERR",
+  regulatory: { contractModel: "simulado", kycFields: [OCCUPATION, PEP] },
   cityFactor: { Bogotá: 1.1, Medellín: 0.95, Cali: 1.08, Barranquilla: 1.05 },
   plans: [
     {
@@ -116,6 +153,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
   id: "bolivar",
   name: "Seguros Bolívar",
   latencyMs: [700, 1800],
+  regulatory: { contractModel: "simulado", kycFields: [OCCUPATION, INCOME, PEP] },
   cityFactor: { Bogotá: 1.06, Medellín: 1.0, Cali: 1.12, Cartagena: 0.97 },
   plans: [
     {

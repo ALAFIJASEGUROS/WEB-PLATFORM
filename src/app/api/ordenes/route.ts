@@ -1,7 +1,6 @@
 import { checkoutSchema } from "@/domain/schemas";
-import { baseUrl, getCurrentUser } from "@/server/auth";
-import { CheckoutError, createOrder } from "@/server/orders";
-import { paymentProvider } from "@/server/payments";
+import { getCurrentUser, otpShownOnScreen } from "@/server/auth";
+import { CheckoutError, createOrder, startAcceptance } from "@/server/orders";
 
 export async function POST(request: Request) {
   const parsed = checkoutSchema.safeParse(await request.json().catch(() => null));
@@ -15,8 +14,9 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? undefined;
     const order = await createOrder(parsed.data, user?.id, { ip, userAgent: request.headers.get("user-agent") ?? undefined });
-    const { redirectUrl } = await paymentProvider().createCheckout(order, await baseUrl());
-    return Response.json({ reference: order.reference, redirectUrl });
+    // Antes de pagar, el tomador acepta las condiciones con un código enviado a su correo.
+    const { demoCode } = startAcceptance(order, otpShownOnScreen());
+    return Response.json({ reference: order.reference, token: order.accessToken, acceptance: true, demoCode });
   } catch (e) {
     if (e instanceof CheckoutError) {
       return Response.json({ error: e.message }, { status: 409 });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { QuoteWizard } from "@/components/quote/QuoteWizard";
+import { availableLines } from "@/domain/lines";
 
 export async function generateMetadata({
   params,
@@ -10,7 +11,7 @@ export async function generateMetadata({
 }
 
 export function generateStaticParams() {
-  return [{ tipo: "auto" }, { tipo: "moto" }];
+  return availableLines().map((l) => ({ tipo: l.id }));
 }
 
 export default async function Page({ params }: PageProps<"/cotizar/[tipo]">) {

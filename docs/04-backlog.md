@@ -29,7 +29,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-02.1 | Como plataforma quiero un contrato `InsurerAdapter` (`quote` + `issue`) y un modelo canónico de oferta | ✅ | M | MVP | 5 |
 | HU-02.2 | Como usuario quiero ver resultados aunque una aseguradora falle o tarde | ✅ | M | MVP | 3 |
 | HU-02.3 | Como equipo quiero mocks realistas de 2 aseguradoras con tarifas, latencias y errores | ✅ | M | MVP | 5 |
-| HU-02.4 | Como equipo quiero metadatos regulatorios por adaptador (figura contractual, productos habilitados, campos KYC) | ⬜ | S | V1 | 3 |
+| HU-02.4 | Como equipo quiero metadatos regulatorios por adaptador (figura contractual, productos habilitados, campos KYC) | ✅ | S | V1 | 3 |
 | HU-02.5 | Como plataforma quiero integrar la API real de la primera aseguradora | ⬜ Dep | M | V1 | 13 |
 | HU-02.6 | Como plataforma quiero caché de cotizaciones con la vigencia del precio | ✅ | C | V1 | 3 |
 
@@ -78,8 +78,8 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-06.1 | Como usuario quiero comprar sin crear cuenta, con datos del tomador validados | ✅ | M | MVP | 5 |
 | HU-06.2 | Como usuario quiero autorizaciones separadas y no premarcadas | ✅ | M | MVP | 2 |
 | HU-06.3 | Como plataforma quiero guardar evidencia de cada consentimiento (fecha, versión del texto, IP) | ✅ | M | V1 | 3 |
-| HU-06.4 | Como usuario quiero aceptar las condiciones con OTP (firma electrónica trazable) | ⬜ | S | V1 | 5 |
-| HU-06.5 | Como aseguradora quiero capturar campos KYC/SARLAFT configurables | ⬜ Dep | M | V1 | 5 |
+| HU-06.4 | Como usuario quiero aceptar las condiciones con OTP (firma electrónica trazable) | ✅ | S | V1 | 5 |
+| HU-06.5 | Como aseguradora quiero capturar campos KYC/SARLAFT configurables | ✅ | M | V1 | 5 |
 
 ## E07 · Pagos (Wompi)
 | ID | Historia | Estado | Prio | Rel | Pts |
@@ -88,7 +88,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-07.2 | Como usuario quiero pagar con PSE, tarjeta o Nequi vía Wompi | 🟡 Dep | M | MVP | 3 |
 | HU-07.3 | Como usuario quiero pagar mensual en 12 cuotas y pagar cada cuota desde mi cuenta | ✅ | S | MVP | 5 |
 | HU-07.4 | Como usuario quiero débito automático de las cuotas (tokenización Wompi) | ⬜ Dep | S | V1 | 8 |
-| HU-07.5 | Como equipo quiero conciliación diaria de pagos | ⬜ | S | V1 | 5 |
+| HU-07.5 | Como equipo quiero conciliación diaria de pagos | ✅ | S | V1 | 5 |
 
 **HU-07.2 · Criterios**
 - Con llaves sandbox, un pago aprobado emite la póliza.
@@ -168,7 +168,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 ## E16 · Extensibilidad
 | ID | Historia | Estado | Prio | Rel | Pts |
 | --- | --- | --- | --- | --- | --- |
-| HU-16.1 | Como plataforma quiero agregar líneas nuevas (hogar, viaje) sin rehacer el núcleo | ⬜ | C | V2 | 13 |
+| HU-16.1 | Como plataforma quiero agregar líneas nuevas (hogar, viaje) sin rehacer el núcleo | ✅ | C | V2 | 13 |
 | HU-16.2 | Como usuario quiero comprar el SOAT (gancho de entrada) | ⬜ Dep | S | V1 | 8 |
 
 ---
@@ -184,11 +184,15 @@ HU-02.6 (caché de cotizaciones), HU-05.5 (compartir cotización), HU-04.5 (re-c
 HU-12.3 (roles de admin por correo y bitácora), HU-14.3 (PQR con radicado y Defensor),
 HU-01.2 (auditoría automática con axe, WCAG 2.2 AA, modo claro y oscuro).
 
+## Sprint 5 (completado)
+HU-02.4 (metadatos regulatorios por adaptador), HU-06.5 (campos SARLAFT por aseguradora en el checkout),
+HU-06.4 (aceptación de condiciones con código por correo), HU-07.5 (conciliación de pagos con cron y panel),
+HU-16.1 (registro de líneas de seguro y guía en docs/nuevas-lineas.md).
+
 ## Próximo sprint sugerido
 Con lo que queda solo de código casi agotado, lo siguiente depende de terceros: Supabase (HU-09.6),
 Resend (HU-10.5), llaves de Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).
-De código quedan HU-02.4 (metadatos regulatorios por adaptador), HU-07.5 (conciliación),
-HU-04.4 (A/B de pesos) y HU-16.1 (nuevas líneas de seguro).
+De código quedan HU-04.4 (A/B de pesos) y HU-09.4 (lectura de pólizas en PDF).
 
 ## Bloqueados por terceros
 - Supabase (HU-09.6)

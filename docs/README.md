@@ -1,6 +1,7 @@
 # Documentación
 
 - [Estado del proyecto](estado.md): lo hecho, lo pendiente y los riesgos
+- [Nuevas líneas de seguro](nuevas-lineas.md): cómo agregar hogar, viaje o SOAT
 - [Versionamiento](versionamiento.md): SemVer, changelog, releases y versión visible
 - [CHANGELOG](../CHANGELOG.md)
 
