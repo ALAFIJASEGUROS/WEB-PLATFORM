@@ -23,7 +23,7 @@ export default async function Page() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-navy">Recordatorios</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-heading">Recordatorios</h1>
         <p className="mt-1 text-sm text-muted">
           Te avisamos por {channels.length ? channels.join(" y ") : "ningún canal (actívalos en tu perfil)"} antes de cada fecha.
           Los de pólizas, SOAT y tecnomecánica se crean solos.
@@ -41,7 +41,7 @@ export default async function Page() {
                   <Badge tone="brand">{KIND_LABEL[r.kind]}</Badge>
                   {r.auto && <Badge tone="neutral">Automático</Badge>}
                 </div>
-                <p className="font-semibold text-navy">{r.title}</p>
+                <p className="font-semibold text-heading">{r.title}</p>
                 <p className="text-sm text-muted">
                   {r.dueDate} · {d < 0 ? `venció hace ${-d} días` : d === 0 ? "hoy" : `en ${d} días`} · aviso {r.daysBefore} días antes
                 </p>
@@ -57,7 +57,7 @@ export default async function Page() {
       </Card>
 
       <Card className="p-5">
-        <h2 className="mb-4 font-bold text-navy">Nuevo recordatorio</h2>
+        <h2 className="mb-4 font-bold text-heading">Nuevo recordatorio</h2>
         <ActionForm action={addReminderAction} submitLabel="Agregar" className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Field label="¿Qué te recordamos?" htmlFor="r-title">

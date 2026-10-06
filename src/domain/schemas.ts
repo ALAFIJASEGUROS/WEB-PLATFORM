@@ -20,6 +20,8 @@ export const quoteRequestSchema = z.object({
     priority: z.enum(["precio", "cobertura", "servicios", "equilibrio"]),
     use: z.enum(["particular", "trabajo", "domicilios"]),
     parking: z.enum(["cerrado", "calle"]),
+    mileage: z.enum(["bajo", "medio", "alto"]).default("medio"),
+    drivers: z.enum(["solo", "varios"]).default("solo"),
     financed: z.boolean(),
     deductibleTolerance: z.enum(["bajo", "medio", "alto"]),
     services: z.array(z.enum(SERVICE_KEYS)).max(SERVICE_KEYS.length),
@@ -43,6 +45,7 @@ export const policyholderSchema = z.object({
 export const checkoutSchema = z.object({
   quote: quoteRequestSchema,
   offerId: z.string().min(3).max(60),
+  analyticsSid: z.string().max(64).optional(),
   paymentPlan: z.enum(["anual", "mensual"]),
   policyholder: policyholderSchema,
   consents: z.object({

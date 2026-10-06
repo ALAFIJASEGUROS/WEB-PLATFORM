@@ -7,9 +7,9 @@ const variants: Record<Variant, string> = {
   primary:
     "bg-brand text-white hover:bg-brand-strong disabled:bg-brand/40",
   secondary:
-    "bg-white text-navy border-2 border-line hover:border-brand disabled:opacity-50",
-  ghost: "text-navy hover:bg-brand-soft",
-  accent: "bg-sun text-navy hover:brightness-95",
+    "bg-surface text-heading border-2 border-line hover:border-brand disabled:opacity-50",
+  ghost: "text-heading hover:bg-brand-soft",
+  accent: "bg-sun text-[#10213f] hover:brightness-95",
 };
 
 const base =
@@ -50,7 +50,7 @@ export function Card({
 const badgeTones = {
   brand: "bg-brand-soft text-brand-strong",
   mint: "bg-mint-soft text-mint",
-  sun: "bg-sun-soft text-[#8a5a00]",
+  sun: "bg-sun-soft text-sun-ink",
   coral: "bg-coral-soft text-coral",
   neutral: "bg-canvas text-muted",
 } as const;
@@ -86,7 +86,7 @@ export function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-sm font-semibold text-navy">
+      <label htmlFor={htmlFor} className="block text-sm font-semibold text-heading">
         {label}
       </label>
       {children}
@@ -101,30 +101,34 @@ export function Field({
 }
 
 export const inputClass =
-  "w-full min-h-12 rounded-2xl border-2 border-line bg-white px-4 text-base text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none aria-[invalid=true]:border-coral";
+  "w-full min-h-12 rounded-2xl border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none aria-[invalid=true]:border-coral";
+
+/**
+ * Distintivo de la aseguradora con sus colores. No usa logotipos registrados:
+ * se reemplazan por los oficiales cuando haya convenio y autorización de marca.
+ */
+const INSURER_STYLE: Record<string, { bg: string; short: string }> = {
+  sura: { bg: "from-[#0033a0] to-[#2f63d6]", short: "SURA" },
+  bolivar: { bg: "from-[#00843d] to-[#2bb36a]", short: "Bolívar" },
+};
 
 export function InsurerLogo({ id, name }: { id: string; name: string }) {
-  const styles: Record<string, string> = {
-    sura: "bg-[#0033a0] text-white",
-    bolivar: "bg-[#00843d] text-white",
-  };
-  const initials = name
-    .replace("Seguros ", "")
-    .slice(0, 2)
-    .toUpperCase();
+  const style = INSURER_STYLE[id];
+  const short = style?.short ?? name.replace("Seguros ", "").slice(0, 7);
   return (
     <div
       aria-hidden
-      className={`flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold ${styles[id] ?? "bg-navy text-white"}`}
+      title={name}
+      className={`flex size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br px-1 text-center font-extrabold leading-none tracking-tight text-white shadow-inner ring-1 ring-black/5 ${style?.bg ?? "from-navy to-brand"} ${short.length > 4 ? "text-[10px]" : "text-xs"}`}
     >
-      {initials}
+      {short}
     </div>
   );
 }
 
 export function SimulatedDataNotice() {
   return (
-    <p className="rounded-xl bg-sun-soft px-3 py-2 text-xs text-[#8a5a00]">
+    <p className="rounded-xl bg-sun-soft px-3 py-2 text-xs text-sun-ink">
       Demo: precios, planes y condiciones son simulados y no corresponden a la
       oferta real de las aseguradoras.
     </p>

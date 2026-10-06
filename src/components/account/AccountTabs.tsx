@@ -23,7 +23,7 @@ export function AccountTabs() {
               <Link
                 href={t.href}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex min-h-10 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold ${active ? "bg-navy text-white" : "bg-white text-navy hover:bg-brand-soft"}`}
+                className={`inline-flex min-h-10 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold ${active ? "bg-navy text-white" : "bg-surface text-heading hover:bg-brand-soft"}`}
               >
                 {t.label}
               </Link>

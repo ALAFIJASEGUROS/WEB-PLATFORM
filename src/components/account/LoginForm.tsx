@@ -12,7 +12,7 @@ export function LoginForm({ defaultEmail = "" }: { defaultEmail?: string }) {
   return (
     <Card className="mx-auto max-w-md space-y-5 p-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-navy">Entra a tu cuenta</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-heading">Entra a tu cuenta</h1>
         <p className="mt-1 text-sm text-muted">
           Sin contraseñas: te enviamos un código a tu correo. Si compraste sin cuenta, usa el mismo
           correo y verás tus pólizas.
@@ -33,7 +33,7 @@ export function LoginForm({ defaultEmail = "" }: { defaultEmail?: string }) {
           <input type="hidden" name="email" value={email} />
           <p className="text-sm text-ink">Enviamos un código de 6 dígitos a <strong>{email}</strong>.</p>
           {sent.demoCode && (
-            <p className="rounded-xl bg-sun-soft p-3 text-sm text-[#8a5a00]">
+            <p className="rounded-xl bg-sun-soft p-3 text-sm text-sun-ink">
               Modo demo (sin envío de correos): tu código es <strong className="tracking-widest">{sent.demoCode}</strong>
             </p>
           )}

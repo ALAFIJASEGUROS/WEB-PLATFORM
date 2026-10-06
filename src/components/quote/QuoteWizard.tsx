@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -35,6 +35,7 @@ import {
 } from "@/vehicles/lookup";
 import { quoteStore, useHydrated } from "@/lib/quote-store";
 import { lookupVehicle } from "@/lib/api-client";
+import { track } from "@/lib/analytics";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { OptionCard, OptionGroup } from "./OptionCard";
 
@@ -50,6 +51,8 @@ const DEFAULT_ANSWERS: Answers = {
   priority: "equilibrio",
   use: "particular",
   parking: "cerrado",
+  mileage: "medio",
+  drivers: "solo",
   financed: false,
   deductibleTolerance: "medio",
   services: [],
@@ -70,6 +73,7 @@ export function QuoteWizard({ type }: { type: VehicleType }) {
 function Wizard({ type }: { type: VehicleType }) {
   const router = useRouter();
   // Reanudar una cotización previa del mismo tipo.
+  useEffect(() => track("cotizacion_iniciada", { tipo: type }), [type]);
   const [prev] = useState(() => {
     const p = quoteStore.getRequest();
     return p && p.vehicle.type === type ? p : null;
@@ -91,7 +95,7 @@ function Wizard({ type }: { type: VehicleType }) {
   const [birthdate, setBirthdate] = useState(prev?.driver.birthdate ?? "");
   const [city, setCity] = useState(prev?.driver.city ?? "");
 
-  const [answers, setAnswers] = useState<Answers>(prev?.answers ?? DEFAULT_ANSWERS);
+  const [answers, setAnswers] = useState<Answers>({ ...DEFAULT_ANSWERS, ...prev?.answers });
   const set = <K extends keyof Answers>(k: K, v: Answers[K]) =>
     setAnswers((a) => ({ ...a, [k]: v }));
 
@@ -148,6 +152,7 @@ function Wizard({ type }: { type: VehicleType }) {
   ][step];
 
   function next() {
+    if (step === 0) track("vehiculo_identificado", { tipo: type, metodo: manual ? "manual" : "placa" });
     if (step === 0 && manual && manualVehicle) setVehicle(manualVehicle);
     if (step < STEPS.length - 1) {
       setStep(step + 1);
@@ -158,6 +163,7 @@ function Wizard({ type }: { type: VehicleType }) {
     if (!v) return;
     const req: QuoteRequest = { vehicle: v, driver: { birthdate, city }, answers };
     quoteStore.setRequest(req);
+    track("cuestionario_completado", { tipo: type, prioridad: answers.priority });
     router.push("/resultados");
   }
 
@@ -178,7 +184,7 @@ function Wizard({ type }: { type: VehicleType }) {
       <button
         type="button"
         onClick={() => (step > 0 ? setStep(step - 1) : router.push("/cotizar"))}
-        className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-navy"
+        className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading"
       >
         <ArrowLeft className="size-4" aria-hidden /> Volver
       </button>
@@ -201,7 +207,7 @@ function Wizard({ type }: { type: VehicleType }) {
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
         Seguro de {noun} · Paso {step + 1} de {STEPS.length}
       </p>
-      <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-navy">
+      <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-heading">
         {STEPS[step].title}
       </h1>
       <p className="mb-4 mt-1 text-muted">{STEPS[step].subtitle}</p>
@@ -209,7 +215,7 @@ function Wizard({ type }: { type: VehicleType }) {
         <button
           type="button"
           onClick={() => setStep(0)}
-          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-white px-3 text-sm font-semibold text-navy shadow-sm"
+          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-heading shadow-sm"
         >
           {type === "auto" ? <CarFront className="size-4 text-brand" aria-hidden /> : <Bike className="size-4 text-brand" aria-hidden />}
           {vehicle.brand} {vehicle.model} {vehicle.year}
@@ -260,7 +266,7 @@ function Wizard({ type }: { type: VehicleType }) {
               {vehicle && (
                 <div className="rounded-2xl bg-mint-soft p-4" aria-live="polite">
                   <p className="text-sm font-semibold text-mint">Encontramos tu {noun}</p>
-                  <p className="mt-1 text-lg font-bold text-navy">
+                  <p className="mt-1 text-lg font-bold text-heading">
                     {vehicle.brand} {vehicle.model} {vehicle.year}
                   </p>
                   <p className="text-sm text-muted">
@@ -329,7 +335,7 @@ function Wizard({ type }: { type: VehicleType }) {
                 </Field>
               </div>
               {manualVehicle && (
-                <p className="rounded-2xl bg-brand-soft p-4 text-sm text-navy">
+                <p className="rounded-2xl bg-brand-soft p-4 text-sm text-heading">
                   Valor comercial estimado:{" "}
                   <strong>{formatCOP(manualVehicle.commercialValue)}</strong>
                 </p>
@@ -384,6 +390,17 @@ function Wizard({ type }: { type: VehicleType }) {
               <OptionGroup legend="¿Dónde lo parqueas en la noche?">
                 <OptionCard name="parking" checked={answers.parking === "cerrado"} onChange={() => set("parking", "cerrado")} icon={<Building2 />} title="Parqueadero cerrado o garaje" />
                 <OptionCard name="parking" checked={answers.parking === "calle"} onChange={() => set("parking", "calle")} icon={<TreePine />} title="En la calle" />
+              </OptionGroup>
+              <OptionGroup legend="¿Cuánto lo usas al mes?">
+                <OptionCard name="mileage" checked={answers.mileage === "bajo"} onChange={() => set("mileage", "bajo")} title="Poco" description="Menos de 500 km, unos días a la semana" />
+                <OptionCard name="mileage" checked={answers.mileage === "medio"} onChange={() => set("mileage", "medio")} title="Normal" description="Entre 500 y 1.500 km" />
+                <OptionCard name="mileage" checked={answers.mileage === "alto"} onChange={() => set("mileage", "alto")} title="Mucho" description="Más de 1.500 km o viajes frecuentes" />
+              </OptionGroup>
+              <OptionGroup legend={`¿Quién maneja tu ${noun}?`}>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <OptionCard name="drivers" checked={answers.drivers === "solo"} onChange={() => set("drivers", "solo")} title="Solo yo" />
+                  <OptionCard name="drivers" checked={answers.drivers === "varios"} onChange={() => set("drivers", "varios")} title="Varias personas" />
+                </div>
               </OptionGroup>
               <OptionGroup legend={`¿Tu ${noun} está financiado?`} description="Si tiene prenda, el banco suele exigir cobertura de daños y hurto.">
                 <div className="grid grid-cols-2 gap-2.5">

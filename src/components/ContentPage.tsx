@@ -15,14 +15,14 @@ export function ContentPage({
   return (
     <>
       <article className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-navy">{title}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-heading">{title}</h1>
         {intro && <p className="mt-2 text-lg text-muted">{intro}</p>}
         {draft && (
-          <p className="mt-4 rounded-xl bg-sun-soft p-3 text-sm text-[#8a5a00]">
+          <p className="mt-4 rounded-xl bg-sun-soft p-3 text-sm text-sun-ink">
             Borrador para el MVP. Este texto debe ser revisado por un abogado antes de operar.
           </p>
         )}
-        <div className="mt-6 space-y-4 text-ink [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-navy [&_li]:ml-5 [&_li]:list-disc [&_p]:leading-relaxed">
+        <div className="mt-6 space-y-4 text-ink [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-heading [&_li]:ml-5 [&_li]:list-disc [&_p]:leading-relaxed">
           {children}
         </div>
       </article>

@@ -6,6 +6,7 @@ import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
 import { Badge, Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
+import { track } from "@/lib/analytics";
 
 const LABELS = {
   recomendado: { text: "Recomendado para ti", tone: "brand" },
@@ -43,7 +44,7 @@ export function OfferCard({
                 </Badge>
               ))}
             </div>
-            <h3 id={`${detailId}-t`} className="font-bold text-navy">
+            <h3 id={`${detailId}-t`} className="font-bold text-heading">
               {offer.planName}
             </h3>
             <p className="text-sm text-muted">{offer.insurerName}</p>
@@ -53,7 +54,7 @@ export function OfferCard({
 
         <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl bg-canvas p-4">
           <div>
-            <p className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-navy">
+            <p className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-heading">
               {formatCOP(offer.annualPremium)}
               <span className="text-sm font-semibold text-muted"> /año</span>
             </p>
@@ -63,7 +64,7 @@ export function OfferCard({
           </div>
           <div className="text-right text-xs text-muted">
             <p>Deducible</p>
-            <p className="text-sm font-bold text-navy">
+            <p className="text-sm font-bold text-heading">
               {offer.deductiblePct === 0 ? "Sin deducible" : `${offer.deductiblePct}% · mín ${offer.deductibleMinSmmlv} SMMLV`}
             </p>
           </div>
@@ -80,7 +81,7 @@ export function OfferCard({
           </ul>
         )}
         {offer.warnings.map((w) => (
-          <p key={w} className="mt-2 flex gap-2 text-sm text-[#8a5a00]">
+          <p key={w} className="mt-2 flex gap-2 text-sm text-sun-ink">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
             {w}
           </p>
@@ -90,7 +91,10 @@ export function OfferCard({
           type="button"
           aria-expanded={open}
           aria-controls={detailId}
-          onClick={() => setOpen(!open)}
+          onClick={() => {
+            if (!open) track("detalle_abierto", { aseguradora: offer.insurerId });
+            setOpen(!open);
+          }}
           className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-brand"
         >
           {open ? "Ocultar detalle" : "Ver coberturas y servicios"}
@@ -100,7 +104,7 @@ export function OfferCard({
         {open && (
           <div id={detailId} className="mt-2 grid gap-4 border-t border-line pt-4 sm:grid-cols-2">
             <div>
-              <h4 className="mb-2 text-sm font-bold text-navy">Coberturas</h4>
+              <h4 className="mb-2 text-sm font-bold text-heading">Coberturas</h4>
               <ul className="space-y-1.5 text-sm">
                 {COVERAGE_KEYS.map((k) => (
                   <li key={k} className={`flex items-center gap-2 ${offer.coverages[k] ? "text-ink" : "text-muted line-through"}`}>
@@ -116,7 +120,7 @@ export function OfferCard({
               </ul>
             </div>
             <div>
-              <h4 className="mb-2 text-sm font-bold text-navy">Servicios</h4>
+              <h4 className="mb-2 text-sm font-bold text-heading">Servicios</h4>
               <ul className="space-y-1.5 text-sm">
                 {offer.services.map((s) => (
                   <li key={s} className="flex items-center gap-2">
@@ -143,7 +147,10 @@ export function OfferCard({
           >
             {comparing ? "Quitar" : "Comparar"}
           </Button>
-          <ButtonLink href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}>
+          <ButtonLink
+            href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}
+            onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado") })}
+          >
             Lo quiero
           </ButtonLink>
         </div>
@@ -172,7 +179,7 @@ function ScoreRing({ score }: { score: number }) {
         />
       </svg>
       <span className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="text-sm font-extrabold text-navy">{score}</span>
+        <span className="text-sm font-extrabold text-heading">{score}</span>
         <span className="text-[9px] font-semibold text-muted">afinidad</span>
       </span>
     </div>

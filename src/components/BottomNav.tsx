@@ -19,7 +19,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegación inferior"
-      className="pb-safe fixed inset-x-0 bottom-0 z-40 print:hidden border-t border-line bg-white md:hidden"
+      className="pb-safe fixed inset-x-0 bottom-0 z-40 print:hidden border-t border-line bg-surface md:hidden"
     >
       <ul className="grid grid-cols-4">
         {ITEMS.map(({ href, label, icon: Icon, match }) => {

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { formatCOP } from "@/domain/labels";
 import { adminOpenWithoutPassword, isAdmin } from "@/server/admin";
 import { db } from "@/server/db";
+import { breakdown, funnel } from "@/server/analytics";
+import { FUNNEL_LABELS } from "@/domain/events";
 import { paymentProvider } from "@/server/payments";
 import { Badge, Button, Card, Field, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
@@ -16,7 +18,7 @@ export default async function Page() {
     return (
       <div className="mx-auto max-w-sm px-4 py-16">
         <Card className="p-6">
-          <h1 className="mb-4 text-xl font-extrabold text-navy">Administración</h1>
+          <h1 className="mb-4 text-xl font-extrabold text-heading">Administración</h1>
           <ActionForm action={adminLoginAction} submitLabel="Entrar">
             <Field label="Contraseña" htmlFor="pw"><input id="pw" name="password" type="password" required className={inputClass} /></Field>
           </ActionForm>
@@ -26,6 +28,8 @@ export default async function Page() {
   }
 
   const d = db();
+  const steps = funnel();
+  const chosen = breakdown("oferta_elegida", "aseguradora");
   const orders = [...d.orders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const issued = orders.filter((o) => o.status === "emitida");
   const revenue = issued.reduce((s, o) => s + o.amountInCents / 100, 0);
@@ -36,7 +40,7 @@ export default async function Page() {
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold text-navy">Administración</h1>
+        <h1 className="text-2xl font-extrabold text-heading">Administración</h1>
         <div className="flex gap-2">
           <Badge tone={paymentProvider().id === "wompi" ? "mint" : "sun"}>Pagos: {paymentProvider().id}</Badge>
           {adminOpenWithoutPassword() && <Badge tone="coral">Sin ADMIN_PASSWORD (solo dev)</Badge>}
@@ -50,15 +54,39 @@ export default async function Page() {
           ["Recaudo", formatCOP(revenue)],
           ["Usuarios", d.users.size],
         ].map(([l, v]) => (
-          <Card key={l} className="p-4"><p className="text-sm text-muted">{l}</p><p className="text-2xl font-extrabold text-navy">{v}</p></Card>
+          <Card key={l} className="p-4"><p className="text-sm text-muted">{l}</p><p className="text-2xl font-extrabold text-heading">{v}</p></Card>
         ))}
       </div>
       {byInsurer.length > 0 && (
         <p className="text-sm text-muted">Emitidas por aseguradora: {byInsurer.map(([n, c]) => `${n} ${c}`).join(" · ")}</p>
       )}
 
+      <section className="space-y-3" aria-labelledby="embudo">
+        <h2 id="embudo" className="text-lg font-bold text-heading">Embudo de conversión</h2>
+        <Card className="space-y-3 p-5">
+          {steps[0].sessions === 0 && <p className="text-sm text-muted">Aún no hay eventos registrados.</p>}
+          {steps.map((s) => (
+            <div key={s.step} className="grid grid-cols-[minmax(0,12rem)_1fr_auto] items-center gap-3 text-sm">
+              <span className="text-ink">{FUNNEL_LABELS[s.step]}</span>
+              <span className="h-3 overflow-hidden rounded-full bg-canvas" aria-hidden>
+                <span className="block h-full rounded-full bg-brand" style={{ width: `${steps[0].sessions ? (s.sessions / steps[0].sessions) * 100 : 0}%` }} />
+              </span>
+              <span className="w-28 text-right tabular-nums">
+                <strong className="text-heading">{s.sessions}</strong>
+                {s.fromPrevious !== null && <span className="text-muted"> · {Math.round(s.fromPrevious * 100)}%</span>}
+              </span>
+            </div>
+          ))}
+          {chosen.length > 0 && (
+            <p className="border-t border-line pt-3 text-sm text-muted">
+              Ofertas elegidas por aseguradora: {chosen.map(([k, v]) => `${k} ${v}`).join(" · ")}
+            </p>
+          )}
+        </Card>
+      </section>
+
       <section className="space-y-3">
-        <h2 className="text-lg font-bold text-navy">Órdenes</h2>
+        <h2 className="text-lg font-bold text-heading">Órdenes</h2>
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="text-left text-muted">
@@ -83,11 +111,11 @@ export default async function Page() {
 
       <section className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
-          <h2 className="text-lg font-bold text-navy">Campañas</h2>
+          <h2 className="text-lg font-bold text-heading">Campañas</h2>
           {[...d.campaigns.values()].map((c) => (
             <Card key={c.id} className="flex items-start gap-3 p-4">
               <div className="flex-1">
-                <p className="font-semibold text-navy">{c.title}</p>
+                <p className="font-semibold text-heading">{c.title}</p>
                 <p className="text-sm text-muted">{c.sponsor} · audiencia: {c.audience}</p>
               </div>
               <form action={toggleCampaignAction.bind(null, c.id)}>
@@ -96,7 +124,7 @@ export default async function Page() {
             </Card>
           ))}
           <Card className="p-5">
-            <h3 className="mb-3 font-bold text-navy">Nueva campaña</h3>
+            <h3 className="mb-3 font-bold text-heading">Nueva campaña</h3>
             <ActionForm action={createCampaignAction} submitLabel="Publicar" className="space-y-3">
               <Field label="Patrocinador" htmlFor="c-sp"><input id="c-sp" name="sponsor" required className={inputClass} /></Field>
               <Field label="Título" htmlFor="c-t"><input id="c-t" name="title" required className={inputClass} /></Field>
@@ -114,7 +142,7 @@ export default async function Page() {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-navy">Bandeja de salida (simulada)</h2>
+            <h2 className="text-lg font-bold text-heading">Bandeja de salida (simulada)</h2>
             <form action={runRemindersAction}><Button variant="secondary" className="min-h-10 px-4 text-sm">Enviar recordatorios</Button></form>
           </div>
           <Card className="max-h-[640px] divide-y divide-line overflow-y-auto">
@@ -122,7 +150,7 @@ export default async function Page() {
             {d.outbox.slice(0, 50).map((m) => (
               <div key={m.id} className="p-4 text-sm">
                 <p className="text-xs text-muted">{m.createdAt.slice(0, 16).replace("T", " ")} · {m.channel} → {m.to}</p>
-                <p className="font-semibold text-navy">{m.subject}</p>
+                <p className="font-semibold text-heading">{m.subject}</p>
                 <p className="whitespace-pre-line text-muted">{m.body}</p>
               </div>
             ))}

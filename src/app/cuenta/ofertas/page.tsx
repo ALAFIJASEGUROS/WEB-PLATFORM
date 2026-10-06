@@ -14,7 +14,7 @@ export default async function Page() {
     return (
       <Card className="mx-auto max-w-lg space-y-4 p-6 text-center">
         <Megaphone className="mx-auto size-10 text-brand" aria-hidden />
-        <h1 className="text-xl font-extrabold text-navy">Ofertas de aseguradoras y aliados</h1>
+        <h1 className="text-xl font-extrabold text-heading">Ofertas de aseguradoras y aliados</h1>
         <p className="text-sm text-muted">
           Con tu autorización, aseguradoras y empresas aliadas pueden mostrarte beneficios según los
           vehículos que tienes. No compartimos tu correo ni tu celular con ellas. Puedes retirar el
@@ -31,7 +31,7 @@ export default async function Page() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold tracking-tight text-navy">Ofertas para ti</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-heading">Ofertas para ti</h1>
         <form action={setMarketingConsentAction.bind(null, false)}>
           <button className="min-h-10 text-sm font-semibold text-muted underline">No quiero recibir ofertas</button>
         </form>
@@ -41,7 +41,7 @@ export default async function Page() {
         {campaigns.map((c) => (
           <Card key={c.id} className="space-y-2 p-5">
             <Badge tone="sun">Publicidad · {c.sponsor}</Badge>
-            <h2 className="font-bold text-navy">{c.title}</h2>
+            <h2 className="font-bold text-heading">{c.title}</h2>
             <p className="text-sm text-muted">{c.body}</p>
             <Link href={c.ctaUrl} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline">
               {c.ctaLabel}

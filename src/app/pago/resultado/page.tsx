@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { db } from "@/server/db";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { ButtonLink, Card } from "@/components/ui";
 import { formatCOP } from "@/domain/labels";
@@ -14,6 +15,19 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
   const { ref, t, id } = await searchParams;
   if (typeof ref !== "string") notFound();
   const user = await getCurrentUser();
+
+  // Regreso desde Wompi tras pagar una cuota.
+  const installment = db().installmentPayments.get(ref);
+  if (installment) {
+    const provider = paymentProvider();
+    if (typeof id === "string" && provider.fetchTransaction) {
+      const update = await provider.fetchTransaction(id);
+      if (update?.reference === ref) await applyPaymentUpdate(update);
+    }
+    const paid = db().policies.get(installment.policyId)?.installments?.find((i) => i.n === installment.n)?.status === "pagada";
+    redirect(paid ? `/cuenta/seguros?cuota=${installment.n}` : `/cuenta/seguros?error=${encodeURIComponent("El pago de la cuota no se completó.")}`);
+  }
+
   let order = getOrderForViewer(ref, typeof t === "string" ? t : undefined, user?.id);
   if (!order) notFound();
 
@@ -33,7 +47,7 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
     return (
       <div className="mx-auto max-w-lg px-4 py-10 text-center">
         <CheckCircle2 className="mx-auto size-16 text-mint" aria-hidden />
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-navy">¡Listo, ya estás asegurado!</h1>
+        <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-heading">¡Listo, ya estás asegurado!</h1>
         <p className="mt-2 text-muted">
           Pagaste {amount}. Enviamos la póliza a <strong>{order.policyholder.email}</strong>.
         </p>
@@ -59,7 +73,7 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <AutoRefresh />
         <Clock className="mx-auto size-16 text-brand" aria-hidden />
-        <h1 className="mt-4 text-2xl font-extrabold text-navy">Estamos confirmando tu pago</h1>
+        <h1 className="mt-4 text-2xl font-extrabold text-heading">Estamos confirmando tu pago</h1>
         <p className="mt-2 text-muted">
           Algunos pagos por PSE tardan unos minutos. Esta página se actualiza sola y también te
           avisaremos por correo.
@@ -71,7 +85,7 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
       <XCircle className="mx-auto size-16 text-coral" aria-hidden />
-      <h1 className="mt-4 text-2xl font-extrabold text-navy">
+      <h1 className="mt-4 text-2xl font-extrabold text-heading">
         {order.status === "error" ? "Hubo un problema emitiendo tu póliza" : "Tu pago no fue aprobado"}
       </h1>
       <p className="mt-2 text-muted">

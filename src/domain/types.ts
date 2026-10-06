@@ -16,6 +16,8 @@ export type Priority = "precio" | "cobertura" | "servicios" | "equilibrio";
 export type VehicleUse = "particular" | "trabajo" | "domicilios";
 export type Parking = "cerrado" | "calle";
 export type DeductibleTolerance = "bajo" | "medio" | "alto";
+export type Mileage = "bajo" | "medio" | "alto";
+export type Drivers = "solo" | "varios";
 
 export const COVERAGE_KEYS = [
   "rc",
@@ -44,6 +46,10 @@ export interface Answers {
   priority: Priority;
   use: VehicleUse;
   parking: Parking;
+  /** Kilómetros al mes: bajo < 500, medio 500–1.500, alto > 1.500. */
+  mileage: Mileage;
+  /** Si el vehículo lo maneja solo el tomador o varias personas. */
+  drivers: Drivers;
   financed: boolean;
   deductibleTolerance: DeductibleTolerance;
   services: ServiceKey[];
