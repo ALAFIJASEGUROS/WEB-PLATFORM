@@ -1,0 +1,156 @@
+import type {
+  Answers,
+  CoverageKey,
+  Offer,
+  OfferLabel,
+  Priority,
+  ScoredOffer,
+} from "@/domain/types";
+import { SERVICE_KEYS } from "@/domain/types";
+import { formatCOP, SERVICE_LABELS } from "@/domain/labels";
+
+/** Peso de cada dimensión según la prioridad declarada por el usuario. */
+export const PRIORITY_WEIGHTS: Record<
+  Priority,
+  { price: number; coverage: number; services: number }
+> = {
+  precio: { price: 0.6, coverage: 0.25, services: 0.15 },
+  cobertura: { price: 0.2, coverage: 0.6, services: 0.2 },
+  servicios: { price: 0.2, coverage: 0.3, services: 0.5 },
+  equilibrio: { price: 0.4, coverage: 0.4, services: 0.2 },
+};
+
+/** Importancia base de cada cobertura (suma no necesariamente 1). */
+function coverageWeights(a: Answers): Record<CoverageKey, number> {
+  const w: Record<CoverageKey, number> = {
+    rc: 3,
+    perdidaTotalDanos: 3,
+    perdidaParcialDanos: 2,
+    perdidaTotalHurto: 2.5,
+    perdidaParcialHurto: 1,
+    eventosNaturaleza: 1,
+    accidentesPersonales: 1,
+  };
+  if (a.parking === "calle") {
+    w.perdidaTotalHurto += 1.5;
+    w.perdidaParcialHurto += 1;
+  }
+  if (a.use === "domicilios" || a.use === "trabajo") {
+    w.accidentesPersonales += 1.5;
+    w.rc += 1;
+  }
+  return w;
+}
+
+const MAX_DEDUCTIBLE_BY_TOLERANCE = { bajo: 5, medio: 10, alto: 100 } as const;
+
+function normalize(value: number, min: number, max: number) {
+  return max === min ? 1 : (value - min) / (max - min);
+}
+
+/** Si el vehículo está financiado, el banco suele exigir daños y hurto total. */
+export function meetsFinancingRequirements(o: Offer) {
+  return o.coverages.perdidaTotalDanos && o.coverages.perdidaTotalHurto;
+}
+
+export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
+  if (offers.length === 0) return [];
+  const weights = PRIORITY_WEIGHTS[answers.priority];
+  const cw = coverageWeights(answers);
+  const cwTotal = Object.values(cw).reduce((s, n) => s + n, 0);
+
+  const prices = offers.map((o) => o.annualPremium);
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+  const rcs = offers.map((o) => o.rcLimit);
+  const minRc = Math.min(...rcs);
+  const maxRc = Math.max(...rcs);
+  const wanted = answers.services.length
+    ? answers.services
+    : [...SERVICE_KEYS];
+
+  const scored = offers.map((o): ScoredOffer => {
+    const reasons: string[] = [];
+    const warnings: string[] = [];
+
+    const price = 1 - normalize(o.annualPremium, minP, maxP);
+
+    const coverageSum = (Object.keys(cw) as CoverageKey[]).reduce(
+      (s, k) => s + (o.coverages[k] ? cw[k] : 0),
+      0,
+    );
+    const deductibleScore = 1 - Math.min(o.deductiblePct, 20) / 20;
+    const coverage =
+      0.7 * (coverageSum / cwTotal) +
+      0.15 * normalize(o.rcLimit, minRc, maxRc) +
+      0.15 * deductibleScore;
+
+    const matched = wanted.filter((s) => o.services.includes(s));
+    const services = matched.length / wanted.length;
+
+    let score =
+      weights.price * price +
+      weights.coverage * coverage +
+      weights.services * services;
+
+    // Ajustes por restricciones (penalizaciones, no exclusiones: el usuario ve todo).
+    if (answers.financed && !meetsFinancingRequirements(o)) {
+      score *= 0.5;
+      warnings.push(
+        "Si tu vehículo está financiado, el banco suele exigir cobertura de daños y hurto total.",
+      );
+    }
+    if (o.deductiblePct > MAX_DEDUCTIBLE_BY_TOLERANCE[answers.deductibleTolerance]) {
+      score *= 0.85;
+      warnings.push(
+        `El deducible (${o.deductiblePct}%) es mayor al que prefieres.`,
+      );
+    }
+    if (answers.parking === "calle" && !o.coverages.perdidaTotalHurto) {
+      warnings.push("No cubre hurto y tu vehículo se parquea en la calle.");
+    }
+
+    if (price >= 0.8) reasons.push(`Precio competitivo: ${formatCOP(o.annualPremium)} al año.`);
+    if (coverage >= 0.75) reasons.push("Cobertura amplia frente a las demás opciones.");
+    if (o.deductiblePct === 0) reasons.push("Sin deducible.");
+    if (answers.services.length && matched.length)
+      reasons.push(
+        `Incluye ${matched.length} de ${answers.services.length} servicios que te importan: ${matched
+          .map((s) => SERVICE_LABELS[s].toLowerCase())
+          .join(", ")}.`,
+      );
+    if (answers.financed && meetsFinancingRequirements(o))
+      reasons.push("Cumple lo que normalmente exige el banco para vehículos financiados.");
+
+    return {
+      ...o,
+      score: Math.round(score * 100),
+      subscores: {
+        price: Math.round(price * 100),
+        coverage: Math.round(coverage * 100),
+        services: Math.round(services * 100),
+      },
+      reasons,
+      warnings,
+      labels: [],
+    };
+  });
+
+  scored.sort(
+    (a, b) => b.score - a.score || a.annualPremium - b.annualPremium,
+  );
+
+  const addLabel = (o: ScoredOffer | undefined, l: OfferLabel) => o?.labels.push(l);
+  addLabel(scored[0], "recomendado");
+  addLabel(
+    [...scored].sort((a, b) => a.annualPremium - b.annualPremium)[0],
+    "menorPrecio",
+  );
+  addLabel(
+    [...scored].sort(
+      (a, b) => b.subscores.coverage - a.subscores.coverage || a.annualPremium - b.annualPremium,
+    )[0],
+    "mayorCobertura",
+  );
+  return scored;
+}
