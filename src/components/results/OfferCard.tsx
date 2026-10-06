@@ -48,15 +48,12 @@ export function OfferCard({
             </h3>
             <p className="text-sm text-muted">{offer.insurerName}</p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted">Afinidad</p>
-            <p className="text-xl font-extrabold text-brand">{offer.score}%</p>
-          </div>
+          <ScoreRing score={offer.score} />
         </div>
 
         <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl bg-canvas p-4">
           <div>
-            <p className="text-2xl font-extrabold tracking-tight text-navy">
+            <p className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-navy">
               {formatCOP(offer.annualPremium)}
               <span className="text-sm font-semibold text-muted"> /año</span>
             </p>
@@ -152,5 +149,32 @@ export function OfferCard({
         </div>
       </article>
     </Card>
+  );
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const r = 20;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative size-14 shrink-0" role="img" aria-label={`Afinidad ${score} de 100`}>
+      <svg viewBox="0 0 48 48" className="size-14 -rotate-90" aria-hidden>
+        <circle cx="24" cy="24" r={r} fill="none" stroke="var(--color-brand-soft)" strokeWidth="5" />
+        <circle
+          cx="24"
+          cy="24"
+          r={r}
+          fill="none"
+          stroke={score >= 70 ? "var(--color-mint)" : score >= 45 ? "var(--color-brand)" : "var(--color-muted)"}
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - score / 100)}
+        />
+      </svg>
+      <span className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className="text-sm font-extrabold text-navy">{score}</span>
+        <span className="text-[9px] font-semibold text-muted">afinidad</span>
+      </span>
+    </div>
   );
 }

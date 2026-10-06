@@ -29,13 +29,15 @@ export const quoteRequestSchema = z.object({
 
 /** Documento colombiano: CC, CE, PA o NIT (persona natural con NIT). */
 export const policyholderSchema = z.object({
-  firstName: z.string().trim().min(2).max(60),
-  lastName: z.string().trim().min(2).max(60),
+  firstName: z.string().trim().min(2, "Escribe tus nombres").max(60),
+  lastName: z.string().trim().min(2, "Escribe tus apellidos").max(60),
   documentType: z.enum(["CC", "CE", "PA"]),
-  documentNumber: z.string().regex(/^[A-Z0-9]{5,15}$/i, "Documento inválido"),
-  email: z.email(),
-  phone: z.string().regex(/^3\d{9}$/, "Celular colombiano de 10 dígitos"),
-  address: z.string().trim().min(5).max(120),
+  documentNumber: z
+    .string()
+    .regex(/^[A-Z0-9]{5,15}$/i, "Escribe tu número de documento, sin puntos"),
+  email: z.email("Escribe un correo válido, como nombre@correo.com"),
+  phone: z.string().regex(/^3\d{9}$/, "Escribe un celular de 10 dígitos que empiece por 3"),
+  address: z.string().trim().min(5, "Escribe tu dirección").max(120),
 });
 
 export const checkoutSchema = z.object({

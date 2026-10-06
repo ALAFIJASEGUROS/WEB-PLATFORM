@@ -66,7 +66,7 @@ export function CheckoutForm({
       const errs: Errors = {};
       for (const i of parsed.error.issues) {
         const k = i.path[0] as keyof Policyholder;
-        errs[k] ??= i.message.startsWith("Invalid") || i.message.startsWith("Too") ? "Revisa este campo" : i.message;
+        errs[k] ??= i.message.startsWith("Too") ? "Revisa este campo" : i.message;
       }
       setErrors(errs);
       document.getElementById(Object.keys(errs)[0])?.focus();
@@ -102,7 +102,7 @@ export function CheckoutForm({
   const v = request.vehicle;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
+    <div className="mx-auto max-w-5xl px-4 pb-28 pt-6 md:pb-6">
       <Link href="/resultados" className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-navy">
         <ArrowLeft className="size-4" aria-hidden /> Volver a opciones
       </Link>
@@ -111,6 +111,14 @@ export function CheckoutForm({
 
       <form onSubmit={submit} noValidate className="mt-6 grid gap-6 md:grid-cols-[1fr_340px]">
         <div className="space-y-6">
+          <Card className="flex items-center gap-3 p-4 md:hidden">
+            <InsurerLogo id={offer.insurerId} name={offer.insurerName} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold text-navy">{offer.planName}</p>
+              <p className="truncate text-sm text-muted">{offer.insurerName} · {v.brand} {v.model} {v.plate ?? ""}</p>
+            </div>
+          </Card>
+
           <Card className="space-y-4 p-5">
             <h2 className="font-bold text-navy">Datos del tomador</h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -204,7 +212,7 @@ export function CheckoutForm({
               <p className="text-3xl font-extrabold tracking-tight text-navy">{formatCOP(amount)}</p>
             </div>
             {serverError && <p role="alert" className="rounded-xl bg-coral-soft p-3 text-sm text-coral">{serverError}</p>}
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="hidden w-full md:inline-flex" disabled={submitting}>
               <Lock className="size-4" aria-hidden />
               {submitting ? "Redirigiendo…" : "Pagar con Wompi"}
             </Button>
@@ -218,6 +226,20 @@ export function CheckoutForm({
             <SimulatedDataNotice />
           </Card>
         </aside>
+
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white px-4 pt-3 shadow-[0_-4px_16px_rgb(16_33_63/0.06)] md:hidden">
+          {serverError && <p role="alert" className="mb-2 rounded-xl bg-coral-soft p-2 text-xs text-coral">{serverError}</p>}
+          <div className="flex items-center gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-muted">{plan === "anual" ? "Pago anual" : "Primera cuota"}</p>
+              <p className="text-lg font-extrabold leading-tight text-navy">{formatCOP(amount)}</p>
+            </div>
+            <Button type="submit" className="flex-1" disabled={submitting}>
+              <Lock className="size-4" aria-hidden />
+              {submitting ? "Redirigiendo…" : "Pagar"}
+            </Button>
+          </div>
+        </div>
       </form>
     </div>
   );

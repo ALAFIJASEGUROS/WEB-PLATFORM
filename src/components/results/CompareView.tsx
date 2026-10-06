@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Minus } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Check, Minus } from "lucide-react";
 import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS, SERVICE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
@@ -34,12 +35,28 @@ export function CompareView() {
     );
   }
 
+  const bestBy = (f: (o: ScoredOffer) => number, dir: 1 | -1) => {
+    const vals = offers.map(f);
+    const target = dir === 1 ? Math.max(...vals) : Math.min(...vals);
+    return (o: ScoredOffer) => vals.filter((v) => v === target).length < offers.length && f(o) === target;
+  };
+  const best = (isBest: (o: ScoredOffer) => boolean, o: ScoredOffer, node: React.ReactNode) => (
+    <span className="inline-flex flex-col items-center gap-1">
+      {node}
+      {isBest(o) && <span className="rounded-full bg-mint-soft px-2 py-0.5 text-[10px] font-bold text-mint">Mejor</span>}
+    </span>
+  );
+  const cheapest = bestBy((o) => o.annualPremium, -1);
+  const topScore = bestBy((o) => o.score, 1);
+  const lowDed = bestBy((o) => o.deductiblePct, -1);
+  const topRc = bestBy((o) => o.rcLimit, 1);
+
   const rows: { label: string; render: (o: ScoredOffer) => React.ReactNode }[] = [
-    { label: "Precio anual", render: (o) => <strong>{formatCOP(o.annualPremium)}</strong> },
+    { label: "Precio anual", render: (o) => best(cheapest, o, <strong>{formatCOP(o.annualPremium)}</strong>) },
     { label: "Precio mensual", render: (o) => formatCOP(o.monthlyPremium) },
-    { label: "Afinidad contigo", render: (o) => <span className="font-bold text-brand">{o.score}%</span> },
-    { label: "Deducible", render: (o) => (o.deductiblePct ? `${o.deductiblePct}%` : "Sin deducible") },
-    { label: "Límite RC", render: (o) => formatMillions(o.rcLimit) },
+    { label: "Afinidad contigo", render: (o) => best(topScore, o, <span className="font-bold text-brand">{o.score}%</span>) },
+    { label: "Deducible", render: (o) => best(lowDed, o, o.deductiblePct ? `${o.deductiblePct}%` : "Sin deducible") },
+    { label: "Límite RC", render: (o) => best(topRc, o, formatMillions(o.rcLimit)) },
     ...COVERAGE_KEYS.filter((k) => k !== "rc").map((k) => ({
       label: COVERAGE_LABELS[k],
       render: (o: ScoredOffer) => <Yes ok={o.coverages[k]} />,
@@ -52,9 +69,12 @@ export function CompareView() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
+      <Link href="/resultados" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-navy">
+        <ArrowLeft className="size-4" aria-hidden /> Volver a opciones
+      </Link>
       <h1 className="mb-4 text-2xl font-extrabold tracking-tight text-navy">Comparación</h1>
       <div className="overflow-x-auto rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)]">
-        <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: 104 + offers.length * 136 }}>
+        <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: 104 + offers.length * 120 }}>
           <caption className="sr-only">Comparación de seguros seleccionados</caption>
           <thead>
             <tr>

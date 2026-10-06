@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui";
 import { PrintButton } from "@/components/PrintButton";
 import { COVERAGE_KEYS } from "@/domain/types";
@@ -21,7 +22,10 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
   const v = policy.vehicle;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 print:py-0">
+    <div className="mx-auto max-w-2xl px-4 py-6 print:py-0">
+      <Link href={user ? "/cuenta/seguros" : "/"} className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-navy print:hidden">
+        <ArrowLeft className="size-4" aria-hidden /> {user ? "Mis seguros" : "Inicio"}
+      </Link>
       <Card className="space-y-6 p-6 print:shadow-none">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -69,7 +73,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
 
         <div className="rounded-xl bg-brand-soft p-4 text-sm text-navy">
           <p className="font-bold">¿Tuviste un accidente?</p>
-          <p>Llama a la línea de asistencia de {policy.insurerName} y ten a mano tu número de póliza. Revisa la guía en <a className="font-semibold underline" href="/ayuda#siniestros">Ayuda</a>.</p>
+          <p>Llama a la línea de asistencia de {policy.insurerName} y ten a mano tu número de póliza. Revisa la guía en <Link className="font-semibold underline" href="/ayuda#siniestros">Ayuda</Link>.</p>
         </div>
 
         <p className="text-xs text-muted">

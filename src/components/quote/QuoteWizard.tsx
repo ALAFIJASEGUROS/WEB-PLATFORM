@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BadgePercent,
+  Bike,
+  CarFront,
   Briefcase,
   Building2,
   Package,
@@ -203,7 +205,18 @@ function Wizard({ type }: { type: VehicleType }) {
       <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-navy">
         {STEPS[step].title}
       </h1>
-      <p className="mb-6 mt-1 text-muted">{STEPS[step].subtitle}</p>
+      <p className="mb-4 mt-1 text-muted">{STEPS[step].subtitle}</p>
+      {step > 0 && vehicle && (
+        <button
+          type="button"
+          onClick={() => setStep(0)}
+          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-white px-3 text-sm font-semibold text-navy shadow-sm"
+        >
+          {type === "auto" ? <CarFront className="size-4 text-brand" aria-hidden /> : <Bike className="size-4 text-brand" aria-hidden />}
+          {vehicle.brand} {vehicle.model} {vehicle.year}
+          {vehicle.plate && <span className="text-muted">· {vehicle.plate}</span>}
+        </button>
+      )}
 
       <form
         onSubmit={(e) => {
@@ -211,7 +224,7 @@ function Wizard({ type }: { type: VehicleType }) {
           if (canContinue) next();
         }}
       >
-        <Card className="space-y-6 p-5 sm:p-6">
+        <Card key={step} className="animate-[fade-up_.25s_ease-out] space-y-6 p-5 sm:p-6">
           {step === 0 && !manual && (
             <>
               <Field

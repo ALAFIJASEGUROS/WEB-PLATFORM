@@ -98,10 +98,24 @@ export function ResultsView() {
 
   if (!data || !request) {
     return (
-      <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-24 text-center" role="status" aria-live="polite">
-        <span className="size-14 animate-spin rounded-full border-4 border-brand-soft border-t-brand" aria-hidden />
-        <h1 className="mt-6 text-2xl font-extrabold text-navy">Consultando aseguradoras…</h1>
-        <p className="mt-2 text-muted">Estamos comparando opciones para tu {request?.vehicle.type === "moto" ? "moto" : "carro"}.</p>
+      <div className="mx-auto max-w-3xl px-4 py-6" role="status" aria-live="polite">
+        <p className="text-2xl font-extrabold tracking-tight text-navy">Consultando aseguradoras…</p>
+        <p className="mt-1 text-sm text-muted">Comparamos precios, coberturas y servicios para ti. Toma unos segundos.</p>
+        <div className="mt-6 space-y-4" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="animate-pulse rounded-[var(--radius-card)] bg-white p-5 shadow-[var(--shadow-card)]">
+              <div className="flex items-center gap-3">
+                <div className="size-12 rounded-xl bg-line" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/2 rounded bg-line" />
+                  <div className="h-3 w-1/3 rounded bg-line" />
+                </div>
+                <div className="size-14 rounded-full bg-line" />
+              </div>
+              <div className="mt-4 h-20 rounded-2xl bg-canvas" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
