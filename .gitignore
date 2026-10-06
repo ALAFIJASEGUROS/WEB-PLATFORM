@@ -43,3 +43,7 @@ next-env.d.ts
 
 # demo estática
 /.static-build/
+
+# playwright
+/test-results/
+/playwright-report/

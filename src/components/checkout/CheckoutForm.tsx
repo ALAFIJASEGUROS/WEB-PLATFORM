@@ -206,6 +206,12 @@ export function CheckoutForm({
               <div className="flex justify-between gap-2"><dt className="text-muted">Vehículo</dt><dd className="text-right font-semibold">{v.brand} {v.model} {v.year}</dd></div>
               {v.plate && <div className="flex justify-between"><dt className="text-muted">Placa</dt><dd className="font-semibold">{v.plate}</dd></div>}
               <div className="flex justify-between"><dt className="text-muted">Vigencia</dt><dd className="font-semibold">12 meses</dd></div>
+              {plan === "anual" && (
+                <>
+                  <div className="flex justify-between"><dt className="text-muted">Prima sin IVA</dt><dd className="font-semibold">{formatCOP(offer.netPremium)}</dd></div>
+                  <div className="flex justify-between"><dt className="text-muted">IVA (19%)</dt><dd className="font-semibold">{formatCOP(offer.iva)}</dd></div>
+                </>
+              )}
               <div className="flex justify-between"><dt className="text-muted">Deducible</dt><dd className="font-semibold">{offer.deductiblePct ? `${offer.deductiblePct}%` : "Sin deducible"}</dd></div>
             </dl>
             <div className="border-t border-line pt-4">

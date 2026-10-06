@@ -22,6 +22,7 @@ export interface MockPlan {
   deductibleMinSmmlv: number;
   services: ServiceKey[];
   substituteCarDays: number;
+  exclusions: string[];
 }
 
 export interface MockInsurerConfig {
@@ -36,6 +37,16 @@ export interface MockInsurerConfig {
 }
 
 const CURRENT_YEAR = 2026;
+
+/** IVA sobre primas de seguros de vehículos en Colombia. */
+export const IVA_RATE = 0.19;
+
+export const COMMON_EXCLUSIONS = [
+  "Conducir bajo efectos del alcohol o sustancias",
+  "Conductor sin licencia vigente para la categoría",
+  "Participar en carreras o competencias",
+  "Uso distinto al declarado (por ejemplo, transporte público no declarado)",
+];
 
 /** Hash determinístico para dar variación estable a una cotización. */
 function hash(input: string): number {
@@ -102,6 +113,7 @@ export function priceOffers(
           jitter,
         1000,
       );
+      const netPremium = Math.round(annual / (1 + IVA_RATE));
       return {
         id: `${config.id}:${plan.code}`,
         insurerId: config.id,
@@ -127,6 +139,10 @@ export function priceOffers(
         deductibleMinSmmlv: plan.deductibleMinSmmlv,
         services: plan.services,
         substituteCarDays: plan.substituteCarDays,
+        netPremium,
+        iva: annual - netPremium,
+        exclusions: [...COMMON_EXCLUSIONS, ...plan.exclusions],
+        conditionsUrl: `/condicionado/${config.id}/${plan.code}`,
         validUntil,
       };
     });

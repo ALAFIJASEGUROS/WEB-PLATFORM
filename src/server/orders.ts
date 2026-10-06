@@ -16,6 +16,8 @@ import {
 } from "./db";
 import { paymentProvider, type PaymentUpdate } from "./payments";
 import { recordEvent } from "./analytics";
+import { addBusinessDays, todayInColombia } from "@/domain/holidays";
+import { consentRecord } from "@/domain/consents";
 
 export class CheckoutError extends Error {}
 
@@ -23,7 +25,11 @@ export class CheckoutError extends Error {}
  * Crea la orden volviendo a cotizar en el servidor: el precio nunca se toma
  * del cliente.
  */
-export async function createOrder(input: CheckoutInput, userId?: string) {
+export async function createOrder(
+  input: CheckoutInput,
+  userId?: string,
+  ctx: { ip?: string; userAgent?: string } = {},
+) {
   const [insurerId] = input.offerId.split(":");
   const adapter = getAdapter(insurerId);
   if (!adapter) throw new CheckoutError("Aseguradora no disponible.");
@@ -53,6 +59,9 @@ export async function createOrder(input: CheckoutInput, userId?: string) {
     accessToken: randomToken(),
     userId,
     analyticsSid: input.analyticsSid,
+    consentEvidence: (["terms", "dataProcessing", "marketing"] as const).map((k) =>
+      consentRecord(k, input.consents[k], "checkout", ctx),
+    ),
   };
   db().orders.set(order.id, order);
   return order;
@@ -81,7 +90,10 @@ export async function applyPaymentUpdate(u: PaymentUpdate) {
   if (installment) {
     d.processedEvents.add(u.eventId);
     if (u.status === "APPROVED" && u.amountInCents === installment.amountInCents) {
+      installment.status = "aprobada";
       markInstallmentPaid(installment.policyId, installment.n);
+    } else if (u.status !== "PENDING") {
+      installment.status = "fallida";
     }
     return null;
   }
@@ -231,6 +243,7 @@ export function markInstallmentPaid(policyId: string, n: number) {
 export async function startInstallmentPayment(policyId: string, userId: string, baseUrl: string) {
   const p = db().policies.get(policyId);
   if (!p || p.userId !== userId) throw new CheckoutError("Póliza no encontrada.");
+  if (p.status === "retractada") throw new CheckoutError("Esta póliza fue anulada por retracto.");
   const next = p.installments?.find((i) => i.status === "pendiente");
   if (!next) throw new CheckoutError("No tienes cuotas pendientes.");
   const provider = paymentProvider();
@@ -240,8 +253,53 @@ export async function startInstallmentPayment(policyId: string, userId: string, 
   }
   const order = p.orderId ? db().orders.get(p.orderId) : undefined;
   if (!order) throw new CheckoutError("No encontramos la compra original.");
+  // Un solo intento activo por cuota: si hay uno que aún puede liquidarse se
+  // reutiliza, para no generar dos cobros por la misma cuota.
+  const active = [...db().installmentPayments.values()].find(
+    (a) => a.policyId === p.id && a.n === next.n && a.status === "pendiente",
+  );
+  if (active?.redirectUrl) return { redirectUrl: active.redirectUrl };
   const reference = `${order.reference}-C${next.n}-${randomToken(2).toUpperCase()}`;
   const amountInCents = next.amount * 100;
-  db().installmentPayments.set(reference, { reference, policyId: p.id, n: next.n, amountInCents });
-  return provider.createCheckout({ ...order, reference, amountInCents }, baseUrl);
+  const attempt = { reference, policyId: p.id, n: next.n, amountInCents, status: "pendiente" as const, createdAt: Date.now() };
+  db().installmentPayments.set(reference, attempt);
+  const checkout = await provider.createCheckout({ ...order, reference, amountInCents }, baseUrl);
+  db().installmentPayments.set(reference, { ...attempt, redirectUrl: checkout.redirectUrl });
+  return checkout;
+}
+
+/** Días hábiles para ejercer el retracto en ventas a distancia (Ley 1480, art. 47). */
+export const RETRACT_BUSINESS_DAYS = 5;
+
+export function retractDeadline(p: Policy) {
+  return addBusinessDays(p.startDate, RETRACT_BUSINESS_DAYS);
+}
+
+export function canRetract(p: Policy, today = todayInColombia()) {
+  return p.source === "compra" && p.status !== "retractada" && today <= retractDeadline(p);
+}
+
+/**
+ * Ejerce el retracto: anula la póliza, quita sus recordatorios y registra la
+ * devolución del dinero pagado (simulada) por el mismo medio de pago.
+ */
+export function retractPolicy(policyId: string, viewer: { token?: string; userId?: string }) {
+  const d = db();
+  const p = getPolicyForViewer(policyId, viewer.token, viewer.userId);
+  if (!p) throw new CheckoutError("Póliza no encontrada.");
+  if (!canRetract(p)) throw new CheckoutError("El plazo para retractarte ya venció.");
+  p.status = "retractada";
+  p.retractedAt = new Date().toISOString();
+  for (const r of d.reminders.values()) if (r.policyId === p.id) d.reminders.delete(r.id);
+  const order = p.orderId ? d.orders.get(p.orderId) : undefined;
+  const paidInstallments = (p.installments ?? []).filter((i) => i.n > 1 && i.status === "pagada").reduce((s, i) => s + i.amount, 0);
+  const refund = (order ? order.amountInCents / 100 : 0) + paidInstallments;
+  if (order) order.status = "retractada";
+  sendMessage({
+    to: p.holderEmail,
+    channel: "email",
+    subject: `Recibimos tu retracto de la póliza ${p.number}`,
+    body: `Anulamos tu póliza ${p.number} (${p.planName}). Te devolveremos ${formatCOP(refund)} por el mismo medio de pago.`,
+  });
+  return { policy: p, refund };
 }

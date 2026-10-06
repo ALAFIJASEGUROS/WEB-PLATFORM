@@ -172,7 +172,11 @@ export function ResultsView() {
             {data.offers.length} opciones para tu {v.brand} {v.model} {v.year}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Ordenadas según tu prioridad: <strong>{PRIORITY_LABELS[request.answers.priority].toLowerCase()}</strong>
+            {request.answers.weights ? (
+              <>Ordenadas según tus pesos: <strong>precio {request.answers.weights.price}% · cobertura {request.answers.weights.coverage}% · servicios {request.answers.weights.services}%</strong></>
+            ) : (
+              <>Ordenadas según tu prioridad: <strong>{PRIORITY_LABELS[request.answers.priority].toLowerCase()}</strong></>
+            )}
           </p>
         </div>
         <Link
@@ -258,7 +262,7 @@ function ProfileCard({ request }: { request: QuoteRequest }) {
     ["Valor", formatCOP(v.commercialValue)],
     ["Ciudad", driver.city],
     ["Uso", a.use === "particular" ? "Personal" : a.use === "trabajo" ? "Trabajo" : "Domicilios / plataformas"],
-    ["Prioridad", PRIORITY_LABELS[a.priority]],
+    ["Prioridad", a.weights ? `P ${a.weights.price} · C ${a.weights.coverage} · S ${a.weights.services}` : PRIORITY_LABELS[a.priority]],
   ];
   return (
     <div className="rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">

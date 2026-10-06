@@ -11,7 +11,7 @@ import { adminLoginAction, createCampaignAction, runRemindersAction, toggleCampa
 
 export const metadata: Metadata = { title: "Administración", robots: { index: false } };
 
-const STATUS_TONE = { pendiente: "sun", aprobada: "brand", emitida: "mint", rechazada: "coral", error: "coral" } as const;
+const STATUS_TONE = { pendiente: "sun", aprobada: "brand", emitida: "mint", rechazada: "coral", retractada: "neutral", error: "coral" } as const;
 
 export default async function Page() {
   if (!(await isAdmin())) {
@@ -32,7 +32,12 @@ export default async function Page() {
   const chosen = breakdown("oferta_elegida", "aseguradora");
   const orders = [...d.orders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const issued = orders.filter((o) => o.status === "emitida");
-  const revenue = issued.reduce((s, o) => s + o.amountInCents / 100, 0);
+  const installmentsRevenue = [...d.policies.values()].reduce(
+    (sum, p) => sum + (p.status === "retractada" ? 0 : 1) * (p.installments ?? []).filter((i) => i.n > 1 && i.status === "pagada").reduce((t, i) => t + i.amount, 0),
+    0,
+  );
+  // La cuota 1 ya está en el monto de la orden; se suman las siguientes.
+  const revenue = issued.reduce((s, o) => s + o.amountInCents / 100, 0) + installmentsRevenue;
   const byInsurer = Object.entries(
     issued.reduce<Record<string, number>>((acc, o) => ({ ...acc, [o.offer.insurerName]: (acc[o.offer.insurerName] ?? 0) + 1 }), {}),
   );
@@ -90,10 +95,10 @@ export default async function Page() {
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="text-left text-muted">
-              <tr>{["Referencia", "Fecha", "Cliente", "Plan", "Monto", "Estado"].map((h) => <th key={h} className="p-3 font-semibold">{h}</th>)}</tr>
+              <tr>{["Referencia", "Fecha", "Cliente", "Plan", "Monto", "Autorizaciones", "Estado"].map((h) => <th key={h} className="p-3 font-semibold">{h}</th>)}</tr>
             </thead>
             <tbody>
-              {orders.length === 0 && <tr><td colSpan={6} className="p-3 text-muted">Sin órdenes.</td></tr>}
+              {orders.length === 0 && <tr><td colSpan={7} className="p-3 text-muted">Sin órdenes.</td></tr>}
               {orders.map((o) => (
                 <tr key={o.id} className="border-t border-line">
                   <td className="p-3 font-mono text-xs">{o.reference}</td>
@@ -101,6 +106,13 @@ export default async function Page() {
                   <td className="p-3">{o.policyholder.firstName} {o.policyholder.lastName}<br /><span className="text-muted">{o.policyholder.email}</span></td>
                   <td className="p-3">{o.offer.planName}<br /><span className="text-muted">{o.offer.insurerName}</span></td>
                   <td className="p-3">{formatCOP(o.amountInCents / 100)}<br /><span className="text-muted">{o.paymentPlan}</span></td>
+                  <td className="p-3 text-xs">
+                    {o.consentEvidence.map((c) => (
+                      <span key={c.purpose} title={`${c.version} · ${c.at} · IP ${c.ip ?? "—"}`} className={`mr-1 inline-block rounded px-1.5 py-0.5 ${c.granted ? "bg-mint-soft text-mint" : "bg-canvas text-muted"}`}>
+                        {c.purpose === "terms" ? "Términos" : c.purpose === "dataProcessing" ? "Datos" : "Marketing"}
+                      </span>
+                    ))}
+                  </td>
                   <td className="p-3"><Badge tone={STATUS_TONE[o.status]}>{o.status}</Badge></td>
                 </tr>
               ))}

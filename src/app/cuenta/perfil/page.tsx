@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { logoutAction, updateProfileAction } from "../actions";
 
 export default async function Page() {
@@ -35,6 +36,10 @@ export default async function Page() {
             Solo te contactamos de lunes a viernes de 7:00 a. m. a 7:00 p. m. y sábados de 8:00 a. m. a 3:00 p. m. (Ley 2300 de 2023).
           </p>
         </ActionForm>
+      </Card>
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+        <p className="font-semibold text-heading">Apariencia</p>
+        <ThemeToggle />
       </Card>
       <form action={logoutAction}>
         <Button type="submit" variant="secondary">Cerrar sesión</Button>

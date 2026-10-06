@@ -54,6 +54,14 @@ export interface Answers {
   deductibleTolerance: DeductibleTolerance;
   services: ServiceKey[];
   claimsLast3Years: number;
+  /** Pesos personalizados (enteros que suman 100). Si no vienen, se usan los de la prioridad. */
+  weights?: Weights;
+}
+
+export interface Weights {
+  price: number;
+  coverage: number;
+  services: number;
 }
 
 export interface Driver {
@@ -85,6 +93,13 @@ export interface Offer {
   deductibleMinSmmlv: number;
   services: ServiceKey[];
   substituteCarDays: number;
+  /** Prima anual sin IVA y valor del IVA (19%). annualPremium = net + iva. */
+  netPremium: number;
+  iva: number;
+  /** Principales exclusiones del plan. */
+  exclusions: string[];
+  /** Ruta al condicionado del plan. */
+  conditionsUrl: string;
   /** Fecha ISO hasta la que el precio es válido. */
   validUntil: string;
 }

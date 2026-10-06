@@ -69,10 +69,10 @@ export default async function Page({ searchParams }: PageProps<"/cuenta/seguros"
                     <p className="font-bold text-heading">{p.planName}</p>
                     <p className="text-sm text-muted">{p.insurerName} · {p.vehicle.plate}</p>
                   </div>
-                  {left < 0 ? <Badge tone="coral">Vencida</Badge> : left <= 30 ? <Badge tone="sun">Vence en {left} días</Badge> : <Badge tone="mint">Vigente</Badge>}
+                  {p.status === "retractada" ? <Badge tone="neutral">Retractada</Badge> : left < 0 ? <Badge tone="coral">Vencida</Badge> : left <= 30 ? <Badge tone="sun">Vence en {left} días</Badge> : <Badge tone="mint">Vigente</Badge>}
                 </div>
                 <p className="text-sm text-muted">Nº {p.number} · {p.startDate} a {p.endDate}</p>
-                {p.installments && <InstallmentPlan policy={p} />}
+                {p.installments && p.status !== "retractada" && <InstallmentPlan policy={p} />}
                 <div className="flex flex-wrap gap-2">
                   {p.source === "compra" ? (
                     <Link href={`/poliza/${p.id}`} className="text-sm font-semibold text-brand underline">Ver póliza</Link>

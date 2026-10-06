@@ -7,7 +7,9 @@ import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
 import { getCurrentUser } from "@/server/auth";
 import { db } from "@/server/db";
-import { getPolicyForViewer } from "@/server/orders";
+import { canRetract, getPolicyForViewer, retractDeadline } from "@/server/orders";
+import { ActionForm } from "@/components/account/ActionForm";
+import { retractAction } from "../actions";
 
 export const metadata = { title: "Póliza", robots: { index: false } };
 
@@ -30,7 +32,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-mint">
-              <ShieldCheck className="size-4" aria-hidden /> Póliza vigente
+              <ShieldCheck className="size-4" aria-hidden /> {policy.status === "retractada" ? "Póliza anulada" : "Póliza vigente"}
             </p>
             <h1 className="mt-1 text-2xl font-extrabold text-heading">{policy.planName}</h1>
             <p className="text-muted">{policy.insurerName}</p>
@@ -69,6 +71,32 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
               </ul>
             </div>
           </div>
+        )}
+
+        {policy.status === "retractada" && (
+          <p role="status" className="rounded-xl bg-coral-soft p-4 text-sm font-medium text-coral">
+            Ejerciste el derecho de retracto el {policy.retractedAt?.slice(0, 10)}. Esta póliza no está vigente y te devolveremos el dinero por el mismo medio de pago.
+          </p>
+        )}
+
+        {canRetract(policy) && (
+          <details className="rounded-xl border border-line p-4 text-sm print:hidden">
+            <summary className="cursor-pointer font-semibold text-heading">
+              Derecho de retracto: puedes arrepentirte hasta el {retractDeadline(policy)}
+            </summary>
+            <p className="mt-2 text-muted">
+              Si te retractas, anulamos la póliza y te devolvemos lo que pagaste por el mismo medio de pago. La póliza deja
+              de cubrirte desde ese momento.
+            </p>
+            <ActionForm action={retractAction} submitLabel="Retractarme de esta compra" successMessage="Listo. Tu retracto quedó registrado." className="mt-3 space-y-3">
+              <input type="hidden" name="policyId" value={policy.id} />
+              <input type="hidden" name="token" value={typeof t === "string" ? t : ""} />
+              <label className="flex gap-3">
+                <input type="checkbox" name="confirm" className="mt-0.5 size-5 shrink-0 accent-[var(--color-brand)]" />
+                <span>Confirmo que quiero retractarme y anular esta póliza.</span>
+              </label>
+            </ActionForm>
+          </details>
         )}
 
         <div className="rounded-xl bg-brand-soft p-4 text-sm text-heading">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, Check, ChevronDown, Minus, Sparkles } from "lucide-react";
 import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS } from "@/domain/types";
@@ -135,6 +136,25 @@ export function OfferCard({
               <p className="mt-3 text-xs text-muted">
                 Precio válido hasta {offer.validUntil}.
               </p>
+            </div>
+            <div>
+              <h4 className="mb-2 text-sm font-bold text-heading">Exclusiones principales</h4>
+              <ul className="space-y-1 text-sm text-muted">
+                {(offer.exclusions ?? []).slice(0, 4).map((e) => (
+                  <li key={e} className="flex gap-2"><Minus className="mt-0.5 size-4 shrink-0" aria-hidden />{e}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="text-sm">
+              <h4 className="mb-2 font-bold text-heading">Prima anual</h4>
+              <dl className="space-y-1">
+                <div className="flex justify-between"><dt className="text-muted">Prima sin IVA</dt><dd>{formatCOP(offer.netPremium)}</dd></div>
+                <div className="flex justify-between"><dt className="text-muted">IVA (19%)</dt><dd>{formatCOP(offer.iva)}</dd></div>
+                <div className="flex justify-between font-bold text-heading"><dt>Total</dt><dd>{formatCOP(offer.annualPremium)}</dd></div>
+              </dl>
+              <Link href={offer.conditionsUrl} target="_blank" className="mt-3 inline-flex min-h-11 items-center font-semibold text-brand underline">
+                Ver condicionado completo
+              </Link>
             </div>
           </div>
         )}

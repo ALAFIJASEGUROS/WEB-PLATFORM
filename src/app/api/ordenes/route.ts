@@ -13,7 +13,8 @@ export async function POST(request: Request) {
   }
   try {
     const user = await getCurrentUser();
-    const order = await createOrder(parsed.data, user?.id);
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? undefined;
+    const order = await createOrder(parsed.data, user?.id, { ip, userAgent: request.headers.get("user-agent") ?? undefined });
     const { redirectUrl } = await paymentProvider().createCheckout(order, await baseUrl());
     return Response.json({ reference: order.reference, redirectUrl });
   } catch (e) {

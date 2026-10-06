@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Footer() {
   return (
@@ -11,6 +12,7 @@ export function Footer() {
             Compara, entiende y compra tu seguro de carro o moto en minutos.
             Solo en Colombia.
           </p>
+          <ThemeToggle />
         </div>
         <nav aria-label="Legal" className="space-y-2 text-sm">
           <p className="font-semibold text-heading">Legal</p>

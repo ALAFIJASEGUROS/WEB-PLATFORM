@@ -1,12 +1,13 @@
 import "server-only";
 import type { CheckoutInput } from "@/domain/schemas";
+import type { ConsentRecord } from "@/domain/consents";
 import type { Offer, QuoteRequest, Vehicle, VehicleType } from "@/domain/types";
 
 // Persistencia EN MEMORIA para el MVP/demo. Las funciones de este módulo son
 // el único punto de acceso a datos, de modo que reemplazarlo por PostgreSQL
 // (Supabase) no cambia el resto de la app. Los datos se pierden al reiniciar.
 
-export type OrderStatus = "pendiente" | "aprobada" | "rechazada" | "emitida" | "error";
+export type OrderStatus = "pendiente" | "aprobada" | "rechazada" | "emitida" | "retractada" | "error";
 
 export interface Order {
   id: string;
@@ -26,6 +27,8 @@ export interface Order {
   accessToken: string;
   userId?: string;
   analyticsSid?: string;
+  /** Evidencia de las autorizaciones otorgadas en el checkout. */
+  consentEvidence: ConsentRecord[];
 }
 
 export interface Policy {
@@ -44,6 +47,9 @@ export interface Policy {
   endDate: string;
   annualPremium?: number;
   paymentPlan?: "anual" | "mensual";
+  /** Vigente salvo que el tomador ejerza el retracto. */
+  status?: "vigente" | "retractada";
+  retractedAt?: string;
   /** Plan de cuotas cuando el pago es mensual. */
   installments?: Installment[];
   accessToken: string;
@@ -63,6 +69,9 @@ export interface InstallmentPayment {
   policyId: string;
   n: number;
   amountInCents: number;
+  status: "pendiente" | "aprobada" | "fallida";
+  createdAt: number;
+  redirectUrl?: string;
 }
 
 export interface User {
@@ -73,6 +82,8 @@ export interface User {
   createdAt: string;
   marketingConsent: boolean;
   channels: { email: boolean; whatsapp: boolean };
+  /** Historial de otorgamientos y revocaciones. */
+  consentLog: ConsentRecord[];
 }
 
 export interface UserVehicle {
@@ -220,6 +231,7 @@ export function getOrCreateUser(email: string): User {
     createdAt: new Date().toISOString(),
     marketingConsent: false,
     channels: { email: true, whatsapp: false },
+    consentLog: [],
   };
   db().users.set(user.id, user);
   return user;
@@ -236,7 +248,10 @@ export function claimGuestPurchases(user: User) {
       o.userId = user.id;
       if (!user.name) user.name = `${o.policyholder.firstName} ${o.policyholder.lastName}`;
       if (!user.phone) user.phone = o.policyholder.phone;
-      if (o.consents.marketing) user.marketingConsent = true;
+      if (o.consents.marketing) {
+        user.marketingConsent = true;
+        user.consentLog.push(...o.consentEvidence.filter((c) => c.purpose === "marketing"));
+      }
     }
   }
   for (const p of d.policies.values()) {
