@@ -7,5 +7,5 @@ export async function GET(request: Request) {
   if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
     return Response.json({ error: "No autorizado" }, { status: 401 });
   }
-  return Response.json(dispatchDueReminders());
+  return Response.json(await dispatchDueReminders());
 }

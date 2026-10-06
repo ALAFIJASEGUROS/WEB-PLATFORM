@@ -17,7 +17,7 @@ import {
 } from "@/server/db";
 import { normalizePlate, plateType } from "@/vehicles/lookup";
 
-export type FormState = { ok?: boolean; error?: string; demoCode?: string; email?: string };
+export type FormState = { ok?: boolean; error?: string; demoCode?: string; email?: string; message?: string };
 
 // ── Acceso ─────────────────────────────────────────────────────────────────
 
@@ -34,7 +34,9 @@ export async function verifyCodeAction(_: FormState, form: FormData): Promise<Fo
   if (!/^\d{6}$/.test(code)) return { email, error: "El código tiene 6 dígitos." };
   const res = await verifyOtp(email, code);
   if (!res.ok) return { email, error: res.error };
-  redirect("/cuenta");
+  // Solo rutas internas, para evitar redirecciones abiertas.
+  const next = String(form.get("next") ?? "");
+  redirect(/^\/(?!\/)[\w\-/]*$/.test(next) ? next : "/cuenta");
 }
 
 export async function logoutAction() {

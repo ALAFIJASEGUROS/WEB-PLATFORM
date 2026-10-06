@@ -1,34 +1,45 @@
 import type { Metadata } from "next";
 import { formatCOP } from "@/domain/labels";
-import { adminOpenWithoutPassword, isAdmin } from "@/server/admin";
+import { adminOpenForDemo, adminSession, auditLog } from "@/server/admin";
+import { getCurrentUser } from "@/server/auth";
+import { LoginForm } from "@/components/account/LoginForm";
 import { db } from "@/server/db";
 import { breakdown, funnel } from "@/server/analytics";
 import { FUNNEL_LABELS } from "@/domain/events";
 import { paymentProvider } from "@/server/payments";
 import { Badge, Button, Card, Field, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
-import { adminLoginAction, createCampaignAction, runRemindersAction, toggleCampaignAction } from "./actions";
+import { createCampaignAction, runRemindersAction, toggleCampaignAction, updatePqrAction } from "./actions";
+import { PQR_TYPE_LABELS } from "@/server/pqr";
+import { todayInColombia } from "@/domain/holidays";
 
 export const metadata: Metadata = { title: "Administración", robots: { index: false } };
 
 const STATUS_TONE = { pendiente: "sun", aprobada: "brand", emitida: "mint", rechazada: "coral", retractada: "neutral", error: "coral" } as const;
 
 export default async function Page() {
-  if (!(await isAdmin())) {
+  const session = await adminSession();
+  if (!session) {
+    const user = await getCurrentUser();
     return (
-      <div className="mx-auto max-w-sm px-4 py-16">
-        <Card className="p-6">
-          <h1 className="mb-4 text-xl font-extrabold text-heading">Administración</h1>
-          <ActionForm action={adminLoginAction} submitLabel="Entrar">
-            <Field label="Contraseña" htmlFor="pw"><input id="pw" name="password" type="password" required className={inputClass} /></Field>
-          </ActionForm>
-        </Card>
+      <div className="mx-auto max-w-md px-4 py-16">
+        {user ? (
+          <Card className="space-y-2 p-6">
+            <h1 className="text-xl font-extrabold text-heading">Sin acceso al panel</h1>
+            <p className="text-sm text-muted">La cuenta {user.email} no tiene un rol de administración.</p>
+          </Card>
+        ) : (
+          <LoginForm next="/admin" />
+        )}
       </div>
     );
   }
+  const canEdit = session.role === "admin";
 
   const d = db();
   const steps = funnel();
+  const today = todayInColombia();
+  const pqrs = [...d.pqrs.values()].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const chosen = breakdown("oferta_elegida", "aseguradora");
   const orders = [...d.orders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const issued = orders.filter((o) => o.status === "emitida");
@@ -48,7 +59,8 @@ export default async function Page() {
         <h1 className="text-2xl font-extrabold text-heading">Administración</h1>
         <div className="flex gap-2">
           <Badge tone={paymentProvider().id === "wompi" ? "mint" : "sun"}>Pagos: {paymentProvider().id}</Badge>
-          {adminOpenWithoutPassword() && <Badge tone="coral">Sin ADMIN_PASSWORD (solo dev)</Badge>}
+          <Badge tone="brand">{session.email} · {session.role}</Badge>
+          {adminOpenForDemo() && <Badge tone="coral">Sin ADMIN_EMAILS (solo demo)</Badge>}
         </div>
       </div>
 
@@ -130,12 +142,16 @@ export default async function Page() {
                 <p className="font-semibold text-heading">{c.title}</p>
                 <p className="text-sm text-muted">{c.sponsor} · audiencia: {c.audience}</p>
               </div>
-              <form action={toggleCampaignAction.bind(null, c.id)}>
-                <Button variant={c.active ? "secondary" : "primary"} className="min-h-10 px-4 text-sm">{c.active ? "Pausar" : "Activar"}</Button>
-              </form>
+              {canEdit ? (
+                <form action={toggleCampaignAction.bind(null, c.id)}>
+                  <Button variant={c.active ? "secondary" : "primary"} className="min-h-10 px-4 text-sm">{c.active ? "Pausar" : "Activar"}</Button>
+                </form>
+              ) : (
+                <Badge tone={c.active ? "mint" : "neutral"}>{c.active ? "Activa" : "Pausada"}</Badge>
+              )}
             </Card>
           ))}
-          <Card className="p-5">
+          {canEdit && <Card className="p-5">
             <h3 className="mb-3 font-bold text-heading">Nueva campaña</h3>
             <ActionForm action={createCampaignAction} submitLabel="Publicar" className="space-y-3">
               <Field label="Patrocinador" htmlFor="c-sp"><input id="c-sp" name="sponsor" required className={inputClass} /></Field>
@@ -149,13 +165,13 @@ export default async function Page() {
                 <select id="c-a" name="audience" className={inputClass}><option value="todos">Todos</option><option value="auto">Carro</option><option value="moto">Moto</option></select>
               </Field>
             </ActionForm>
-          </Card>
+          </Card>}
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-heading">Bandeja de salida (simulada)</h2>
-            <form action={runRemindersAction}><Button variant="secondary" className="min-h-10 px-4 text-sm">Enviar recordatorios</Button></form>
+            {canEdit && <form action={runRemindersAction}><Button variant="secondary" className="min-h-10 px-4 text-sm">Enviar recordatorios</Button></form>}
           </div>
           <Card className="max-h-[640px] divide-y divide-line overflow-y-auto">
             {d.outbox.length === 0 && <p className="p-4 text-sm text-muted">Sin mensajes.</p>}
@@ -168,6 +184,52 @@ export default async function Page() {
             ))}
           </Card>
         </div>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="pqrs">
+        <h2 id="pqrs" className="text-lg font-bold text-heading">PQR</h2>
+        {pqrs.length === 0 && <Card className="p-4 text-sm text-muted">Sin solicitudes.</Card>}
+        <div className="grid gap-3 md:grid-cols-2">
+          {pqrs.map((q) => {
+            const overdue = q.status !== "respondida" && q.dueDate < today;
+            return (
+              <Card key={q.id} className="space-y-2 p-4 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="font-mono text-xs">{q.radicado}</strong>
+                  <Badge tone="brand">{PQR_TYPE_LABELS[q.type]}</Badge>
+                  <Badge tone={q.status === "respondida" ? "mint" : overdue ? "coral" : "sun"}>{q.status.replace("_", " ")}</Badge>
+                  <span className={`text-xs ${overdue ? "font-bold text-coral" : "text-muted"}`}>vence {q.dueDate}</span>
+                </div>
+                <p className="text-muted">{q.name} · {q.email}{q.policyNumber ? ` · póliza ${q.policyNumber}` : ""}</p>
+                <p className="whitespace-pre-line">{q.message}</p>
+                {q.response && <p className="rounded-xl bg-mint-soft p-2 text-ink">Respuesta: {q.response}</p>}
+                {canEdit && q.status !== "respondida" && (
+                  <ActionForm action={updatePqrAction.bind(null, q.id)} submitLabel="Actualizar" className="space-y-2" resetOnSuccess={false}>
+                    <select name="status" defaultValue={q.status === "radicada" ? "en_tramite" : "respondida"} className={inputClass} aria-label="Estado">
+                      <option value="en_tramite">En trámite</option>
+                      <option value="respondida">Respondida</option>
+                    </select>
+                    <textarea name="response" rows={3} placeholder="Respuesta al usuario (requerida para marcarla como respondida)" className={`${inputClass} py-2`} aria-label="Respuesta" />
+                  </ActionForm>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="auditoria">
+        <h2 id="auditoria" className="text-lg font-bold text-heading">Bitácora de auditoría</h2>
+        <Card className="max-h-80 divide-y divide-line overflow-y-auto text-sm">
+          {auditLog().length === 0 && <p className="p-4 text-muted">Sin acciones registradas.</p>}
+          {auditLog().slice(0, 100).map((a) => (
+            <p key={a.id} className="p-3">
+              <span className="text-xs text-muted">{a.at.slice(0, 16).replace("T", " ")} · {a.actor}</span>
+              <br />
+              <strong className="text-heading">{a.action}</strong> {a.detail && <span className="text-muted">— {a.detail}</span>}
+            </p>
+          ))}
+        </Card>
       </section>
     </div>
   );

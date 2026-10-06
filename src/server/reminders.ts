@@ -2,6 +2,8 @@ import "server-only";
 import { isHoliday, todayInColombia } from "@/domain/holidays";
 import { db, sendMessage, type Reminder } from "./db";
 import { daysUntil } from "./queries";
+import { renewalSuggestions } from "./renewals";
+import { formatCOP } from "@/domain/labels";
 
 /**
  * Ventana de contacto de la Ley 2300 de 2023: lunes a viernes 7:00–19:00 y
@@ -25,7 +27,7 @@ const lastContact = () => (g.__safLastContact ??= new Map());
  * a cada persona se le escribe como máximo una vez al día y por un solo canal
  * (WhatsApp si lo autorizó, si no correo), agrupando todos sus avisos.
  */
-export function dispatchDueReminders(now = new Date()) {
+export async function dispatchDueReminders(now = new Date()) {
   if (!withinContactHours(now)) return { sent: 0, skipped: "fuera de horario" as const };
   const today = todayInColombia(now);
   const d = db();
@@ -46,6 +48,15 @@ export function dispatchDueReminders(now = new Date()) {
       const left = daysUntil(r.dueDate, now);
       return `• ${r.title}: vence ${left === 0 ? "hoy" : `en ${left} días (${r.dueDate})`}`;
     });
+    // Si alguna póliza por renovar tiene una opción mejor, se menciona en el mismo mensaje.
+    const renewing = new Set(due.filter((r) => r.kind === "poliza").map((r) => r.policyId));
+    if (renewing.size) {
+      for (const s of await renewalSuggestions(userId, now)) {
+        if (renewing.has(s.policy.id)) {
+          lines.push(`  ↳ Encontramos ${s.offer.planName} de ${s.offer.insurerName} con la misma cobertura y ${formatCOP(s.savings)} menos al año.`);
+        }
+      }
+    }
     sendMessage({
       to: channel === "whatsapp" ? user.phone! : user.email,
       channel,

@@ -15,7 +15,7 @@ export function PlateInput({ className = "", ...props }: ComponentProps<"input">
         maxLength={7}
         className="w-full min-w-0 bg-transparent text-center text-2xl font-black uppercase tracking-[0.25em] text-[#1a1a1a] placeholder:text-[#1a1a1a]/70 focus:outline-none"
       />
-      <span aria-hidden className="block text-center text-[9px] font-bold uppercase tracking-[0.3em] text-[#1a1a1a]/70">
+      <span aria-hidden className="block text-center text-[10px] font-bold uppercase tracking-[0.3em] text-[#1a1a1a]">
         Colombia
       </span>
     </div>

@@ -1,8 +1,17 @@
 import Link from "next/link";
-import { Bell, CarFront, Megaphone, ShieldCheck } from "lucide-react";
+import { Bell, CarFront, Megaphone, ShieldCheck, TrendingDown } from "lucide-react";
 import { getCurrentUser } from "@/server/auth";
 import { campaignsFor, daysUntil, userPolicies, userReminders, userVehicles } from "@/server/queries";
 import { LoginForm } from "@/components/account/LoginForm";
+import { formatCOP } from "@/domain/labels";
+import { db } from "@/server/db";
+import { renewalSuggestions, type RenewalSuggestion } from "@/server/renewals";
+import { encodeShare } from "@/lib/share";
+
+function renewalShare(s: RenewalSuggestion) {
+  const order = s.policy.orderId ? db().orders.get(s.policy.orderId) : undefined;
+  return order ? encodeShare(order.quote) : "";
+}
 import { ButtonLink, Card } from "@/components/ui";
 
 export default async function Page({ searchParams }: PageProps<"/cuenta">) {
@@ -16,6 +25,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
   const vehicles = userVehicles(user.id);
   const upcoming = userReminders(user.id).filter((r) => daysUntil(r.dueDate) >= 0).slice(0, 3);
   const offers = campaignsFor(user);
+  const renewals = await renewalSuggestions(user.id);
 
   const tiles = [
     { href: "/cuenta/seguros", icon: ShieldCheck, label: "Pólizas", value: policies.length },
@@ -41,6 +51,24 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
           </Link>
         ))}
       </div>
+
+      {renewals.map((s) => (
+        <Card key={s.policy.id} className="flex flex-col gap-3 border-2 border-mint p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-3">
+            <TrendingDown className="mt-0.5 size-6 shrink-0 text-mint" aria-hidden />
+            <div>
+              <h2 className="font-bold text-heading">Puedes ahorrar {formatCOP(s.savings)} al renovar</h2>
+              <p className="text-sm text-muted">
+                Tu {s.policy.planName} vence el {s.policy.endDate}. {s.offer.planName} de {s.offer.insurerName} tiene al
+                menos la misma cobertura por {formatCOP(s.offer.annualPremium)} al año.
+              </p>
+            </div>
+          </div>
+          <ButtonLink href={`/resultados?c=${renewalShare(s)}`} variant="secondary" className="shrink-0">
+            Ver opciones
+          </ButtonLink>
+        </Card>
+      ))}
 
       <Card className="p-5">
         <h2 className="font-bold text-heading">Próximos vencimientos</h2>

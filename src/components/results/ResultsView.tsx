@@ -17,6 +17,8 @@ import {
 } from "@/lib/quote-store";
 import { Button, ButtonLink, SimulatedDataNotice } from "@/components/ui";
 import { OfferCard } from "./OfferCard";
+import { ShareQuote } from "./ShareQuote";
+import { decodeShare } from "@/lib/share";
 
 type Sort = "afinidad" | "precio" | "cobertura";
 const MAX_COMPARE = 3;
@@ -42,6 +44,16 @@ export function ResultsView() {
       active = false;
     };
   }, [request, data, error]);
+
+  // Cotización compartida por enlace (?c=...): se carga y se limpia la URL.
+  const sharing = hydrated && new URLSearchParams(window.location.search).has("c");
+  useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("c");
+    if (!param) return;
+    const shared = decodeShare(param);
+    if (shared) quoteStore.setRequest(shared);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   const quoteId = data?.quoteId;
   useEffect(() => {
@@ -74,7 +86,7 @@ export function ResultsView() {
     quoteStore.setCompare(next);
   }
 
-  if (hydrated && !request) {
+  if (hydrated && !request && !sharing) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="text-2xl font-extrabold text-heading">Aún no has cotizado</h1>
@@ -179,12 +191,15 @@ export function ResultsView() {
             )}
           </p>
         </div>
-        <Link
-          href={`/cotizar/${v.type}`}
-          className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft"
-        >
-          <Pencil className="size-4" aria-hidden /> Editar
-        </Link>
+        <div className="flex shrink-0 flex-wrap items-center justify-end">
+          <ShareQuote request={request} />
+          <Link
+            href={`/cotizar/${v.type}`}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft"
+          >
+            <Pencil className="size-4" aria-hidden /> Editar
+          </Link>
+        </div>
       </div>
 
       <SimulatedDataNotice />

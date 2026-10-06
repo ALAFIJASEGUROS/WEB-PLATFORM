@@ -63,3 +63,15 @@ test("el condicionado está disponible desde la oferta", async ({ page }) => {
   await page.goto("/condicionado/sura/auto-clasico");
   await expect(page.getByRole("heading", { name: "Exclusiones principales" })).toBeVisible();
 });
+
+test("abre una cotización compartida por enlace", async ({ page }) => {
+  // Mismo formato que src/lib/share.ts: JSON en base64url.
+  const c = Buffer.from(JSON.stringify({
+    vehicle: { type: "moto", plate: "XYZ12A", brand: "Yamaha", model: "NMAX 155", year: 2023, commercialValue: 13_000_000 },
+    driver: { birthdate: "1995-03-03", city: "Cali" },
+    answers: { priority: "precio", use: "domicilios", parking: "calle", mileage: "alto", drivers: "solo", financed: false, deductibleTolerance: "alto", services: [], claimsLast3Years: 0 },
+  })).toString("base64url");
+  await page.goto(`/resultados?c=${c}`);
+  await expect(page.getByRole("heading", { name: /opciones para tu Yamaha NMAX 155 2023/ })).toBeVisible({ timeout: 15_000 });
+  await expect(page).toHaveURL(/\/resultados$/);
+});

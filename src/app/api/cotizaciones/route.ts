@@ -1,6 +1,6 @@
 import { quoteRequestSchema } from "@/domain/schemas";
 import type { QuoteResponse } from "@/domain/types";
-import { quoteAll } from "@/insurers/aggregator";
+import { quoteWithCache } from "@/insurers/cache";
 import { scoreOffers } from "@/recommendation/scoring";
 
 export async function POST(request: Request) {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const { offers, errors } = await quoteAll(parsed.data);
+  const { offers, errors } = await quoteWithCache(parsed.data);
   const response: QuoteResponse = {
     quoteId: crypto.randomUUID(),
     offers: scoreOffers(offers, parsed.data.answers),

@@ -41,7 +41,7 @@ export default function Page() {
       <h2>¿Necesitas hablar con alguien?</h2>
       <a
         href="https://wa.me/570000000000?text=Hola%2C%20necesito%20ayuda%20con%20mi%20seguro"
-        className="inline-flex min-h-12 items-center gap-2 rounded-full bg-mint px-6 font-semibold text-white"
+        className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[#0d7563] px-6 font-semibold text-white hover:bg-[#095c4d]"
       >
         <MessageCircle className="size-5" aria-hidden /> Escríbenos por WhatsApp
       </a>

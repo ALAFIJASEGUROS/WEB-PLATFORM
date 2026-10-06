@@ -19,7 +19,7 @@ for (const f of ["package.json", "tsconfig.json", "postcss.config.mjs"]) {
 }
 symlinkSync(join(root, "node_modules"), join(build, "node_modules"), "dir");
 
-const SERVER_ROUTES = ["api", "admin", "cuenta", "checkout", "pago", "poliza"];
+const SERVER_ROUTES = ["api", "admin", "cuenta", "checkout", "pago", "poliza", "pqr"];
 for (const r of SERVER_ROUTES) rmSync(join(build, "src/app", r), { recursive: true, force: true });
 // Código que solo usan las rutas de servidor.
 for (const d of ["src/server", "src/components/account"]) rmSync(join(build, d), { recursive: true, force: true });

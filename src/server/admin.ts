@@ -1,41 +1,59 @@
 import "server-only";
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+import { getCurrentUser } from "./auth";
+import { newId } from "./db";
 
-const COOKIE = "saf_admin";
+// Acceso al panel: la persona entra con su código por correo y su email debe
+// estar en ADMIN_EMAILS ("ana@x.com:admin,luis@x.com:analista").
+// admin: puede hacer cambios. analista: solo lectura.
 
-/** Sin ADMIN_PASSWORD el panel solo funciona fuera de producción (demo). */
-export function adminOpenWithoutPassword() {
-  return !process.env.ADMIN_PASSWORD && process.env.NODE_ENV !== "production";
+export type AdminRole = "admin" | "analista";
+export interface AdminSession {
+  email: string;
+  role: AdminRole;
 }
 
-function token() {
-  return createHmac("sha256", process.env.ADMIN_PASSWORD ?? "")
-    .update("saf-admin")
-    .digest("base64url");
+export function adminRoles(env = process.env.ADMIN_EMAILS ?? ""): Map<string, AdminRole> {
+  const roles = new Map<string, AdminRole>();
+  for (const entry of env.split(",")) {
+    const [email, role] = entry.trim().toLowerCase().split(":");
+    if (email && (role === "admin" || role === "analista")) roles.set(email, role);
+  }
+  return roles;
 }
 
-export async function isAdmin() {
-  // Leer cookies siempre hace que el panel se renderice por solicitud.
-  const v = (await cookies()).get(COOKIE)?.value ?? "";
-  if (adminOpenWithoutPassword()) return true;
-  if (!process.env.ADMIN_PASSWORD) return false;
-  const t = token();
-  return v.length === t.length && timingSafeEqual(Buffer.from(v), Buffer.from(t));
+/** Sin ADMIN_EMAILS el panel solo abre fuera de producción (demo). */
+export function adminOpenForDemo() {
+  return adminRoles().size === 0 && process.env.NODE_ENV !== "production";
 }
 
-export async function adminLogin(password: string) {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) return false;
-  const a = Buffer.from(password);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
-  (await cookies()).set(COOKIE, token(), {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
-    path: "/admin",
-    maxAge: 60 * 60 * 8,
-  });
-  return true;
+export async function adminSession(): Promise<AdminSession | null> {
+  const user = await getCurrentUser();
+  if (adminOpenForDemo()) return { email: user?.email ?? "demo", role: "admin" };
+  if (!user) return null;
+  const role = adminRoles().get(user.email);
+  return role ? { email: user.email, role } : null;
+}
+
+export async function requireAdmin(role: AdminRole = "admin") {
+  const s = await adminSession();
+  if (!s || (role === "admin" && s.role !== "admin")) throw new Error("No autorizado");
+  return s;
+}
+
+// ── Bitácora de auditoría ──────────────────────────────────────────────────
+
+export interface AuditEntry {
+  id: string;
+  at: string;
+  actor: string;
+  action: string;
+  detail: string;
+}
+
+const g = globalThis as unknown as { __safAudit?: AuditEntry[] };
+export const auditLog = () => (g.__safAudit ??= []);
+
+export function audit(actor: string, action: string, detail = "") {
+  auditLog().unshift({ id: newId(), at: new Date().toISOString(), actor, action, detail });
+  if (auditLog().length > 1000) auditLog().length = 1000;
 }

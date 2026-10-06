@@ -16,6 +16,7 @@ cp .env.example .env.local   # opcional: sin variables todo funciona en modo dem
 npm run dev                  # http://localhost:3000
 npm test                     # pruebas unitarias (vitest)
 npm run lint && npm run typecheck
+npm run e2e                  # Playwright: flujo de compra y auditoría de accesibilidad (axe)
 ```
 
 ## Flujo para probar
@@ -24,7 +25,7 @@ npm run lint && npm run typecheck
    Con una placa que empiece por `ERR`, SURA falla y se muestran resultados parciales.
 2. Resultados → comparar → "Lo quiero" → checkout sin cuenta → pasarela simulada.
 3. Póliza emitida → "Guardarla en mi cuenta" → el código OTP aparece en pantalla en modo demo.
-4. `/admin` (en desarrollo no pide contraseña): órdenes, campañas y bandeja de mensajes simulados.
+4. `/admin`: órdenes, embudo, campañas, PQR, bitácora y bandeja de mensajes simulados. Se entra con el código por correo si tu email está en `ADMIN_EMAILS` (sin esa variable, abre solo fuera de producción).
 
 ## Demo estática (GitHub Pages)
 

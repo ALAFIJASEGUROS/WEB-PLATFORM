@@ -30,7 +30,7 @@ export function ActionForm({
     <form ref={ref} action={formAction} className={className}>
       {children}
       {state.error && <p role="alert" className="text-sm font-medium text-coral">{state.error}</p>}
-      {state.ok && <p role="status" className="text-sm font-medium text-mint">{successMessage}</p>}
+      {state.ok && <p role="status" className="text-sm font-medium text-mint">{state.message ?? successMessage}</p>}
       <Button type="submit" disabled={pending}>
         {pending ? "Guardando…" : submitLabel}
       </Button>
