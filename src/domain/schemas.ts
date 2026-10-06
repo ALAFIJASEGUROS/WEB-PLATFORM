@@ -56,6 +56,11 @@ export const checkoutSchema = z.object({
   analyticsSid: z.string().max(64).optional(),
   paymentPlan: z.enum(["anual", "mensual"]),
   policyholder: policyholderSchema,
+  /** Respuestas de conocimiento del cliente; se validan contra la aseguradora. */
+  kyc: z
+    .record(z.string().max(40), z.union([z.string().max(80), z.boolean()]))
+    .refine((r) => Object.keys(r).length <= 20)
+    .default({}),
   consents: z.object({
     terms: z.literal(true),
     dataProcessing: z.literal(true),

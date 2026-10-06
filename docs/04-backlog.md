@@ -29,7 +29,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-02.1 | Como plataforma quiero un contrato `InsurerAdapter` (`quote` + `issue`) y un modelo canónico de oferta | ✅ | M | MVP | 5 |
 | HU-02.2 | Como usuario quiero ver resultados aunque una aseguradora falle o tarde | ✅ | M | MVP | 3 |
 | HU-02.3 | Como equipo quiero mocks realistas de 2 aseguradoras con tarifas, latencias y errores | ✅ | M | MVP | 5 |
-| HU-02.4 | Como equipo quiero metadatos regulatorios por adaptador (figura contractual, productos habilitados, campos KYC) | ⬜ | S | V1 | 3 |
+| HU-02.4 | Como equipo quiero metadatos regulatorios por adaptador (figura contractual, productos habilitados, campos KYC) | ✅ | S | V1 | 3 |
 | HU-02.5 | Como plataforma quiero integrar la API real de la primera aseguradora | ⬜ Dep | M | V1 | 13 |
 | HU-02.6 | Como plataforma quiero caché de cotizaciones con la vigencia del precio | ✅ | C | V1 | 3 |
 
@@ -78,8 +78,8 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-06.1 | Como usuario quiero comprar sin crear cuenta, con datos del tomador validados | ✅ | M | MVP | 5 |
 | HU-06.2 | Como usuario quiero autorizaciones separadas y no premarcadas | ✅ | M | MVP | 2 |
 | HU-06.3 | Como plataforma quiero guardar evidencia de cada consentimiento (fecha, versión del texto, IP) | ✅ | M | V1 | 3 |
-| HU-06.4 | Como usuario quiero aceptar las condiciones con OTP (firma electrónica trazable) | ⬜ | S | V1 | 5 |
-| HU-06.5 | Como aseguradora quiero capturar campos KYC/SARLAFT configurables | ⬜ Dep | M | V1 | 5 |
+| HU-06.4 | Como usuario quiero aceptar las condiciones con OTP (firma electrónica trazable) | ✅ | S | V1 | 5 |
+| HU-06.5 | Como aseguradora quiero capturar campos KYC/SARLAFT configurables | ✅ | M | V1 | 5 |
 
 ## E07 · Pagos (Wompi)
 | ID | Historia | Estado | Prio | Rel | Pts |
@@ -88,7 +88,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-07.2 | Como usuario quiero pagar con PSE, tarjeta o Nequi vía Wompi | 🟡 Dep | M | MVP | 3 |
 | HU-07.3 | Como usuario quiero pagar mensual en 12 cuotas y pagar cada cuota desde mi cuenta | ✅ | S | MVP | 5 |
 | HU-07.4 | Como usuario quiero débito automático de las cuotas (tokenización Wompi) | ⬜ Dep | S | V1 | 8 |
-| HU-07.5 | Como equipo quiero conciliación diaria de pagos | ⬜ | S | V1 | 5 |
+| HU-07.5 | Como equipo quiero conciliación diaria de pagos | ✅ | S | V1 | 5 |
 
 **HU-07.2 · Criterios**
 - Con llaves sandbox, un pago aprobado emite la póliza.
@@ -154,22 +154,43 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-14.3 | Como plataforma quiero un canal de PQR y el enlace al Defensor del Consumidor Financiero | ✅ | M | V1 | 3 |
 | HU-14.4 | Como plataforma quiero el registro en el RNBD (SIC) | ⬜ Dep | M | V1 | — |
 
-## E15 · Investigación pendiente
+## E15 · Investigación
 | ID | Tema | Estado |
 | --- | --- | --- |
 | INV-1 | Benchmark competitivo | ✅ parcial (ver 01-investigacion) |
 | INV-2 | Regulación | ✅ parcial |
-| INV-3 | Pasarelas en Colombia: tarifas de Wompi, recurrencia, Bre-B | ⬜ |
-| INV-4 | Recomendador: métodos de ponderación y riesgo de considerarlo asesoría | ⬜ |
-| INV-5 | APIs de aseguradoras y proveedores de RUNT | ⬜ |
-| INV-6 | Auditoría UX con usuarios reales | ⬜ |
-| INV-7 | Canales y costos de WhatsApp y SMS | ⬜ |
+| INV-3 | Pasarelas en Colombia: tarifas de Wompi, recurrencia, Bre-B | ✅ [payments](investigacion/payments.md) |
+| INV-4 | Recomendador: métodos de ponderación y riesgo de considerarlo asesoría | ✅ [recommender](investigacion/recommender.md) |
+| INV-5 | APIs de aseguradoras y proveedores de RUNT | ✅ [integrations](investigacion/integrations.md) |
+| INV-6 | Auditoría UX (heurística); pruebas con usuarios pendientes | ✅ parcial [ux](investigacion/ux.md) |
+| INV-7 | Canales y costos de WhatsApp y SMS, cuenta y mensajería | ✅ [account](investigacion/account.md) |
 
 ## E16 · Extensibilidad
 | ID | Historia | Estado | Prio | Rel | Pts |
 | --- | --- | --- | --- | --- | --- |
-| HU-16.1 | Como plataforma quiero agregar líneas nuevas (hogar, viaje) sin rehacer el núcleo | ⬜ | C | V2 | 13 |
+| HU-16.1 | Como plataforma quiero agregar líneas nuevas (hogar, viaje) sin rehacer el núcleo | ✅ | C | V2 | 13 |
 | HU-16.2 | Como usuario quiero comprar el SOAT (gancho de entrada) | ⬜ Dep | S | V1 | 8 |
+
+## E17 · Hallazgos de la investigación
+Funcionalidades nuevas que salen de los documentos de [investigacion/](investigacion/). "Código" = no depende de terceros.
+
+| ID | Historia | Fuente | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- | --- |
+| HU-17.1 | Como plataforma quiero una interfaz `PaymentProvider` para sumar una segunda pasarela sin tocar el checkout | payments | ⬜ Código | M | V1 | 5 |
+| HU-17.2 | Como plataforma quiero una máquina de estados explícita de pago y póliza (transiciones monótonas) | payments | ⬜ Código | M | MVP | 5 |
+| HU-17.3 | Como usuario quiero que el precio se revalide antes de pagar si la cotización venció | integrations | ⬜ Código | M | MVP | 3 |
+| HU-17.4 | Como plataforma quiero emitir de forma asíncrona con *outbox*, idempotencia y reintentos | integrations | ⬜ Código (cola real: Dep) | M | MVP | 8 |
+| HU-17.5 | Como usuario quiero que se descarten las pólizas que no cubren mi uso (plataformas, domicilios en moto) | recommender | ⬜ Código | M | MVP | 5 |
+| HU-17.6 | Como plataforma quiero guardar versión del algoritmo, pesos y posiciones de cada recomendación | recommender | ⬜ Código (persistir: Dep Supabase) | S | MVP | 3 |
+| HU-17.7 | Como usuario quiero etiquetas "Mejor precio" y "Mejor cobertura" y un empate técnico explícito | recommender | ⬜ Código | S | MVP | 3 |
+| HU-17.8 | Como usuario quiero revisar y editar mis respuestas antes de cotizar | ux | ⬜ Código | S | MVP | 3 |
+| HU-17.9 | Como usuario quiero instalar la app (PWA con íconos PNG y página sin conexión) | ux | ⬜ Código | C | V1 | 3 |
+| HU-17.10 | Como usuario quiero un centro de preferencias por tipo de mensaje y canal | account | ⬜ Código | S | MVP | 5 |
+| HU-17.11 | Como usuario quiero una guía de siniestros por aseguradora con contactos | account | ⬜ Código (contactos reales: Dep) | S | MVP | 3 |
+| HU-17.12 | Como plataforma quiero reemplazar las marcas reales de los mocks por aseguradoras ficticias | integrations, ux | ⬜ Decisión del negocio | M | MVP | 2 |
+| HU-17.13 | Como usuario quiero entrar con código por WhatsApp o SMS | account | ⬜ Dep (WhatsApp/SMS) | S | V1 | 5 |
+| HU-17.14 | Como plataforma quiero recaudo por aseguradora (split o comercio propio) | payments | ⬜ Dep (pasarela y figura legal) | M | V1 | 8 |
+| HU-17.15 | Como usuario quiero avisos de mora antes de que termine el contrato | payments | ⬜ Código | M | V1 | 3 |
 
 ---
 
@@ -184,11 +205,17 @@ HU-02.6 (caché de cotizaciones), HU-05.5 (compartir cotización), HU-04.5 (re-c
 HU-12.3 (roles de admin por correo y bitácora), HU-14.3 (PQR con radicado y Defensor),
 HU-01.2 (auditoría automática con axe, WCAG 2.2 AA, modo claro y oscuro).
 
-## Próximo sprint sugerido
-Con lo que queda solo de código casi agotado, lo siguiente depende de terceros: Supabase (HU-09.6),
-Resend (HU-10.5), llaves de Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).
-De código quedan HU-02.4 (metadatos regulatorios por adaptador), HU-07.5 (conciliación),
-HU-04.4 (A/B de pesos) y HU-16.1 (nuevas líneas de seguro).
+## Sprint 5 (completado)
+HU-02.4 (metadatos regulatorios por adaptador), HU-06.5 (campos SARLAFT por aseguradora en el checkout),
+HU-06.4 (aceptación de condiciones con código por correo), HU-07.5 (conciliación de pagos con cron y panel),
+HU-16.1 (registro de líneas de seguro y guía en docs/nuevas-lineas.md).
+
+## Próximo sprint sugerido (Sprint 6, solo código)
+Robustez del flujo de compra y del recomendador según la investigación: HU-17.2 (estados de pago y póliza),
+HU-17.3 (revalidar precio), HU-17.4 (emisión asíncrona con outbox en memoria), HU-17.5 (elegibilidad),
+HU-17.7 (etiquetas y empate), HU-17.8 (resumen editable) y HU-17.15 (avisos de mora).
+También quedan HU-04.4 (A/B de pesos) y HU-09.4 (lectura de pólizas en PDF).
+Con terceros: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).
 
 ## Bloqueados por terceros
 - Supabase (HU-09.6)

@@ -4,7 +4,27 @@ export interface IssueRequest {
   offer: Offer;
   quote: QuoteRequest;
   holder: { documentType: string; documentNumber: string; fullName: string };
+  kyc: Record<string, string | boolean>;
   startDate: string;
+}
+
+/** Figura contractual bajo la que la plataforma comercializa los productos. */
+export type ContractModel = "simulado" | "corresponsalia_digital" | "agencia" | "corredor";
+
+/** Campo de conocimiento del cliente (SARLAFT) que exige la aseguradora. */
+export interface KycField {
+  key: string;
+  label: string;
+  type: "select" | "boolean";
+  options?: { value: string; label: string }[];
+  required: boolean;
+  help?: string;
+}
+
+export interface RegulatoryInfo {
+  contractModel: ContractModel;
+  /** Campos KYC que deben capturarse antes de emitir. */
+  kycFields: KycField[];
 }
 
 /**
@@ -16,6 +36,7 @@ export interface InsurerAdapter {
   id: string;
   name: string;
   supports: VehicleType[];
+  regulatory: RegulatoryInfo;
   quote(request: QuoteRequest, signal: AbortSignal): Promise<Offer[]>;
   /** Emite la póliza una vez confirmado el pago. Devuelve el número de póliza. */
   issue(request: IssueRequest): Promise<{ policyNumber: string }>;

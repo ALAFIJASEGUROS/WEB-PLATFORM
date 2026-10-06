@@ -30,9 +30,19 @@ test("cotiza, compra sin cuenta, recibe la póliza y la guarda en su cuenta", as
   await page.getByLabel("Correo electrónico").fill(email);
   await page.getByLabel("Celular").fill("3001234567");
   await page.getByLabel("Dirección").fill("Calle 10 # 43-21");
+  // Preguntas SARLAFT: dependen de la aseguradora elegida.
+  const kyc = page.getByRole("region", { name: "Conocimiento del cliente" });
+  for (const select of await kyc.locator("select").all()) await select.selectOption({ index: 1 });
+  for (const no of await kyc.getByText("No", { exact: true }).all()) await no.click();
   await page.getByText("Leí y acepto").click();
   await page.getByText("Autorizo el tratamiento").click();
   await page.getByRole("button", { name: /^Pagar/ }).filter({ visible: true }).first().click();
+
+  const dialog = page.getByRole("dialog", { name: "Confirma tu compra" });
+  await expect(dialog).toBeVisible();
+  const acceptanceCode = await dialog.locator("strong.tracking-widest").innerText();
+  await dialog.getByLabel("Código de aceptación").fill(acceptanceCode);
+  await dialog.getByRole("button", { name: "Aceptar y pagar" }).click();
 
   await page.getByRole("button", { name: "Simular pago aprobado" }).click();
   await expect(page.getByRole("heading", { name: "¡Listo, ya estás asegurado!" })).toBeVisible();

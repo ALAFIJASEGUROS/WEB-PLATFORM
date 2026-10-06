@@ -9,7 +9,8 @@ import { FUNNEL_LABELS } from "@/domain/events";
 import { paymentProvider } from "@/server/payments";
 import { Badge, Button, Card, Field, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
-import { createCampaignAction, runRemindersAction, toggleCampaignAction, updatePqrAction } from "./actions";
+import { createCampaignAction, reconcileAction, runRemindersAction, toggleCampaignAction, updatePqrAction } from "./actions";
+import { lastReconciliation } from "@/server/reconciliation";
 import { PQR_TYPE_LABELS } from "@/server/pqr";
 import { todayInColombia } from "@/domain/holidays";
 
@@ -38,6 +39,7 @@ export default async function Page() {
 
   const d = db();
   const steps = funnel();
+  const recon = lastReconciliation();
   const today = todayInColombia();
   const pqrs = [...d.pqrs.values()].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const chosen = breakdown("oferta_elegida", "aseguradora");
@@ -98,6 +100,41 @@ export default async function Page() {
             <p className="border-t border-line pt-3 text-sm text-muted">
               Ofertas elegidas por aseguradora: {chosen.map(([k, v]) => `${k} ${v}`).join(" · ")}
             </p>
+          )}
+        </Card>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="conciliacion">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="conciliacion" className="text-lg font-bold text-heading">Conciliación de pagos</h2>
+          {canEdit && (
+            <form action={reconcileAction}>
+              <Button variant="secondary" className="min-h-10 px-4 text-sm">Conciliar ahora</Button>
+            </form>
+          )}
+        </div>
+        <Card className="space-y-2 p-4 text-sm">
+          {!recon ? (
+            <p className="text-muted">Aún no se ha ejecutado. También corre a diario con el cron.</p>
+          ) : (
+            <>
+              <p className="text-muted">
+                Última ejecución {recon.at.slice(0, 16).replace("T", " ")} UTC · {recon.checked} revisados · {recon.updated} actualizados
+              </p>
+              {recon.issues.length === 0 ? (
+                <p className="font-semibold text-mint">Sin novedades.</p>
+              ) : (
+                <ul className="divide-y divide-line">
+                  {recon.issues.map((i) => (
+                    <li key={`${i.reference}-${i.kind}`} className="flex flex-wrap items-center gap-2 py-2">
+                      <span className="font-mono text-xs">{i.reference}</span>
+                      <Badge tone={i.kind === "sin_aceptacion" ? "neutral" : "coral"}>{i.kind.replace(/_/g, " ")}</Badge>
+                      <span className="text-muted">{i.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </Card>
       </section>

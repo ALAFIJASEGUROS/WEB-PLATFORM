@@ -18,6 +18,7 @@ const input: CheckoutInput = {
   paymentPlan: "anual",
   policyholder: { firstName: "Ana", lastName: "Gómez", documentType: "CC", documentNumber: "1020304050", email: "Ana@Example.com", phone: "3001234567", address: "Calle 1 # 2-3" },
   consents: { terms: true, dataProcessing: true, marketing: true },
+  kyc: { ocupacion: "independiente", ingresos: "2-5smmlv", pep: false },
 };
 
 beforeEach(() => {
@@ -66,6 +67,13 @@ describe("órdenes y emisión", () => {
     await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: 1, eventId: "x" });
     expect(order.status).toBe("error");
     expect(db().policies.size).toBe(0);
+  });
+
+  it("exige las preguntas SARLAFT de la aseguradora", async () => {
+    await expect(createOrder({ ...input, kyc: {} })).rejects.toBeInstanceOf(CheckoutError);
+    await expect(createOrder({ ...input, kyc: { ...input.kyc, ingresos: "inventado" } })).rejects.toBeInstanceOf(CheckoutError);
+    const order = await createOrder(input);
+    expect(order.kyc).toEqual({ ocupacion: "independiente", ingresos: "2-5smmlv", pep: false });
   });
 
   it("rechaza ofertas inexistentes", async () => {
@@ -268,4 +276,53 @@ describe("PQR", () => {
     expect(pqr.status).toBe("respondida");
     expect(db().outbox[0]).toMatchObject({ to: "ana@example.com", body: "Te reenviamos la póliza." });
   });
+});
+
+describe("aceptación con código", () => {
+  it("exige el código correcto, limita intentos y deja evidencia", async () => {
+    const { startAcceptance, confirmAcceptance, isAccepted } = await import("./orders");
+    const order = await createOrder(input);
+    const { demoCode } = startAcceptance(order, true);
+    expect(demoCode).toMatch(/^\d{6}$/);
+    expect(db().outbox[0].subject).toMatch(/aceptar tu compra/);
+    const wrong = demoCode === "000000" ? "111111" : "000000";
+    expect(() => confirmAcceptance(order.reference, order.accessToken, wrong)).toThrow(CheckoutError);
+    expect(() => confirmAcceptance(order.reference, "otro-token", demoCode!)).toThrow(CheckoutError);
+    expect(isAccepted(order)).toBe(false);
+    confirmAcceptance(order.reference, order.accessToken, demoCode!, { ip: "9.9.9.9" });
+    expect(isAccepted(order)).toBe(true);
+    expect(order.consentEvidence.at(-1)).toMatchObject({ purpose: "terms", source: "aceptacion-otp", ip: "9.9.9.9" });
+  });
+
+  it("bloquea tras 5 intentos fallidos", async () => {
+    const { startAcceptance, confirmAcceptance } = await import("./orders");
+    const order = await createOrder(input);
+    const { demoCode } = startAcceptance(order, true);
+    const wrong = demoCode === "000000" ? "111111" : "000000";
+    for (let i = 0; i < 5; i++) expect(() => confirmAcceptance(order.reference, order.accessToken, wrong)).toThrow();
+    expect(() => confirmAcceptance(order.reference, order.accessToken, demoCode!)).toThrow(/Demasiados intentos/);
+  });
+});
+
+describe("conciliación", () => {
+  it("reporta pagos atascados, órdenes sin aceptar y errores de emisión", async () => {
+    const { reconcilePayments } = await import("./reconciliation");
+    const { startAcceptance, confirmAcceptance } = await import("./orders");
+    const stuck = await createOrder(input);
+    const { demoCode } = startAcceptance(stuck, true);
+    confirmAcceptance(stuck.reference, stuck.accessToken, demoCode!);
+    const abandoned = await createOrder(input);
+    const broken = await createOrder(input);
+    await applyPaymentUpdate({ reference: broken.reference, transactionId: "t", status: "APPROVED", amountInCents: 1, eventId: "bad" });
+    const ok = await createOrder(input);
+    await applyPaymentUpdate({ reference: ok.reference, transactionId: "t2", status: "APPROVED", amountInCents: ok.amountInCents, eventId: "good" });
+
+    const report = await reconcilePayments(Date.now() + 31 * 60_000);
+    const kinds = Object.fromEntries(report.issues.map((i) => [i.reference, i.kind]));
+    expect(kinds[stuck.reference]).toBe("pago_pendiente");
+    expect(kinds[abandoned.reference]).toBe("sin_aceptacion");
+    expect(kinds[broken.reference]).toBe("error_emision");
+    expect(kinds[ok.reference]).toBeUndefined();
+    expect(report.checked).toBe(4);
+  }, 20_000);
 });

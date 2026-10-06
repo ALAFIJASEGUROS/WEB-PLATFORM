@@ -5,7 +5,7 @@ import type {
   ServiceKey,
   VehicleType,
 } from "@/domain/types";
-import { InsurerUnavailableError, type InsurerAdapter } from "../adapter";
+import { InsurerUnavailableError, type InsurerAdapter, type RegulatoryInfo } from "../adapter";
 
 /** Definición de un plan dentro de una aseguradora simulada. */
 export interface MockPlan {
@@ -34,6 +34,7 @@ export interface MockInsurerConfig {
   plans: MockPlan[];
   /** Placas que fuerzan error, para probar resultados parciales. */
   failPlatePrefix?: string;
+  regulatory: RegulatoryInfo;
 }
 
 const CURRENT_YEAR = 2026;
@@ -163,6 +164,7 @@ export function createMockAdapter(config: MockInsurerConfig): InsurerAdapter {
     id: config.id,
     name: config.name,
     supports: [...new Set(config.plans.map((p) => p.vehicleType))],
+    regulatory: config.regulatory,
     async quote(req, signal) {
       const [min, max] = config.latencyMs;
       const latency =

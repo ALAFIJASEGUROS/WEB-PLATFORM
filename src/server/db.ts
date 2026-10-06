@@ -27,6 +27,17 @@ export interface Order {
   accessToken: string;
   userId?: string;
   analyticsSid?: string;
+  /** Aceptación de condiciones con código por correo (firma electrónica simple). */
+  acceptance?: {
+    codeHash: string;
+    expiresAt: number;
+    attempts: number;
+    acceptedAt?: string;
+    ip?: string;
+    userAgent?: string;
+  };
+  /** Respuestas KYC/SARLAFT validadas contra la aseguradora. */
+  kyc: Record<string, string | boolean>;
   /** Evidencia de las autorizaciones otorgadas en el checkout. */
   consentEvidence: ConsentRecord[];
 }

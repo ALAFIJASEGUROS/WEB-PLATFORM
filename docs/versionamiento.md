@@ -39,5 +39,11 @@ Cada build inyecta, desde `build-env.mjs`, la siguiente información:
 El footer muestra `vX.Y.Z · <commit> · <destino>`, y al pasar el cursor se ve la fecha del build. Para verificar un despliegue, compara el commit del footer con el último commit de `main` o del PR desplegado.
 
 ## Ramas
-- `main`: siempre desplegable. Publica la demo en GitHub Pages en cada push.
-- Ramas de trabajo: cada cambio entra por pull request hacia `main`, con la CI en verde (lint, typecheck, pruebas unitarias, build y E2E con accesibilidad).
+| Rama | Rol | Reglas |
+| --- | --- | --- |
+| `main` | Producción. Cada push publica la demo en GitHub Pages; los releases se etiquetan aquí (`vX.Y.Z`) | Solo recibe merges por PR desde la rama de desarrollo, con la CI en verde (lint, typecheck, pruebas unitarias, build y E2E con accesibilidad) |
+| `claude/funny-albattani-3b14tk` | Desarrollo (*develop*). Aquí se integra el trabajo de cada sprint | Se mantiene sincronizada con `main` después de cada merge |
+
+Flujo: desarrollo en la rama *develop* → PR hacia `main` → CI en verde → merge → tag del release.
+
+> La rama *develop* figura hoy como rama por defecto en GitHub porque fue la primera en subirse. Los PR deben abrirse siempre con `main` como base.

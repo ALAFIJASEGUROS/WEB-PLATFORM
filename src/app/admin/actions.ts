@@ -6,6 +6,7 @@ import { audit, requireAdmin } from "@/server/admin";
 import { db, newId } from "@/server/db";
 import { dispatchDueReminders } from "@/server/reminders";
 import { updatePqr } from "@/server/pqr";
+import { reconcilePayments } from "@/server/reconciliation";
 import type { FormState } from "../cuenta/actions";
 
 const campaignSchema = z.object({
@@ -66,4 +67,11 @@ export async function updatePqrAction(id: string, _: FormState, form: FormData):
   audit(admin.email, `PQR ${pqr.radicado} → ${parsed.data.status}`);
   revalidatePath("/admin");
   return { ok: true };
+}
+
+export async function reconcileAction() {
+  const admin = await requireAdmin();
+  const report = await reconcilePayments();
+  audit(admin.email, "Concilió pagos", `${report.checked} revisados, ${report.updated} actualizados, ${report.issues.length} novedades`);
+  revalidatePath("/admin");
 }

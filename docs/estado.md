@@ -1,4 +1,4 @@
-# Estado del proyecto · v0.6.0 (2026-10-06)
+# Estado del proyecto · v0.7.0 (2026-10-06)
 
 Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está en el
 [backlog](04-backlog.md) y el historial de cambios en el [CHANGELOG](../CHANGELOG.md).
@@ -16,12 +16,12 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Aseguradoras | Adaptadores simulados de SURA y Seguros Bolívar detrás de `InsurerAdapter`. Agregador con timeouts y resultados parciales. Caché de 15 min | Pruebas unitarias del agregador y la caché |
 | Recomendación | Puntaje de afinidad (precio, cobertura, servicios) con pesos editables, explicaciones y avisos. Página "Cómo funciona" | Pruebas de puntaje |
 | Resultados | Recomendación destacada, filtros, comparador de 3 con "Mejor" por fila, ficha con exclusiones, IVA y condicionado. Compartir por enlace o WhatsApp | E2E y axe |
-| Compra | Checkout sin registro, consentimientos separados con evidencia, Wompi (Web Checkout + webhook firmado) o pasarela simulada, pago anual o 12 cuotas | Pruebas de órdenes y E2E |
+| Compra | Checkout sin registro, preguntas SARLAFT por aseguradora, aceptación con código por correo, consentimientos separados con evidencia, Wompi (Web Checkout + webhook firmado) o pasarela simulada, pago anual o 12 cuotas | Pruebas de órdenes y E2E |
 | Póliza | Emisión simulada, certificado imprimible, retracto en 5 días hábiles | Pruebas de retracto |
 | Cuenta | Acceso con código por correo, reclamación de compras como invitado, billetera de pólizas y vehículos, pago de cuotas, sugerencia de renovación con ahorro | Pruebas y E2E |
 | Comunicaciones | Recordatorios de póliza, SOAT, tecnomecánica y cuotas (Ley 2300: horario, festivos, un contacto al día). Centro de ofertas con consentimiento | Pruebas de recordatorios |
 | Atención | PQR con radicado y plazo de 15 días hábiles. Sección del Defensor del Consumidor Financiero | Pruebas de PQR |
-| Administración | Roles `admin` y `analista` por correo, órdenes, recaudo, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
+| Administración | Roles `admin` y `analista` por correo, órdenes, recaudo, conciliación de pagos, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
 | Calidad | CI con lint, typecheck, 42 pruebas unitarias, build, 24 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
 | Diseño | Mobile-first, modo oscuro con selector, tokens de color con contraste AA, versión visible en el footer | axe |
 
@@ -42,15 +42,13 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Marca | HU-13.6 | Logos oficiales con autorización |
 
 ### Solo código (siguientes candidatos)
-- HU-02.4: metadatos regulatorios por adaptador (figura contractual, productos y campos KYC).
-- HU-06.4 y HU-06.5: aceptación con OTP y campos SARLAFT configurables por aseguradora.
-- HU-07.5: conciliación diaria de pagos.
+- Sprint 6 sugerido (épica E17): estados de pago y póliza, revalidar precio antes de pagar, emisión asíncrona, elegibilidad por uso, etiquetas de recomendación, resumen editable y avisos de mora.
 - HU-04.4: pruebas A/B de pesos del recomendador.
-- HU-16.1 y HU-16.2: nuevas líneas de seguro y SOAT.
 - HU-09.4: lectura automática de pólizas en PDF.
+- Habilitar una nueva línea (hogar o viaje) siguiendo [nuevas-lineas.md](nuevas-lineas.md). SOAT depende del RUNT.
 
-### Investigación pendiente
-Pasarelas (tarifas, recurrencia, Bre-B), métodos del recomendador y riesgo de que se considere asesoría, APIs de aseguradoras y proveedores de RUNT, pruebas con usuarios y costos de WhatsApp y SMS. Ver [01-investigacion.md](01-investigacion.md).
+### Investigación
+Los 7 frentes terminaron (ver [01-investigacion.md](01-investigacion.md) y [investigacion/](investigacion/)). De ahí salen las historias de la épica E17 del backlog; las de solo código forman el Sprint 6 sugerido. Quedan pendientes las pruebas con usuarios reales.
 
 ## Riesgos conocidos
 - **Datos en memoria:** no apto para usuarios reales hasta tener Supabase.

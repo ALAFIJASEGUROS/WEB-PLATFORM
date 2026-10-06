@@ -1,7 +1,9 @@
 import "server-only";
+import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import type { CheckoutInput } from "@/domain/schemas";
 import { formatCOP } from "@/domain/labels";
 import { getAdapter } from "@/insurers/aggregator";
+import { validateKyc } from "@/insurers/registry";
 import {
   attachPolicyToUser,
   db,
@@ -41,6 +43,8 @@ export async function createOrder(
   }
   const offer = offers.find((o) => o.id === input.offerId);
   if (!offer) throw new CheckoutError("La oferta ya no está disponible. Cotiza de nuevo.");
+  const kyc = validateKyc(adapter.regulatory.kycFields, input.kyc ?? {});
+  if (!kyc.ok) throw new CheckoutError("Completa las preguntas de conocimiento del cliente.");
 
   const amount =
     input.paymentPlan === "anual" ? offer.annualPremium : offer.monthlyPremium;
@@ -59,6 +63,7 @@ export async function createOrder(
     accessToken: randomToken(),
     userId,
     analyticsSid: input.analyticsSid,
+    kyc: kyc.clean,
     consentEvidence: (["terms", "dataProcessing", "marketing"] as const).map((k) =>
       consentRecord(k, input.consents[k], "checkout", ctx),
     ),
@@ -162,6 +167,7 @@ async function issuePolicy(order: Order) {
         documentNumber: h.documentNumber,
         fullName: `${h.firstName} ${h.lastName}`,
       },
+      kyc: order.kyc,
       startDate,
     });
     const policy: Policy = {
@@ -302,4 +308,50 @@ export function retractPolicy(policyId: string, viewer: { token?: string; userId
     body: `Anulamos tu póliza ${p.number} (${p.planName}). Te devolveremos ${formatCOP(refund)} por el mismo medio de pago.`,
   });
   return { policy: p, refund };
+}
+
+// ── Aceptación con código (Ley 527 de 1999: mensaje de datos con evidencia) ──
+
+const ACCEPTANCE_TTL_MS = 10 * 60 * 1000;
+const ACCEPTANCE_MAX_ATTEMPTS = 5;
+
+const hashAcceptance = (order: Order, code: string) =>
+  createHash("sha256").update(`${order.reference}:${code}:${order.accessToken}`).digest("hex");
+
+/** Envía el código de aceptación al correo del tomador. */
+export function startAcceptance(order: Order, showCode: boolean) {
+  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  order.acceptance = { codeHash: hashAcceptance(order, code), expiresAt: Date.now() + ACCEPTANCE_TTL_MS, attempts: 0 };
+  sendMessage({
+    to: order.policyholder.email,
+    channel: "email",
+    subject: "Código para aceptar tu compra en SeguAlaFija",
+    body: `Tu código es ${code}. Al ingresarlo aceptas las condiciones del seguro ${order.offer.planName} de ${order.offer.insurerName}. Vence en 10 minutos.`,
+  });
+  return { demoCode: showCode ? code : undefined };
+}
+
+export function confirmAcceptance(
+  reference: string,
+  token: string,
+  code: string,
+  ctx: { ip?: string; userAgent?: string } = {},
+) {
+  const order = getOrderForViewer(reference, token);
+  if (!order?.acceptance) throw new CheckoutError("Compra no encontrada.");
+  const a = order.acceptance;
+  if (a.acceptedAt) return order;
+  if (a.expiresAt < Date.now()) throw new CheckoutError("El código venció. Vuelve a enviar el formulario.");
+  if (a.attempts >= ACCEPTANCE_MAX_ATTEMPTS) throw new CheckoutError("Demasiados intentos. Vuelve a enviar el formulario.");
+  a.attempts++;
+  const expected = Buffer.from(a.codeHash);
+  const got = Buffer.from(hashAcceptance(order, code.trim()));
+  if (expected.length !== got.length || !timingSafeEqual(expected, got)) throw new CheckoutError("Código incorrecto.");
+  Object.assign(a, { acceptedAt: new Date().toISOString(), ip: ctx.ip, userAgent: ctx.userAgent?.slice(0, 200) });
+  order.consentEvidence.push({ ...consentRecord("terms", true, "aceptacion-otp", ctx) });
+  return order;
+}
+
+export function isAccepted(order: Order) {
+  return !!order.acceptance?.acceptedAt;
 }

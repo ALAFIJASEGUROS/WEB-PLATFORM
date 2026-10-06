@@ -43,8 +43,15 @@ export async function lookupVehicle(plate: string): Promise<Vehicle> {
   return json(await fetch(`/api/vehiculos/${plate}`));
 }
 
-/** Devuelve la URL a la que hay que llevar al usuario para pagar. */
-export async function startCheckout(input: CheckoutInput): Promise<{ redirectUrl: string }> {
+export type CheckoutStart =
+  | { redirectUrl: string; acceptance?: undefined }
+  | { acceptance: true; reference: string; token: string; demoCode?: string };
+
+/**
+ * Crea la orden. En la versión completa devuelve los datos para aceptar con
+ * código; en la demo estática va directo a la pasarela simulada.
+ */
+export async function startCheckout(input: CheckoutInput): Promise<CheckoutStart> {
   if (STATIC_DEMO) {
     const { createDemoOrder } = await import("./demo-store");
     const order = createDemoOrder(input);
@@ -56,6 +63,17 @@ export async function startCheckout(input: CheckoutInput): Promise<{ redirectUrl
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
+    }),
+  );
+}
+
+/** Confirma la aceptación con el código y devuelve la URL de pago. */
+export async function confirmAcceptance(reference: string, token: string, code: string): Promise<{ redirectUrl: string }> {
+  return json(
+    await fetch("/api/ordenes/aceptar", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reference, token, code }),
     }),
   );
 }

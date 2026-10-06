@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { startCheckout } from "@/lib/api-client";
+import { kycFieldsFor, validateKyc } from "@/insurers/registry";
+import { AcceptanceDialog } from "./AcceptanceDialog";
 import { analyticsSessionId, track } from "@/lib/analytics";
 import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
@@ -42,6 +44,9 @@ export function CheckoutForm({
   const [terms, setTerms] = useState(false);
   const [data, setData] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const [acceptance, setAcceptance] = useState<{ reference: string; token: string; demoCode?: string } | null>(null);
+  const [kyc, setKyc] = useState<Record<string, string | boolean>>({});
+  const [kycErrors, setKycErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -62,6 +67,11 @@ export function CheckoutForm({
     if (errors[k]) setErrors((e) => ({ ...e, [k]: undefined }));
   };
 
+  function goToPayment(redirectUrl: string) {
+    if (redirectUrl.startsWith("/")) router.push(redirectUrl);
+    else window.location.assign(redirectUrl);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setServerError(null);
@@ -76,6 +86,12 @@ export function CheckoutForm({
       document.getElementById(Object.keys(errs)[0])?.focus();
       return;
     }
+    const kycCheck = validateKyc(kycFieldsFor(offer!.insurerId), kyc);
+    setKycErrors(kycCheck.errors);
+    if (!kycCheck.ok) {
+      document.getElementById(`kyc-${Object.keys(kycCheck.errors)[0]}`)?.focus();
+      return;
+    }
     if (!terms || !data) {
       setServerError("Debes aceptar los términos y la autorización de tratamiento de datos.");
       return;
@@ -83,16 +99,21 @@ export function CheckoutForm({
     setSubmitting(true);
     try {
       track("checkout_enviado", { plan, aseguradora: offer!.insurerId });
-      const { redirectUrl } = await startCheckout({
+      const result = await startCheckout({
         analyticsSid: analyticsSessionId(),
         quote: request!,
         offerId,
         paymentPlan: plan,
         policyholder: parsed.data,
         consents: { terms, dataProcessing: data, marketing },
+        kyc: kycCheck.clean,
       });
-      if (redirectUrl.startsWith("/")) router.push(redirectUrl);
-      else window.location.assign(redirectUrl);
+      if (result.acceptance) {
+        setAcceptance(result);
+        setSubmitting(false);
+      } else {
+        goToPayment(result.redirectUrl);
+      }
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "No pudimos iniciar el pago.");
       setSubmitting(false);
@@ -110,6 +131,16 @@ export function CheckoutForm({
       <h1 className="text-2xl font-extrabold tracking-tight text-heading">Compra tu seguro</h1>
       <p className="mt-1 text-muted">No necesitas crear cuenta. Te enviamos la póliza a tu correo.</p>
 
+      {acceptance && (
+        <AcceptanceDialog
+          email={holder.email}
+          reference={acceptance.reference}
+          token={acceptance.token}
+          demoCode={acceptance.demoCode}
+          onAccepted={goToPayment}
+          onCancel={() => setAcceptance(null)}
+        />
+      )}
       <form onSubmit={submit} noValidate className="mt-6 grid gap-6 md:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <Card className="flex items-center gap-3 p-4 md:hidden">
@@ -175,6 +206,47 @@ export function CheckoutForm({
               <p className="text-sm text-muted">Hoy pagas la primera cuota. Te recordamos cada mes antes del siguiente pago.</p>
             )}
           </Card>
+
+          {kycFieldsFor(offer.insurerId).length > 0 && (
+            <Card className="space-y-4 p-5" role="region" aria-labelledby="kyc-title">
+              <div>
+                <h2 id="kyc-title" className="font-bold text-heading">Conocimiento del cliente</h2>
+                <p className="text-sm text-muted">
+                  {offer.insurerName} pide estos datos por norma (SARLAFT) antes de emitir la póliza.
+                </p>
+              </div>
+              {kycFieldsFor(offer.insurerId).map((f) =>
+                f.type === "select" ? (
+                  <Field key={f.key} label={f.label} htmlFor={`kyc-${f.key}`} hint={f.help} error={kycErrors[f.key]}>
+                    <select
+                      id={`kyc-${f.key}`}
+                      className={inputClass}
+                      value={String(kyc[f.key] ?? "")}
+                      aria-invalid={!!kycErrors[f.key]}
+                      onChange={(e) => setKyc((k) => ({ ...k, [f.key]: e.target.value }))}
+                    >
+                      <option value="">Selecciona</option>
+                      {f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </Field>
+                ) : (
+                  <fieldset key={f.key} className="space-y-2">
+                    <legend className="text-sm font-semibold text-heading">{f.label}</legend>
+                    {f.help && <p className="text-xs text-muted">{f.help}</p>}
+                    <div className="flex gap-2">
+                      {[{ v: true, l: "Sí" }, { v: false, l: "No" }].map(({ v, l }) => (
+                        <label key={l} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-2xl border-2 text-sm font-semibold has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand ${kyc[f.key] === v ? "border-brand bg-brand-soft text-heading" : "border-line text-heading"}`}>
+                          <input id={v ? `kyc-${f.key}` : undefined} type="radio" name={`kyc-${f.key}`} className="sr-only" checked={kyc[f.key] === v} onChange={() => setKyc((k) => ({ ...k, [f.key]: v }))} />
+                          {l}
+                        </label>
+                      ))}
+                    </div>
+                    {kycErrors[f.key] && <p role="alert" className="text-xs font-medium text-coral">{kycErrors[f.key]}</p>}
+                  </fieldset>
+                ),
+              )}
+            </Card>
+          )}
 
           <Card className="space-y-3 p-5">
             <h2 className="font-bold text-heading">Autorizaciones</h2>
