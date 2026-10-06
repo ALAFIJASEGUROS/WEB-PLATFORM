@@ -42,12 +42,13 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Marca | HU-13.6 | Logos oficiales con autorización |
 
 ### Solo código (siguientes candidatos)
+- Sprint 6 sugerido (épica E17): estados de pago y póliza, revalidar precio antes de pagar, emisión asíncrona, elegibilidad por uso, etiquetas de recomendación, resumen editable y avisos de mora.
 - HU-04.4: pruebas A/B de pesos del recomendador.
 - HU-09.4: lectura automática de pólizas en PDF.
 - Habilitar una nueva línea (hogar o viaje) siguiendo [nuevas-lineas.md](nuevas-lineas.md). SOAT depende del RUNT.
 
-### Investigación pendiente
-Pasarelas (tarifas, recurrencia, Bre-B), métodos del recomendador y riesgo de que se considere asesoría, APIs de aseguradoras y proveedores de RUNT, pruebas con usuarios y costos de WhatsApp y SMS. Ver [01-investigacion.md](01-investigacion.md).
+### Investigación
+Los 7 frentes terminaron (ver [01-investigacion.md](01-investigacion.md) y [investigacion/](investigacion/)). De ahí salen las historias de la épica E17 del backlog; las de solo código forman el Sprint 6 sugerido. Quedan pendientes las pruebas con usuarios reales.
 
 ## Riesgos conocidos
 - **Datos en memoria:** no apto para usuarios reales hasta tener Supabase.

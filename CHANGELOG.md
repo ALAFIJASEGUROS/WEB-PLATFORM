@@ -6,6 +6,9 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 [docs/versionamiento.md](docs/versionamiento.md).
 
 ## [No publicado]
+### Documentación
+- Investigación completa de pagos, recomendador, integraciones, UX y cuenta en `docs/investigacion/`, resumida en `docs/01-investigacion.md`.
+- Épica E17 del backlog con las funcionalidades derivadas y Sprint 6 sugerido.
 
 ## [0.7.0] - 2026-10-06 · Sprint 5
 ### Agregado

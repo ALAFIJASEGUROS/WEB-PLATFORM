@@ -1,8 +1,8 @@
 # Investigación (corte 2026-10-06)
 
-> **Alcance real:** de los 7 frentes planeados, solo **benchmark** y **regulación** terminaron
-> con búsqueda web. Pagos, recomendador, integraciones, UX y cuenta se cortaron por límite de
-> uso y quedan como **pendientes** (ver [backlog](04-backlog.md), épica E15).
+> **Alcance:** los 7 frentes terminaron. Este documento cubre **benchmark** y **regulación**; los
+> otros cinco tienen su propio documento en [investigacion/](investigacion/) y se resumen en la
+> sección 4. Las funcionalidades derivadas están en el [backlog](04-backlog.md), épica E17.
 > Lo marcado **[no verificado]** viene de conocimiento general y hay que confirmarlo.
 
 ## 1. Benchmark competitivo
@@ -82,6 +82,19 @@ Es una agencia con licencia. El cuestionario toma menos de 2 minutos y compara e
 - Sesgo percibido por la comisión: se mitiga con la página *Cómo funciona* y con la comisión fuera del puntaje.
 - Dependencia de que existan APIs de las aseguradoras; si no, el modelo cae en lead-gen manual.
 - Acceso restringido a RUNT y Fasecolda.
+
+## 4. Frentes complementarios (resumen)
+
+| Frente | Documento | Implicaciones principales |
+| --- | --- | --- |
+| Pagos | [payments.md](investigacion/payments.md) | Abstraer la pasarela (`PaymentProvider`) para no depender solo de Wompi y sumar PayU como respaldo. Máquina de estados de pago y de póliza con transiciones monótonas. Emitir solo con el webhook, nunca con el redirect. Priorizar Nequi, PSE, Daviplata, Bancolombia y QR/Bre-B en móvil. Recaudo directo o *split* por aseguradora para evitar el 4x1000 y el riesgo de recaudar primas sin figura. Avisos de mora: la mora termina el contrato (art. 1068 C. Co.). |
+| Recomendador | [recommender.md](investigacion/recommender.md) | Separar **elegibilidad** (filtros duros: uso en plataformas, domicilios, prenda del banco) del **puntaje**. Subpuntajes 0–100 por dimensión, empate técnico y etiquetas "Mejor para ti", "Mejor precio" y "Mejor cobertura". Guardar versión del algoritmo, pesos y posiciones de cada recomendación. Página pública con la metodología y declarar cuántas aseguradoras se comparan. Riesgo de que se considere asesoría: definir la figura legal. |
+| Integraciones | [integrations.md](investigacion/integrations.md) | No hay APIs públicas: cada aseguradora exige convenio. Contrato de adaptador v2 (idempotencia en la emisión, estado de emisión, documento, *healthcheck*, vigencia de la cotización). Emisión asíncrona con *outbox* y reintentos, y revalidar el precio antes de pagar. RUNT y Fasecolda solo vía proveedor autorizado y con consentimiento. **Recomienda reemplazar las marcas reales de los mocks por aseguradoras ficticias.** |
+| UX | [ux.md](investigacion/ux.md) | Quitar claims sin respaldo (ahorros, número de aseguradoras). Bloque de precio normalizado (prima, IVA, total, cuota, deducible en % y SMMLV). Resumen editable al final del cuestionario, estados de carga parciales, comparador apilado en móvil, CTA *sticky* sin tapar el foco. PWA instalable con íconos PNG. Pruebas con 5–8 usuarios por segmento. |
+| Cuenta | [account.md](investigacion/account.md) | Cuenta sombra por documento tras la compra y reclamación con OTP en el canal usado. Login por WhatsApp/SMS además de correo. Centro de preferencias (tipo × canal) con los transaccionales no desactivables. Motor de reglas de mensajes (Ley 2300 y RNE). Tablas configurables de pico y placa e impuesto. Guía de siniestros por aseguradora y revocación asistida. |
+
+**Decisiones que dependen del negocio:** figura de intermediación (agencia, corredor o corresponsal
+digital), quién recauda la prima y si se mantienen las marcas reales en el prototipo.
 
 ## Fuentes
 - [B1] Portafolio, comprar seguro de carro: https://www.portafolio.co/economia/finanzas/lo-que-debe-saber-antes-de-comprar-un-seguro-para-su-carro-529941

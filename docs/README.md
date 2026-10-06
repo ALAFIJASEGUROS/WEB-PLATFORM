@@ -5,6 +5,7 @@
 - [Versionamiento](versionamiento.md): SemVer, changelog, releases y versión visible
 - [CHANGELOG](../CHANGELOG.md)
 
-- [Investigación](01-investigacion.md): benchmark y marco regulatorio (parcial)
+- [Investigación](01-investigacion.md): benchmark, marco regulatorio y resumen de los demás frentes
+  - [Pagos](investigacion/payments.md) · [Recomendador](investigacion/recommender.md) · [Integraciones](investigacion/integrations.md) · [UX](investigacion/ux.md) · [Cuenta y mensajería](investigacion/account.md)
 - [Backlog](04-backlog.md): épicas, historias, estado y próximo sprint
 - [Plan de trabajo](plan.md): decisiones tomadas e iteraciones
