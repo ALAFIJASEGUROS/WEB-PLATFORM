@@ -7,10 +7,14 @@ import {
   Check,
   CreditCard,
   Eye,
+  KeyRound,
+  LifeBuoy,
   ListChecks,
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Users,
+  Wrench,
 } from "lucide-react";
 import { ButtonLink, Card } from "@/components/ui";
 import { Footer } from "@/components/Footer";
@@ -28,6 +32,13 @@ const BENEFITS = [
 ];
 
 const INSURERS = ["SURA", "Seguros Bolívar"];
+
+const COVERAGES = [
+  { icon: Users, tone: "bg-brand-soft text-brand", title: "Responsabilidad civil", text: "Paga los daños que le causes a otras personas o a sus bienes. Es la base de cualquier póliza." },
+  { icon: Wrench, tone: "bg-sun-soft text-sun-ink", title: "Daños a tu vehículo", text: "Cubre el arreglo si chocas. La pérdida parcial es para arreglos y la total para cuando no vale la pena repararlo." },
+  { icon: KeyRound, tone: "bg-coral-soft text-coral", title: "Hurto", text: "Te pagan el valor del vehículo si lo roban, y en algunos planes también las partes robadas." },
+  { icon: LifeBuoy, tone: "bg-mint-soft text-mint", title: "Asistencias", text: "Grúa, vehículo de reemplazo, conductor elegido o asistencia jurídica. Varían mucho entre planes." },
+];
 
 function HeroPreview() {
   return (
@@ -135,6 +146,36 @@ export default function Home() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-14" aria-labelledby="cubre">
+        <div className="grid gap-8 md:grid-cols-[1fr_2fr] md:items-start">
+          <div>
+            <h2 id="cubre" className="text-2xl font-extrabold tracking-tight text-heading md:text-3xl">
+              ¿Qué cubre un seguro de carro o moto?
+            </h2>
+            <p className="mt-3 text-muted">
+              El SOAT es obligatorio y cubre a las personas lesionadas. El seguro voluntario protege
+              tu vehículo y tu bolsillo frente a terceros. Estas son las coberturas que comparamos:
+            </p>
+            <Link href="/ayuda" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-brand hover:underline">
+              Más preguntas frecuentes →
+            </Link>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {COVERAGES.map((c) => (
+              <li key={c.title} className="flex gap-4 rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
+                <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${c.tone}`}>
+                  <c.icon className="size-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-bold text-heading">{c.title}</h3>
+                  <p className="mt-1 text-sm text-muted">{c.text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <section className="bg-surface py-14" aria-labelledby="por-que">

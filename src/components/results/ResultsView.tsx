@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Pencil, SlidersHorizontal } from "lucide-react";
-import { PRIORITY_LABELS } from "@/domain/labels";
+import { formatCOP, PRIORITY_LABELS } from "@/domain/labels";
+import type { QuoteRequest } from "@/domain/types";
 import { fetchQuote } from "@/lib/api-client";
 import { track } from "@/lib/analytics";
 import {
@@ -117,11 +118,54 @@ export function ResultsView() {
     );
   }
 
+  const pill = "min-h-10 rounded-full border-2 border-line bg-surface px-3 text-sm font-semibold text-heading";
+  const filters = (size: "sm" | "lg") => {
+    const block = size === "lg" ? "w-full" : "";
+    return (
+      <>
+        <label className={size === "lg" ? "block text-xs font-semibold text-muted" : "sr-only"} htmlFor={`sort-${size}`}>Ordenar por</label>
+        <select id={`sort-${size}`} value={sort} onChange={(e) => setSort(e.target.value as Sort)} className={`${pill} ${block}`}>
+          <option value="afinidad">Más afines</option>
+          <option value="precio">Menor precio</option>
+          <option value="cobertura">Mayor cobertura</option>
+        </select>
+        <label className={size === "lg" ? "block text-xs font-semibold text-muted" : "sr-only"} htmlFor={`insurer-${size}`}>Aseguradora</label>
+        <select id={`insurer-${size}`} value={insurer} onChange={(e) => setInsurer(e.target.value)} className={`${pill} ${block}`}>
+          <option value="todas">Todas las aseguradoras</option>
+          {insurers.map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          aria-pressed={onlyFull}
+          onClick={() => setOnlyFull(!onlyFull)}
+          className={`min-h-10 shrink-0 rounded-full border-2 px-3 text-sm font-semibold ${block} ${onlyFull ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-heading"}`}
+        >
+          Solo todo riesgo
+        </button>
+      </>
+    );
+  };
+
   const [top] = data.offers;
   const v = request.vehicle;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto max-w-3xl px-4 py-6 lg:grid lg:max-w-6xl lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-8">
+      <aside className="hidden lg:block" aria-label="Tu perfil y filtros">
+        <div className="sticky top-24 space-y-4">
+          <ProfileCard request={request} />
+          <div className="space-y-3 rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
+            <p className="flex items-center gap-2 font-bold text-heading">
+              <SlidersHorizontal className="size-4" aria-hidden /> Filtros
+            </p>
+            {filters("lg")}
+          </div>
+        </div>
+      </aside>
+
+      <div className="min-w-0">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-heading">
@@ -162,29 +206,9 @@ export function ResultsView() {
         </section>
       )}
 
-      <div className="hide-scrollbar -mx-4 mt-8 flex items-center gap-2 overflow-x-auto px-4 pb-1">
+      <div className="hide-scrollbar -mx-4 mt-8 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:hidden">
         <SlidersHorizontal className="size-4 shrink-0 text-muted" aria-hidden />
-        <label className="sr-only" htmlFor="sort">Ordenar por</label>
-        <select id="sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="min-h-10 rounded-full border-2 border-line bg-surface px-3 text-sm font-semibold text-heading">
-          <option value="afinidad">Más afines</option>
-          <option value="precio">Menor precio</option>
-          <option value="cobertura">Mayor cobertura</option>
-        </select>
-        <label className="sr-only" htmlFor="insurer">Aseguradora</label>
-        <select id="insurer" value={insurer} onChange={(e) => setInsurer(e.target.value)} className="min-h-10 rounded-full border-2 border-line bg-surface px-3 text-sm font-semibold text-heading">
-          <option value="todas">Todas las aseguradoras</option>
-          {insurers.map(([id, name]) => (
-            <option key={id} value={id}>{name}</option>
-          ))}
-        </select>
-        <button
-          type="button"
-          aria-pressed={onlyFull}
-          onClick={() => setOnlyFull(!onlyFull)}
-          className={`min-h-10 shrink-0 rounded-full border-2 px-3 text-sm font-semibold ${onlyFull ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-heading"}`}
-        >
-          Todo riesgo
-        </button>
+        {filters("sm")}
       </div>
 
       <h2 className="sr-only">Todas las opciones</h2>
@@ -205,9 +229,11 @@ export function ResultsView() {
         )}
       </div>
 
+      </div>
+
       {compare.length >= 2 && (
         <div className="pb-safe fixed inset-x-0 bottom-16 z-30 border-t border-line bg-navy px-4 pt-3 md:bottom-0">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 lg:max-w-6xl">
             <p className="text-sm font-semibold text-white">
               {compare.length} de {MAX_COMPARE} seleccionadas
             </p>
@@ -220,6 +246,34 @@ export function ResultsView() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ProfileCard({ request }: { request: QuoteRequest }) {
+  const { vehicle: v, driver, answers: a } = request;
+  const rows = [
+    ["Vehículo", `${v.brand} ${v.model} ${v.year}`],
+    ["Placa", v.plate ?? "—"],
+    ["Valor", formatCOP(v.commercialValue)],
+    ["Ciudad", driver.city],
+    ["Uso", a.use === "particular" ? "Personal" : a.use === "trabajo" ? "Trabajo" : "Domicilios / plataformas"],
+    ["Prioridad", PRIORITY_LABELS[a.priority]],
+  ];
+  return (
+    <div className="rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between">
+        <p className="font-bold text-heading">Tu perfil</p>
+        <Link href={`/cotizar/${v.type}`} className="text-sm font-semibold text-brand hover:underline">Editar</Link>
+      </div>
+      <dl className="mt-3 space-y-2 text-sm">
+        {rows.map(([k, val]) => (
+          <div key={k} className="flex justify-between gap-3">
+            <dt className="text-muted">{k}</dt>
+            <dd className="text-right font-semibold text-ink">{val}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
