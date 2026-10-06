@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { startCheckout } from "@/lib/api-client";
 import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { policyholderSchema, type Policyholder } from "@/domain/schemas";
@@ -19,6 +21,7 @@ export function CheckoutForm({
   defaultEmail?: string;
   simulatedPayments: boolean;
 }) {
+  const router = useRouter();
   const hydrated = useHydrated();
   const request = useQuoteRequest();
   const response = useQuoteResponse();
@@ -78,20 +81,15 @@ export function CheckoutForm({
     }
     setSubmitting(true);
     try {
-      const res = await fetch("/api/ordenes", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          quote: request,
-          offerId,
-          paymentPlan: plan,
-          policyholder: parsed.data,
-          consents: { terms, dataProcessing: data, marketing },
-        }),
+      const { redirectUrl } = await startCheckout({
+        quote: request!,
+        offerId,
+        paymentPlan: plan,
+        policyholder: parsed.data,
+        consents: { terms, dataProcessing: data, marketing },
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "No pudimos iniciar el pago.");
-      window.location.assign(json.redirectUrl);
+      if (redirectUrl.startsWith("/")) router.push(redirectUrl);
+      else window.location.assign(redirectUrl);
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "No pudimos iniciar el pago.");
       setSubmitting(false);

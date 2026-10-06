@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Pencil, SlidersHorizontal } from "lucide-react";
-import type { QuoteRequest, QuoteResponse } from "@/domain/types";
 import { PRIORITY_LABELS } from "@/domain/labels";
+import { fetchQuote } from "@/lib/api-client";
 import {
   quoteStore,
   useCompare,
@@ -18,16 +18,6 @@ import { OfferCard } from "./OfferCard";
 
 type Sort = "afinidad" | "precio" | "cobertura";
 const MAX_COMPARE = 3;
-
-async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
-  const res = await fetch("/api/cotizaciones", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(req),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
 
 export function ResultsView() {
   const router = useRouter();

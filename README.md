@@ -26,6 +26,17 @@ npm run lint && npm run typecheck
 3. Póliza emitida → "Guardarla en mi cuenta" → el código OTP aparece en pantalla en modo demo.
 4. `/admin` (en desarrollo no pide contraseña): órdenes, campañas y bandeja de mensajes simulados.
 
+## Demo estática (GitHub Pages)
+
+`npm run build:static` genera en `out/` una versión sin servidor. La cotización y la
+recomendación corren en el navegador, y la compra, la póliza y "Mis seguros" se
+simulan con `localStorage`. La cuenta completa y `/admin` necesitan servidor y
+en esta versión muestran un aviso. Las páginas que reemplazan a las del servidor
+están en `static-demo/app`.
+
+El workflow `.github/workflows/pages.yml` la publica en cada push. Para eso,
+en *Settings → Pages* el origen debe ser **GitHub Actions**.
+
 ## Arquitectura
 
 | Carpeta | Contenido |

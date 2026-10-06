@@ -34,6 +34,7 @@ import {
   plateType,
 } from "@/vehicles/lookup";
 import { quoteStore, useHydrated } from "@/lib/quote-store";
+import { lookupVehicle } from "@/lib/api-client";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { OptionCard, OptionGroup } from "./OptionCard";
 
@@ -124,9 +125,7 @@ function Wizard({ type }: { type: VehicleType }) {
     }
     setLookingUp(true);
     try {
-      const res = await fetch(`/api/vehiculos/${p}`);
-      if (!res.ok) throw new Error((await res.json()).error);
-      setVehicle(await res.json());
+      setVehicle(await lookupVehicle(p));
     } catch (e) {
       setLookupError(e instanceof Error ? e.message : "No pudimos consultar la placa.");
     } finally {

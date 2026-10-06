@@ -62,8 +62,8 @@ export function lookupPlate(rawPlate: string): Vehicle | null {
   const h = hash(plate);
   const brands = CATALOG[type];
   const b = brands[h % brands.length];
-  const m = b.models[(h >> 4) % b.models.length];
-  const year = CURRENT_YEAR - ((h >> 8) % 12);
+  const m = b.models[(h >>> 4) % b.models.length];
+  const year = CURRENT_YEAR - ((h >>> 8) % 12);
   return {
     type,
     plate,
