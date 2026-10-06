@@ -5,7 +5,7 @@ import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { ButtonLink, Card } from "@/components/ui";
 import { formatCOP } from "@/domain/labels";
 import { getCurrentUser } from "@/server/auth";
-import { applyPaymentUpdate, getOrderForViewer } from "@/server/orders";
+import { applyPaymentUpdate, getOrderForViewer, processIssuance } from "@/server/orders";
 import { paymentProvider } from "@/server/payments";
 import { AutoRefresh } from "./AutoRefresh";
 
@@ -52,6 +52,9 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
     }
   }
 
+  // Pago aprobado con la emisión pendiente: si ya le toca, se reintenta aquí.
+  if (order.status === "aprobada") await processIssuance(order.id);
+
   const amount = formatCOP(order.amountInCents / 100);
 
   if (order.status === "emitida" && order.policyId) {
@@ -79,7 +82,21 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
     );
   }
 
-  if (order.status === "pendiente" || order.status === "aprobada") {
+  if (order.status === "aprobada") {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <AutoRefresh />
+        <Clock className="mx-auto size-16 text-brand" aria-hidden />
+        <h1 className="mt-4 text-2xl font-extrabold text-heading">Pago aprobado. Estamos emitiendo tu póliza</h1>
+        <p className="mt-2 text-muted">
+          Recibimos {amount}. {order.offer.insurerName} está tardando más de lo normal en emitir; lo
+          reintentamos automáticamente y te enviaremos la póliza por correo. No vuelvas a pagar.
+        </p>
+      </div>
+    );
+  }
+
+  if (order.status === "pendiente") {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <AutoRefresh />

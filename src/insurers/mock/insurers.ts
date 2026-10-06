@@ -45,6 +45,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
   name: "SURA",
   latencyMs: [400, 1200],
   failPlatePrefix: "ERR",
+  failIssuePlatePrefix: "EMI",
   regulatory: { contractModel: "simulado", kycFields: [OCCUPATION, PEP] },
   cityFactor: { Bogotá: 1.1, Medellín: 0.95, Cali: 1.08, Barranquilla: 1.05 },
   plans: [
@@ -81,6 +82,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
       services: ["grua", "conductorElegido", "cerrajeria", "llantas"],
       substituteCarDays: 7,
       exclusions: ["Hurto de partes", "Llantas y rines por desgaste"],
+      allowedUses: ["particular", "trabajo"],
     },
     {
       code: "auto-clasico",
@@ -145,6 +147,7 @@ export const SURA_CONFIG: MockInsurerConfig = {
       services: ["grua", "asistenciaJuridica"],
       substituteCarDays: 0,
       exclusions: ["Hurto de partes", "Accesorios no declarados"],
+      allowedUses: ["particular", "trabajo"],
     },
   ],
 };
@@ -153,6 +156,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
   id: "bolivar",
   name: "Seguros Bolívar",
   latencyMs: [700, 1800],
+  failIssuePlatePrefix: "EMI",
   regulatory: { contractModel: "simulado", kycFields: [OCCUPATION, INCOME, PEP] },
   cityFactor: { Bogotá: 1.06, Medellín: 1.0, Cali: 1.12, Cartagena: 0.97 },
   plans: [
@@ -169,6 +173,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
       services: ["grua", "cerrajeria"],
       substituteCarDays: 0,
       exclusions: ["Pérdidas parciales por daños", "Hurto de partes", "Eventos de la naturaleza"],
+      allowedUses: ["particular", "trabajo"],
     },
     {
       code: "auto-plus",
@@ -210,6 +215,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
       services: ["grua"],
       substituteCarDays: 0,
       exclusions: ["Daños a tu propia moto", "Hurto de partes"],
+      allowedUses: ["particular"],
     },
     {
       code: "moto-plus",

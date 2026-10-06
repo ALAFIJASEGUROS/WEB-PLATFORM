@@ -102,6 +102,8 @@ export interface Offer {
   conditionsUrl: string;
   /** Fecha ISO hasta la que el precio es válido. */
   validUntil: string;
+  /** Usos del vehículo que el plan acepta. Si no viene, acepta todos. */
+  allowedUses?: VehicleUse[];
 }
 
 export interface ScoredOffer extends Offer {
@@ -112,7 +114,15 @@ export interface ScoredOffer extends Offer {
   labels: OfferLabel[];
 }
 
-export type OfferLabel = "recomendado" | "menorPrecio" | "mayorCobertura";
+export type OfferLabel = "recomendado" | "menorPrecio" | "mayorCobertura" | "empate";
+
+/** Oferta descartada por un requisito que no cumple (no entra al puntaje). */
+export interface ExcludedOffer {
+  id: string;
+  insurerName: string;
+  planName: string;
+  reason: string;
+}
 
 export interface InsurerError {
   insurerId: string;
@@ -124,4 +134,8 @@ export interface QuoteResponse {
   quoteId: string;
   offers: ScoredOffer[];
   errors: InsurerError[];
+  /** Ofertas que no cumplen un requisito del usuario (uso, financiación). */
+  excluded?: ExcludedOffer[];
+  /** Versión del algoritmo de recomendación que ordenó las ofertas. */
+  algorithm?: string;
 }

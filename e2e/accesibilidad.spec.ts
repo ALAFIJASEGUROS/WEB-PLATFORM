@@ -34,6 +34,8 @@ for (const scheme of ["light", "dark"] as const) {
       await page.getByLabel("Ciudad donde circula").selectOption("Cali");
       for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Continuar" }).click();
       await audit(page, "cuestionario");
+      await page.getByRole("button", { name: "Continuar" }).click();
+      await audit(page, "resumen del cuestionario");
       await page.getByRole("button", { name: "Ver mis opciones" }).click();
       await expect(page.getByText("Nuestra recomendación")).toBeVisible({ timeout: 15_000 });
       await audit(page, "/resultados");

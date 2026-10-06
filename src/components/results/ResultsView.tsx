@@ -161,6 +161,7 @@ export function ResultsView() {
   };
 
   const [top] = data.offers;
+  const tie = top?.labels.includes("empate") ? data.offers[1] : undefined;
   const v = request.vehicle;
 
   return (
@@ -215,6 +216,13 @@ export function ResultsView() {
           <h2 id="rec" className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">
             Nuestra recomendación
           </h2>
+          {tie && (
+            <p className="mb-3 rounded-xl bg-canvas px-3 py-2 text-sm text-ink">
+              <strong>Empate técnico:</strong> {top.planName} y {tie.planName} ({tie.insurerName}) quedaron
+              a menos de 2 puntos. Te recomendamos la más económica; compáralas si te importa algún
+              detalle en particular.
+            </p>
+          )}
           <OfferCard
             offer={top}
             highlight
@@ -247,6 +255,22 @@ export function ResultsView() {
           <p className="py-10 text-center text-muted">Ninguna opción cumple esos filtros.</p>
         )}
       </div>
+
+      {!!data.excluded?.length && (
+        <details className="mt-6 rounded-[var(--radius-card)] bg-surface p-4 shadow-[var(--shadow-card)]">
+          <summary className="cursor-pointer text-sm font-semibold text-heading">
+            {data.excluded.length === 1 ? "1 plan no aplica" : `${data.excluded.length} planes no aplican`} para tu caso
+          </summary>
+          <ul className="mt-3 space-y-2 text-sm">
+            {data.excluded.map((o) => (
+              <li key={o.id}>
+                <span className="font-semibold text-ink">{o.planName}</span>{" "}
+                <span className="text-muted">({o.insurerName}): {o.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       </div>
 

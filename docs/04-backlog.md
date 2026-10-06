@@ -177,20 +177,20 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | ID | Historia | Fuente | Estado | Prio | Rel | Pts |
 | --- | --- | --- | --- | --- | --- | --- |
 | HU-17.1 | Como plataforma quiero una interfaz `PaymentProvider` para sumar una segunda pasarela sin tocar el checkout | payments | ⬜ Código | M | V1 | 5 |
-| HU-17.2 | Como plataforma quiero una máquina de estados explícita de pago y póliza (transiciones monótonas) | payments | ⬜ Código | M | MVP | 5 |
-| HU-17.3 | Como usuario quiero que el precio se revalide antes de pagar si la cotización venció | integrations | ⬜ Código | M | MVP | 3 |
-| HU-17.4 | Como plataforma quiero emitir de forma asíncrona con *outbox*, idempotencia y reintentos | integrations | ⬜ Código (cola real: Dep) | M | MVP | 8 |
-| HU-17.5 | Como usuario quiero que se descarten las pólizas que no cubren mi uso (plataformas, domicilios en moto) | recommender | ⬜ Código | M | MVP | 5 |
-| HU-17.6 | Como plataforma quiero guardar versión del algoritmo, pesos y posiciones de cada recomendación | recommender | ⬜ Código (persistir: Dep Supabase) | S | MVP | 3 |
-| HU-17.7 | Como usuario quiero etiquetas "Mejor precio" y "Mejor cobertura" y un empate técnico explícito | recommender | ⬜ Código | S | MVP | 3 |
-| HU-17.8 | Como usuario quiero revisar y editar mis respuestas antes de cotizar | ux | ⬜ Código | S | MVP | 3 |
+| HU-17.2 | Como plataforma quiero una máquina de estados explícita de pago y póliza (transiciones monótonas) | payments | ✅ | M | MVP | 5 |
+| HU-17.3 | Como usuario quiero que el precio se revalide antes de pagar si la cotización venció | integrations | ✅ | M | MVP | 3 |
+| HU-17.4 | Como plataforma quiero emitir de forma asíncrona con *outbox*, idempotencia y reintentos | integrations | ✅ | M | MVP | 8 |
+| HU-17.5 | Como usuario quiero que se descarten las pólizas que no cubren mi uso (plataformas, domicilios en moto) | recommender | ✅ | M | MVP | 5 |
+| HU-17.6 | Como plataforma quiero guardar versión del algoritmo, pesos y posiciones de cada recomendación | recommender | 🟡 Versión en cada cotización (persistir: Dep Supabase) | S | MVP | 3 |
+| HU-17.7 | Como usuario quiero etiquetas "Mejor precio" y "Mejor cobertura" y un empate técnico explícito | recommender | ✅ | S | MVP | 3 |
+| HU-17.8 | Como usuario quiero revisar y editar mis respuestas antes de cotizar | ux | ✅ | S | MVP | 3 |
 | HU-17.9 | Como usuario quiero instalar la app (PWA con íconos PNG y página sin conexión) | ux | ⬜ Código | C | V1 | 3 |
 | HU-17.10 | Como usuario quiero un centro de preferencias por tipo de mensaje y canal | account | ⬜ Código | S | MVP | 5 |
 | HU-17.11 | Como usuario quiero una guía de siniestros por aseguradora con contactos | account | ⬜ Código (contactos reales: Dep) | S | MVP | 3 |
 | HU-17.12 | Como plataforma quiero reemplazar las marcas reales de los mocks por aseguradoras ficticias | integrations, ux | ⬜ Decisión del negocio | M | MVP | 2 |
 | HU-17.13 | Como usuario quiero entrar con código por WhatsApp o SMS | account | ⬜ Dep (WhatsApp/SMS) | S | V1 | 5 |
 | HU-17.14 | Como plataforma quiero recaudo por aseguradora (split o comercio propio) | payments | ⬜ Dep (pasarela y figura legal) | M | V1 | 8 |
-| HU-17.15 | Como usuario quiero avisos de mora antes de que termine el contrato | payments | ⬜ Código | M | V1 | 3 |
+| HU-17.15 | Como usuario quiero avisos de mora antes de que termine el contrato | payments | ✅ | M | V1 | 3 |
 
 ---
 
@@ -210,11 +210,14 @@ HU-02.4 (metadatos regulatorios por adaptador), HU-06.5 (campos SARLAFT por aseg
 HU-06.4 (aceptación de condiciones con código por correo), HU-07.5 (conciliación de pagos con cron y panel),
 HU-16.1 (registro de líneas de seguro y guía en docs/nuevas-lineas.md).
 
-## Próximo sprint sugerido (Sprint 6, solo código)
-Robustez del flujo de compra y del recomendador según la investigación: HU-17.2 (estados de pago y póliza),
-HU-17.3 (revalidar precio), HU-17.4 (emisión asíncrona con outbox en memoria), HU-17.5 (elegibilidad),
-HU-17.7 (etiquetas y empate), HU-17.8 (resumen editable) y HU-17.15 (avisos de mora).
-También quedan HU-04.4 (A/B de pesos) y HU-09.4 (lectura de pólizas en PDF).
+## Sprint 6 (completado)
+HU-17.2 (estados de la orden), HU-17.3 (revalidar precio), HU-17.4 (emisión asíncrona con reintentos e idempotencia),
+HU-17.5 (elegibilidad por uso y financiación), HU-17.7 (empate técnico), HU-17.8 (resumen editable),
+HU-17.15 (avisos de mora) y la versión del algoritmo (parte de HU-17.6).
+
+## Próximo sprint sugerido (Sprint 7, solo código)
+HU-17.1 (interfaz `PaymentProvider` para una segunda pasarela), HU-17.10 (centro de preferencias por tipo y canal),
+HU-17.11 (guía de siniestros por aseguradora), HU-17.9 (PWA instalable), HU-04.4 (A/B de pesos) y HU-09.4 (lectura de pólizas en PDF).
 Con terceros: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).
 
 ## Bloqueados por terceros

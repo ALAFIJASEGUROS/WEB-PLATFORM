@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ContentPage } from "@/components/ContentPage";
 import { ButtonLink } from "@/components/ui";
-import { PRIORITY_WEIGHTS } from "@/recommendation/scoring";
+import { ALGORITHM_VERSION, PRIORITY_WEIGHTS, TIE_THRESHOLD } from "@/recommendation/scoring";
 import { PRIORITY_LABELS } from "@/domain/labels";
 import type { Priority } from "@/domain/types";
 
@@ -19,7 +19,15 @@ export default function Page() {
         Si alguna no responde a tiempo, te mostramos las demás y te avisamos.
       </p>
 
-      <h2>2. Calculamos tu afinidad con cada opción</h2>
+      <h2>2. Descartamos lo que no te sirve</h2>
+      <p>
+        Antes de ordenar, quitamos los planes que no cumplen un requisito tuyo: los que no aceptan el
+        uso que le das al vehículo (por ejemplo, domicilios o plataformas) y, si está financiado, los
+        que no incluyen daños y hurto total, que el banco exige. En los resultados te mostramos cuáles
+        quedaron por fuera y por qué.
+      </p>
+
+      <h2>3. Calculamos tu afinidad con cada opción</h2>
       <p>Cada opción recibe un puntaje de 0 a 100 que combina tres dimensiones según tu prioridad:</p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -37,19 +45,24 @@ export default function Page() {
         </table>
       </div>
       <p>
-        Además ajustamos el resultado si tu vehículo está financiado (los bancos suelen exigir daños y
-        hurto), si se parquea en la calle (el hurto pesa más), si lo usas para trabajar (accidentes
-        personales y responsabilidad civil pesan más) o si el deducible es mayor al que prefieres.
+        El precio se mide frente a la opción más barata: una diferencia de pocos pesos casi no cambia
+        el puntaje. Además ajustamos el resultado si se parquea en la calle (el hurto pesa más), si lo
+        usas para trabajar (accidentes personales y responsabilidad civil pesan más) o si el deducible
+        es mayor al que prefieres.
+      </p>
+      <p>
+        Si las dos mejores opciones quedan a menos de {TIE_THRESHOLD} puntos, lo indicamos como empate
+        técnico y recomendamos la más económica. Versión del método: {ALGORITHM_VERSION}.
       </p>
 
-      <h2>3. La comisión no cambia el orden</h2>
+      <h2>4. La comisión no cambia el orden</h2>
       <p>
         Cuando compras, la aseguradora nos paga una comisión. Esa comisión no forma parte del puntaje
         de recomendación y el precio que ves es el mismo que pagarías directamente. Las ofertas
         patrocinadas siempre se marcan como publicidad.
       </p>
 
-      <h2>4. Compras desde el celular</h2>
+      <h2>5. Compras desde el celular</h2>
       <p>Pagas a través de Wompi y recibes tu póliza por correo. Si creas una cuenta, te recordamos renovaciones, SOAT y tecnomecánica.</p>
 
       <ButtonLink href="/cotizar" className="mt-4">Cotizar ahora</ButtonLink>

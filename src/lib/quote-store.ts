@@ -8,7 +8,7 @@ import type { QuoteRequest, QuoteResponse } from "@/domain/types";
 
 const KEYS = {
   request: "saf:quote-request",
-  response: "saf:quote-response:v2",
+  response: "saf:quote-response:v3",
   compare: "saf:compare",
 } as const;
 type Key = (typeof KEYS)[keyof typeof KEYS];

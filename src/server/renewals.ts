@@ -1,7 +1,7 @@
 import "server-only";
-import { COVERAGE_KEYS, type ScoredOffer } from "@/domain/types";
+import { COVERAGE_KEYS, type Offer, type ScoredOffer } from "@/domain/types";
 import { quoteWithCache } from "@/insurers/cache";
-import { scoreOffers } from "@/recommendation/scoring";
+import { recommend } from "@/recommendation/scoring";
 import { db, type Policy } from "./db";
 import { daysUntil } from "./queries";
 
@@ -16,8 +16,7 @@ export interface RenewalSuggestion {
   savings: number;
 }
 
-function coversAtLeast(offer: ScoredOffer, current: ScoredOffer | undefined) {
-  if (!current) return true;
+function coversAtLeast(offer: Offer, current: Offer) {
   return COVERAGE_KEYS.every((k) => !current.coverages[k] || offer.coverages[k]) && offer.rcLimit >= current.rcLimit;
 }
 
@@ -36,8 +35,10 @@ export async function renewalSuggestions(userId: string, now = new Date()): Prom
     const order = policy.orderId ? d.orders.get(policy.orderId) : undefined;
     if (!order) continue;
     const { offers } = await quoteWithCache(order.quote);
-    const scored = scoreOffers(offers, order.quote.answers);
-    const current = scored.find((o) => o.id === order.offer.id);
+    // Solo ofertas elegibles para el uso y la financiación declarados, comparadas
+    // contra la cobertura de la póliza que se compró.
+    const { offers: scored } = recommend(offers, order.quote.answers);
+    const current = order.offer;
     const best = scored
       .filter((o) => o.id !== order.offer.id && coversAtLeast(o, current))
       .sort((a, b) => a.annualPremium - b.annualPremium)[0];

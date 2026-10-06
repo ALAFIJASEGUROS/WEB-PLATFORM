@@ -20,8 +20,21 @@ import { paymentProvider, type PaymentUpdate } from "./payments";
 import { recordEvent } from "./analytics";
 import { addBusinessDays, todayInColombia } from "@/domain/holidays";
 import { consentRecord } from "@/domain/consents";
+import { eligibility } from "@/recommendation/scoring";
+import { transition } from "./order-state";
+import { adminRoles } from "./admin";
 
 export class CheckoutError extends Error {}
+
+/** El precio que vio el usuario ya no es el que cotiza hoy la aseguradora. */
+export class PriceChangedError extends CheckoutError {
+  constructor(
+    readonly previous: number,
+    readonly current: number,
+  ) {
+    super(`El precio cambió de ${formatCOP(previous)} a ${formatCOP(current)}. Revisa y confirma para continuar.`);
+  }
+}
 
 /**
  * Crea la orden volviendo a cotizar en el servidor: el precio nunca se toma
@@ -43,16 +56,25 @@ export async function createOrder(
   }
   const offer = offers.find((o) => o.id === input.offerId);
   if (!offer) throw new CheckoutError("La oferta ya no está disponible. Cotiza de nuevo.");
+  const notEligible = eligibility(offer, input.quote.answers);
+  if (notEligible) throw new CheckoutError(`Este plan no aplica para ti: ${notEligible}`);
   const kyc = validateKyc(adapter.regulatory.kycFields, input.kyc ?? {});
   if (!kyc.ok) throw new CheckoutError("Completa las preguntas de conocimiento del cliente.");
 
   const amount =
     input.paymentPlan === "anual" ? offer.annualPremium : offer.monthlyPremium;
+  // Revalidación: si la tarifa cambió desde que el usuario vio el precio, no se
+  // cobra el nuevo valor sin que lo confirme.
+  if (input.expectedAmount !== undefined && input.expectedAmount !== amount) {
+    throw new PriceChangedError(input.expectedAmount, amount);
+  }
+  const createdAt = new Date().toISOString();
   const order: Order = {
     id: newId(),
     reference: `SAF-${Date.now().toString(36).toUpperCase()}-${randomToken(3).toUpperCase()}`,
-    createdAt: new Date().toISOString(),
+    createdAt,
     status: "pendiente",
+    history: [{ status: "pendiente", at: createdAt }],
     quote: input.quote,
     offer,
     paymentPlan: input.paymentPlan,
@@ -111,19 +133,97 @@ export async function applyPaymentUpdate(u: PaymentUpdate) {
 
   if (u.status === "APPROVED") {
     if (u.amountInCents !== order.amountInCents) {
-      order.status = "error";
+      transition(order, "error", "El monto pagado no coincide con la orden");
       console.error(`[pagos] monto no coincide para ${order.reference}`);
       return order;
     }
-    order.status = "aprobada";
+    if (!transition(order, "aprobada", `Transacción ${u.transactionId}`)) return order;
     if (order.analyticsSid) recordEvent("pago_aprobado", order.analyticsSid, { aseguradora: order.offer.insurerId, plan: order.paymentPlan });
-    await issuePolicy(order);
+    // La emisión se encola y se intenta de inmediato; si la aseguradora falla,
+    // se reintenta después (processIssuanceQueue) sin volver a cobrar.
+    enqueueIssuance(order);
+    await processIssuance(order.id);
   } else if (u.status === "PENDING") {
-    order.status = "pendiente";
+    transition(order, "pendiente");
   } else {
-    order.status = "rechazada";
+    transition(order, "rechazada", u.status);
   }
   return order;
+}
+
+// ── Emisión asíncrona con reintentos (outbox) ─────────────────────────────
+
+export const ISSUANCE_MAX_ATTEMPTS = 5;
+/** Espera antes del siguiente intento: 1, 2, 4 y 8 minutos. */
+export const issuanceBackoffMs = (attempt: number) => 60_000 * 2 ** (attempt - 1);
+
+function enqueueIssuance(order: Order) {
+  const jobs = db().issuanceJobs;
+  if (!jobs.has(order.id)) {
+    jobs.set(order.id, { orderId: order.id, attempts: 0, nextAttemptAt: Date.now(), status: "pendiente" });
+  }
+}
+
+/** Ejecuta un intento de emisión si el trabajo está pendiente y le toca. */
+export async function processIssuance(orderId: string, now = Date.now()) {
+  const d = db();
+  const job = d.issuanceJobs.get(orderId);
+  const order = d.orders.get(orderId);
+  if (!job || !order || job.status !== "pendiente" || job.running || job.nextAttemptAt > now) return job;
+  if (order.status !== "aprobada" || order.policyId) {
+    job.status = "completada";
+    return job;
+  }
+  job.running = true;
+  job.attempts++;
+  try {
+    await issuePolicy(order);
+    job.status = "completada";
+    job.lastError = undefined;
+  } catch (e) {
+    job.lastError = e instanceof Error ? e.message : String(e);
+    console.error(`[emisión] intento ${job.attempts} falló para ${order.reference}: ${job.lastError}`);
+    if (job.attempts >= ISSUANCE_MAX_ATTEMPTS) {
+      job.status = "fallida";
+      transition(order, "error", `Emisión fallida tras ${job.attempts} intentos`);
+      notifyIssuanceFailure(order, job.lastError);
+    } else {
+      job.nextAttemptAt = now + issuanceBackoffMs(job.attempts);
+    }
+  } finally {
+    job.running = false;
+  }
+  return job;
+}
+
+/** Procesa los trabajos de emisión vencidos. Lo llama el cron de conciliación. */
+export async function processIssuanceQueue(now = Date.now()) {
+  let processed = 0;
+  for (const job of db().issuanceJobs.values()) {
+    if (job.status === "pendiente" && job.nextAttemptAt <= now) {
+      await processIssuance(job.orderId, now);
+      processed++;
+    }
+  }
+  return { processed };
+}
+
+function notifyIssuanceFailure(order: Order, error: string) {
+  const h = order.policyholder;
+  sendMessage({
+    to: h.email,
+    channel: "email",
+    subject: `Estamos resolviendo la emisión de tu póliza (${order.reference})`,
+    body: `Hola ${h.firstName}, tu pago fue aprobado pero ${order.offer.insurerName} no ha podido emitir la póliza. Un asesor te contactará en las próximas 24 horas; si no se puede emitir, te devolveremos el dinero completo.`,
+  });
+  for (const email of adminRoles().keys()) {
+    sendMessage({
+      to: email,
+      channel: "email",
+      subject: `[Alerta] Emisión fallida ${order.reference}`,
+      body: `La orden ${order.reference} (${order.offer.insurerName} · ${order.offer.planName}) quedó sin póliza tras ${ISSUANCE_MAX_ATTEMPTS} intentos. Último error: ${error}`,
+    });
+  }
 }
 
 function addMonths(iso: string, n: number) {
@@ -153,71 +253,68 @@ function addYears(iso: string, n: number) {
   return d.toISOString().slice(0, 10);
 }
 
+/** Emite con la aseguradora. Lanza si falla, para que el trabajo se reintente. */
 async function issuePolicy(order: Order) {
   const adapter = getAdapter(order.offer.insurerId);
-  if (!adapter) return;
+  if (!adapter) throw new Error(`Aseguradora ${order.offer.insurerId} no disponible`);
   const h = order.policyholder;
   const startDate = new Date().toISOString().slice(0, 10);
-  try {
-    const { policyNumber } = await adapter.issue({
-      offer: order.offer,
-      quote: order.quote,
-      holder: {
-        documentType: h.documentType,
-        documentNumber: h.documentNumber,
-        fullName: `${h.firstName} ${h.lastName}`,
-      },
-      kyc: order.kyc,
-      startDate,
-    });
-    const policy: Policy = {
-      id: newId(),
-      number: policyNumber,
-      source: "compra",
-      orderId: order.id,
-      holderEmail: h.email,
-      holderName: `${h.firstName} ${h.lastName}`,
-      insurerId: order.offer.insurerId,
-      insurerName: order.offer.insurerName,
-      planName: order.offer.planName,
-      vehicle: order.quote.vehicle,
-      startDate,
-      endDate: addYears(startDate, 1),
-      annualPremium: order.offer.annualPremium,
-      paymentPlan: order.paymentPlan,
-      installments:
-        order.paymentPlan === "mensual"
-          ? buildInstallments(startDate, order.amountInCents / 100)
-          : undefined,
-      accessToken: order.accessToken,
-    };
-    db().policies.set(policy.id, policy);
-    order.policyId = policy.id;
-    order.status = "emitida";
+  const { policyNumber } = await adapter.issue({
+    offer: order.offer,
+    quote: order.quote,
+    holder: {
+      documentType: h.documentType,
+      documentNumber: h.documentNumber,
+      fullName: `${h.firstName} ${h.lastName}`,
+    },
+    kyc: order.kyc,
+    startDate,
+    idempotencyKey: order.id,
+  });
+  const policy: Policy = {
+    id: newId(),
+    number: policyNumber,
+    source: "compra",
+    orderId: order.id,
+    holderEmail: h.email,
+    holderName: `${h.firstName} ${h.lastName}`,
+    insurerId: order.offer.insurerId,
+    insurerName: order.offer.insurerName,
+    planName: order.offer.planName,
+    vehicle: order.quote.vehicle,
+    startDate,
+    endDate: addYears(startDate, 1),
+    annualPremium: order.offer.annualPremium,
+    paymentPlan: order.paymentPlan,
+    installments:
+      order.paymentPlan === "mensual"
+        ? buildInstallments(startDate, order.amountInCents / 100)
+        : undefined,
+    accessToken: order.accessToken,
+  };
+  db().policies.set(policy.id, policy);
+  order.policyId = policy.id;
+  transition(order, "emitida", `Póliza ${policy.number}`);
 
-    const owner = order.userId ?? findUserByEmail(h.email)?.id;
-    if (owner) {
-      order.userId = owner;
-      attachPolicyToUser(policy, owner);
-    }
-
-    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-    sendMessage({
-      to: h.email,
-      channel: "email",
-      subject: `Tu póliza ${policy.number} está activa`,
-      body: [
-        `Hola ${h.firstName},`,
-        `Tu seguro ${policy.planName} de ${policy.insurerName} para ${policy.vehicle.brand} ${policy.vehicle.model} quedó activo desde el ${policy.startDate} hasta el ${policy.endDate}.`,
-        `Pagaste ${formatCOP(order.amountInCents / 100)} (${order.paymentPlan === "anual" ? "pago anual" : "primera cuota mensual"}).`,
-        `Ver tu póliza: ${base}/poliza/${policy.id}?t=${policy.accessToken}`,
-        `Crea tu cuenta con este correo para recibir recordatorios de renovación, SOAT y tecnomecánica: ${base}/cuenta`,
-      ].join("\n\n"),
-    });
-  } catch (e) {
-    order.status = "error";
-    console.error("[emisión] falló", e);
+  const owner = order.userId ?? findUserByEmail(h.email)?.id;
+  if (owner) {
+    order.userId = owner;
+    attachPolicyToUser(policy, owner);
   }
+
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  sendMessage({
+    to: h.email,
+    channel: "email",
+    subject: `Tu póliza ${policy.number} está activa`,
+    body: [
+      `Hola ${h.firstName},`,
+      `Tu seguro ${policy.planName} de ${policy.insurerName} para ${policy.vehicle.brand} ${policy.vehicle.model} quedó activo desde el ${policy.startDate} hasta el ${policy.endDate}.`,
+      `Pagaste ${formatCOP(order.amountInCents / 100)} (${order.paymentPlan === "anual" ? "pago anual" : "primera cuota mensual"}).`,
+      `Ver tu póliza: ${base}/poliza/${policy.id}?t=${policy.accessToken}`,
+      `Crea tu cuenta con este correo para recibir recordatorios de renovación, SOAT y tecnomecánica: ${base}/cuenta`,
+    ].join("\n\n"),
+  });
 }
 
 export function getPolicyForViewer(id: string, token?: string, userId?: string) {
@@ -300,7 +397,7 @@ export function retractPolicy(policyId: string, viewer: { token?: string; userId
   const order = p.orderId ? d.orders.get(p.orderId) : undefined;
   const paidInstallments = (p.installments ?? []).filter((i) => i.n > 1 && i.status === "pagada").reduce((s, i) => s + i.amount, 0);
   const refund = (order ? order.amountInCents / 100 : 0) + paidInstallments;
-  if (order) order.status = "retractada";
+  if (order) transition(order, "retractada", `Reembolso ${formatCOP(refund)}`);
   sendMessage({
     to: p.holderEmail,
     channel: "email",

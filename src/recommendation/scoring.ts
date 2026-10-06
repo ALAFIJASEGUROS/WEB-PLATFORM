@@ -1,14 +1,23 @@
 import type {
   Answers,
   CoverageKey,
+  ExcludedOffer,
+  InsurerError,
   Offer,
   OfferLabel,
   Priority,
+  QuoteResponse,
   ScoredOffer,
   Weights,
 } from "@/domain/types";
 import { SERVICE_KEYS } from "@/domain/types";
-import { formatCOP, SERVICE_LABELS } from "@/domain/labels";
+import { formatCOP, SERVICE_LABELS, USE_LABELS } from "@/domain/labels";
+
+/** Cambia cuando cambian los pesos, las reglas o las etiquetas. */
+export const ALGORITHM_VERSION = "2026.10-2";
+
+/** Diferencia de puntaje por debajo de la cual dos ofertas se consideran empatadas. */
+export const TIE_THRESHOLD = 2;
 
 /** Peso de cada dimensión según la prioridad declarada por el usuario. */
 export const PRIORITY_WEIGHTS: Record<
@@ -46,6 +55,8 @@ function coverageWeights(a: Answers): Record<CoverageKey, number> {
   }
   return w;
 }
+
+const PRICE_CURVE = 1.5;
 
 const MAX_DEDUCTIBLE_BY_TOLERANCE = { bajo: 5, medio: 10, alto: 100 } as const;
 
@@ -88,7 +99,6 @@ export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
 
   const prices = offers.map((o) => o.annualPremium);
   const minP = Math.min(...prices);
-  const maxP = Math.max(...prices);
   const rcs = offers.map((o) => o.rcLimit);
   const minRc = Math.min(...rcs);
   const maxRc = Math.max(...rcs);
@@ -100,7 +110,9 @@ export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
     const reasons: string[] = [];
     const warnings: string[] = [];
 
-    const price = 1 - normalize(o.annualPremium, minP, maxP);
+    // Curva relativa al más barato: una diferencia de pocos pesos no cambia el
+    // puntaje, y pagar el doble deja el precio en ~0,35.
+    const price = Math.pow(minP / o.annualPremium, PRICE_CURVE);
 
     const coverageSum = (Object.keys(cw) as CoverageKey[]).reduce(
       (s, k) => s + (o.coverages[k] ? cw[k] : 0),
@@ -120,13 +132,7 @@ export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
       weights.coverage * coverage +
       weights.services * services;
 
-    // Ajustes por restricciones (penalizaciones, no exclusiones: el usuario ve todo).
-    if (answers.financed && !meetsFinancingRequirements(o)) {
-      score *= 0.5;
-      warnings.push(
-        "Si tu vehículo está financiado, el banco suele exigir cobertura de daños y hurto total.",
-      );
-    }
+    // Preferencias blandas: penalizan pero no excluyen (los requisitos duros van en `eligibility`).
     if (o.deductiblePct > MAX_DEDUCTIBLE_BY_TOLERANCE[answers.deductibleTolerance]) {
       score *= 0.85;
       warnings.push(
@@ -170,6 +176,13 @@ export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
   );
 
   const addLabel = (o: ScoredOffer | undefined, l: OfferLabel) => o?.labels.push(l);
+  // Empate técnico: si las dos primeras están a menos de TIE_THRESHOLD puntos,
+  // se recomienda la más barata y ambas se marcan como empatadas.
+  if (scored.length > 1 && scored[0].score - scored[1].score < TIE_THRESHOLD) {
+    if (scored[1].annualPremium < scored[0].annualPremium) [scored[0], scored[1]] = [scored[1], scored[0]];
+    addLabel(scored[0], "empate");
+    addLabel(scored[1], "empate");
+  }
   addLabel(scored[0], "recomendado");
   addLabel(
     [...scored].sort((a, b) => a.annualPremium - b.annualPremium)[0],
@@ -182,4 +195,32 @@ export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
     "mayorCobertura",
   );
   return scored;
+}
+
+/**
+ * Requisitos duros: si la oferta no los cumple, se descarta antes del puntaje
+ * y se informa el motivo. Devuelve null si la oferta es elegible.
+ */
+export function eligibility(o: Offer, answers: Answers): string | null {
+  if (o.allowedUses && !o.allowedUses.includes(answers.use))
+    return `No cubre el uso ${USE_LABELS[answers.use]}.`;
+  if (answers.financed && !meetsFinancingRequirements(o))
+    return "No incluye daños y hurto total, que el banco exige si el vehículo está financiado.";
+  return null;
+}
+
+/** Filtra por elegibilidad y ordena las ofertas que quedan. */
+export function recommend(offers: Offer[], answers: Answers) {
+  const eligible: Offer[] = [];
+  const excluded: ExcludedOffer[] = [];
+  for (const o of offers) {
+    const reason = eligibility(o, answers);
+    if (reason) excluded.push({ id: o.id, insurerName: o.insurerName, planName: o.planName, reason });
+    else eligible.push(o);
+  }
+  return { offers: scoreOffers(eligible, answers), excluded };
+}
+
+export function buildQuoteResponse(offers: Offer[], errors: InsurerError[], answers: Answers): QuoteResponse {
+  return { quoteId: crypto.randomUUID(), ...recommend(offers, answers), errors, algorithm: ALGORITHM_VERSION };
 }

@@ -3,7 +3,7 @@ import type { Answers, QuoteRequest } from "@/domain/types";
 import { priceOffers } from "@/insurers/mock/tariff";
 import { BOLIVAR_CONFIG, SURA_CONFIG } from "@/insurers/mock/insurers";
 import { quoteAll } from "@/insurers/aggregator";
-import { scoreOffers } from "./scoring";
+import { recommend, scoreOffers, TIE_THRESHOLD } from "./scoring";
 
 const answers: Answers = {
   priority: "equilibrio",
@@ -39,11 +39,31 @@ describe("scoreOffers", () => {
     expect(top.coverages.perdidaTotalHurto).toBe(true);
   });
 
-  it("penaliza planes que no cumplen requisitos de financiación", () => {
-    const scored = scoreOffers(offers, { ...answers, priority: "precio", financed: true });
-    const rcOnly = scored.find((o) => o.id === "sura:auto-rc")!;
-    expect(rcOnly.warnings.join()).toMatch(/financiado/);
-    expect(scored[0].coverages.perdidaTotalDanos).toBe(true);
+  it("descarta planes que no cumplen los requisitos de financiación y explica por qué", () => {
+    const { offers: scored, excluded } = recommend(offers, { ...answers, priority: "precio", financed: true });
+    expect(scored.find((o) => o.id === "sura:auto-rc")).toBeUndefined();
+    expect(excluded.find((o) => o.id === "sura:auto-rc")?.reason).toMatch(/financiado/);
+    expect(scored.every((o) => o.coverages.perdidaTotalDanos && o.coverages.perdidaTotalHurto)).toBe(true);
+  });
+
+  it("descarta planes que no aceptan el uso declarado", () => {
+    const motoReq: QuoteRequest = { ...req, vehicle: { ...req.vehicle, type: "moto", commercialValue: 9_000_000 } };
+    const motoOffers = [...priceOffers(motoReq, SURA_CONFIG), ...priceOffers(motoReq, BOLIVAR_CONFIG)];
+    const { offers: scored, excluded } = recommend(motoOffers, { ...answers, use: "domicilios" });
+    expect(excluded.map((o) => o.id).sort()).toEqual(["bolivar:moto-basico", "sura:moto-integral"]);
+    expect(excluded[0].reason).toMatch(/domicilios/);
+    expect(scored.length).toBeGreaterThan(0);
+    expect(recommend(motoOffers, answers).excluded).toHaveLength(0);
+  });
+
+  it("en empate técnico recomienda la más barata y marca ambas", () => {
+    const base = offers.find((o) => o.id === "sura:auto-global")!;
+    const twin = { ...base, id: "bolivar:twin", insurerId: "bolivar", annualPremium: base.annualPremium - 1000 };
+    const scored = scoreOffers([base, twin], answers);
+    expect(Math.abs(scored[0].score - scored[1].score)).toBeLessThan(TIE_THRESHOLD);
+    expect(scored[0].id).toBe("bolivar:twin");
+    expect(scored[0].labels).toEqual(expect.arrayContaining(["recomendado", "empate"]));
+    expect(scored[1].labels).toContain("empate");
   });
 
   it("asigna exactamente una etiqueta de recomendado y puntajes 0..100", () => {

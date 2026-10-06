@@ -1,4 +1,4 @@
-import type { CoverageKey, Priority, ServiceKey } from "./types";
+import type { CoverageKey, Priority, ServiceKey, VehicleUse } from "./types";
 
 export const COVERAGE_LABELS: Record<CoverageKey, string> = {
   rc: "Responsabilidad civil",
@@ -25,6 +25,13 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
   cobertura: "Tener la mayor cobertura",
   servicios: "Servicios y asistencias",
   equilibrio: "Un equilibrio",
+};
+
+/** Uso del vehículo, redactado para completar "uso …". */
+export const USE_LABELS: Record<VehicleUse, string> = {
+  particular: "personal o familiar",
+  trabajo: "para trabajo",
+  domicilios: "en domicilios o plataformas",
 };
 
 export const CITIES = [

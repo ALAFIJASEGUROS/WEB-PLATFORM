@@ -1,5 +1,5 @@
 import "server-only";
-import { db, type Campaign, type User } from "./db";
+import { db, type Campaign, type Policy, type User } from "./db";
 
 export function userPolicies(userId: string) {
   return [...db().policies.values()]
@@ -24,6 +24,12 @@ export function campaignsFor(user: User): Campaign[] {
   return [...db().campaigns.values()].filter(
     (c) => c.active && (c.audience === "todos" || types.size === 0 || types.has(c.audience)),
   );
+}
+
+/** Primera cuota pendiente cuya fecha ya pasó (la póliza está en mora). */
+export function overdueInstallment(p: Pick<Policy, "installments" | "status">, now = new Date()) {
+  if (p.status === "retractada") return undefined;
+  return p.installments?.find((i) => i.status === "pendiente" && daysUntil(i.dueDate, now) < 0);
 }
 
 export function daysUntil(iso: string, from = new Date()) {
