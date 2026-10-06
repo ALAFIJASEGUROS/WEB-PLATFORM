@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BadgePercent,
+  Check,
+  Info,
+  Lock,
   Bike,
   CarFront,
   Briefcase,
@@ -38,6 +41,7 @@ import { lookupVehicle } from "@/lib/api-client";
 import { track } from "@/lib/analytics";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { OptionCard, OptionGroup } from "./OptionCard";
+import { PlateInput } from "./PlateInput";
 
 const STEPS = [
   { title: "Tu vehículo", subtitle: "Con la placa lo encontramos más rápido." },
@@ -180,7 +184,7 @@ function Wizard({ type }: { type: VehicleType }) {
   );
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-6">
+    <div className="mx-auto max-w-xl lg:max-w-5xl px-4 py-6">
       <button
         type="button"
         onClick={() => (step > 0 ? setStep(step - 1) : router.push("/cotizar"))}
@@ -223,6 +227,7 @@ function Wizard({ type }: { type: VehicleType }) {
         </button>
       )}
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,36rem)_1fr] lg:gap-10">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -239,13 +244,9 @@ function Wizard({ type }: { type: VehicleType }) {
                 hint="Prueba con cualquier placa válida: los datos del vehículo son simulados."
               >
                 <div className="flex gap-2">
-                  <input
+                  <PlateInput
                     id="plate"
-                    className={`${inputClass} text-lg font-bold uppercase tracking-[0.2em]`}
                     placeholder={type === "auto" ? "ABC123" : "ABC12D"}
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    maxLength={7}
                     value={plate}
                     aria-invalid={!!lookupError}
                     onChange={(e) => {
@@ -449,6 +450,61 @@ function Wizard({ type }: { type: VehicleType }) {
           </Button>
         </div>
       </form>
+        <WhyWeAsk step={step} vehicle={vehicle} answers={answers} city={city} />
+      </div>
     </div>
+  );
+}
+
+const WHY = [
+  { title: "¿Por qué la placa?", text: "Con la placa identificamos marca, línea, modelo y el valor comercial que usan las aseguradoras. No consultamos multas ni datos personales." },
+  { title: "¿Por qué tu edad y ciudad?", text: "La edad del conductor y la ciudad donde circula el vehículo son los factores que más cambian el precio. Tu cédula solo la pedimos si decides comprar." },
+  { title: "¿Por qué el uso?", text: "Un vehículo que se parquea en la calle o recorre muchos kilómetros tiene más riesgo de hurto o choque. Así priorizamos las coberturas que de verdad necesitas." },
+  { title: "¿Para qué tu prioridad?", text: "Define el peso del precio, la cobertura y los servicios en tu puntaje de afinidad. Igual verás todas las opciones." },
+  { title: "¿Y los servicios?", text: "Si eliges servicios, premiamos las opciones que los incluyen. El deducible que prefieres ajusta la recomendación." },
+];
+
+function WhyWeAsk({
+  step,
+  vehicle,
+  answers,
+  city,
+}: {
+  step: number;
+  vehicle: Vehicle | null;
+  answers: Answers;
+  city: string;
+}) {
+  const why = WHY[step];
+  const summary = [
+    vehicle && `${vehicle.brand} ${vehicle.model} ${vehicle.year}`,
+    step > 1 && city,
+    step > 2 && `Uso ${answers.use}, ${answers.parking === "calle" ? "parquea en la calle" : "parqueadero cerrado"}`,
+    step > 3 && `Prioridad: ${answers.priority}`,
+  ].filter(Boolean) as string[];
+  return (
+    <aside className="hidden lg:block" aria-label="Información">
+      <div className="sticky top-24 space-y-4">
+        <div className="rounded-[var(--radius-card)] border border-line p-5">
+          <p className="flex items-center gap-2 font-bold text-heading">
+            <Info className="size-4 text-brand" aria-hidden /> {why.title}
+          </p>
+          <p className="mt-2 text-sm text-muted">{why.text}</p>
+        </div>
+        {summary.length > 0 && (
+          <div className="rounded-[var(--radius-card)] bg-brand-soft p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-strong">Tu perfil hasta ahora</p>
+            <ul className="mt-2 space-y-1 text-sm text-ink">
+              {summary.map((s) => (
+                <li key={s} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />{s}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <p className="flex items-center gap-2 text-xs text-muted">
+          <Lock className="size-3.5" aria-hidden /> Tus datos solo se usan para cotizar.
+        </p>
+      </div>
+    </aside>
   );
 }

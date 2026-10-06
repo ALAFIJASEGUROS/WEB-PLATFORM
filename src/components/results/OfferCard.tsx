@@ -32,8 +32,8 @@ export function OfferCard({
 
   return (
     <Card className={`p-5 ${highlight ? "ring-2 ring-brand" : comparing ? "ring-2 ring-brand/50" : ""}`}>
-      <article aria-labelledby={`${detailId}-t`}>
-        <div className="flex items-start gap-3">
+      <article aria-labelledby={`${detailId}-t`} className="md:grid md:grid-cols-[minmax(0,1fr)_17rem] md:gap-x-6">
+        <div className="flex items-start gap-3 md:col-start-1 md:row-start-1">
           <InsurerLogo id={offer.insurerId} name={offer.insurerName} />
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap gap-1.5">
@@ -52,7 +52,7 @@ export function OfferCard({
           <ScoreRing score={offer.score} />
         </div>
 
-        <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl bg-canvas p-4">
+        <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl bg-canvas p-4 md:col-start-2 md:row-span-2 md:row-start-1 md:mt-0 md:flex-col md:items-stretch md:justify-center">
           <div>
             <p className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-heading">
               {formatCOP(offer.annualPremium)}
@@ -62,7 +62,7 @@ export function OfferCard({
               o {formatCOP(offer.monthlyPremium)} al mes
             </p>
           </div>
-          <div className="text-right text-xs text-muted">
+          <div className="text-right text-xs text-muted md:border-t md:border-line md:pt-3 md:text-left">
             <p>Deducible</p>
             <p className="text-sm font-bold text-heading">
               {offer.deductiblePct === 0 ? "Sin deducible" : `${offer.deductiblePct}% · mín ${offer.deductibleMinSmmlv} SMMLV`}
@@ -70,6 +70,7 @@ export function OfferCard({
           </div>
         </div>
 
+        <div className="md:col-start-1 md:row-start-2">
         {offer.reasons.length > 0 && (
           <ul className="mt-4 space-y-1.5">
             {offer.reasons.slice(0, highlight ? 4 : 2).map((r) => (
@@ -100,9 +101,10 @@ export function OfferCard({
           {open ? "Ocultar detalle" : "Ver coberturas y servicios"}
           <ChevronDown className={`size-4 transition ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
+        </div>
 
         {open && (
-          <div id={detailId} className="mt-2 grid gap-4 border-t border-line pt-4 sm:grid-cols-2">
+          <div id={detailId} className="mt-2 grid gap-4 border-t border-line pt-4 sm:grid-cols-2 md:col-span-2 md:row-start-4">
             <div>
               <h4 className="mb-2 text-sm font-bold text-heading">Coberturas</h4>
               <ul className="space-y-1.5 text-sm">
@@ -137,7 +139,7 @@ export function OfferCard({
           </div>
         )}
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2 md:col-start-2 md:row-start-3 md:mt-3 [&>*]:whitespace-nowrap [&>*]:px-3">
           <Button
             variant="secondary"
             type="button"
