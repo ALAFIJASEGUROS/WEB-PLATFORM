@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/server/auth";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CHANNEL_LABELS, CHANNELS, MESSAGE_TYPE_KEYS, MESSAGE_TYPES } from "@/domain/messaging";
 import { logoutAction, updateProfileAction } from "../actions";
 
 export default async function Page() {
@@ -23,10 +24,47 @@ export default async function Page() {
               <input id="p-phone" name="phone" type="tel" inputMode="numeric" maxLength={10} defaultValue={user.phone} className={inputClass} />
             </Field>
           </div>
-          <fieldset className="space-y-2">
-            <legend className="mb-1 text-sm font-semibold text-heading">¿Por dónde te avisamos?</legend>
-            <label className="flex items-center gap-3 text-sm"><input type="checkbox" name="ch_email" defaultChecked={user.channels.email} className="size-5 accent-brand" />Correo electrónico</label>
-            <label className="flex items-center gap-3 text-sm"><input type="checkbox" name="ch_whatsapp" defaultChecked={user.channels.whatsapp} className="size-5 accent-brand" />WhatsApp</label>
+          <fieldset>
+            <legend id="avisos" className="mb-2 text-sm font-semibold text-heading">Avisos: qué te enviamos y por dónde</legend>
+            <table className="w-full text-sm" aria-labelledby="avisos">
+              <thead>
+                <tr className="text-left text-muted">
+                  <th scope="col" className="py-2 font-medium">Tipo de mensaje</th>
+                  {CHANNELS.map((c) => (
+                    <th key={c} scope="col" className="w-20 py-2 text-center font-medium">{CHANNEL_LABELS[c]}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {MESSAGE_TYPE_KEYS.map((t) => {
+                  const info = MESSAGE_TYPES[t];
+                  return (
+                    <tr key={t} className="border-t border-line align-top">
+                      <th scope="row" className="py-3 pr-3 text-left font-normal">
+                        <span className="block font-semibold text-ink">{info.label}</span>
+                        <span className="block text-xs text-muted">{info.description}</span>
+                      </th>
+                      {CHANNELS.map((c) => {
+                        const locked = (info.mandatory && c === "email") || (c === "whatsapp" && !user.phone);
+                        return (
+                          <td key={c} className="py-3 text-center">
+                            <input
+                              type="checkbox"
+                              name={`pref_${t}_${c}`}
+                              defaultChecked={user.preferences[t][c] || (info.mandatory && c === "email")}
+                              disabled={locked}
+                              aria-label={`${info.label} por ${CHANNEL_LABELS[c]}`}
+                              className="size-5 accent-brand"
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {!user.phone && <p className="mt-1 text-xs text-muted">Agrega tu celular para recibir avisos por WhatsApp.</p>}
           </fieldset>
           <label className="flex gap-3 text-sm">
             <input type="checkbox" name="marketing" defaultChecked={user.marketingConsent} className="mt-0.5 size-5 shrink-0 accent-brand" />

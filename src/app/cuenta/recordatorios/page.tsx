@@ -18,14 +18,15 @@ export default async function Page() {
   const user = await getCurrentUser();
   if (!user) redirect("/cuenta");
   const reminders = userReminders(user.id);
-  const channels = [user.channels.email && "correo", user.channels.whatsapp && "WhatsApp"].filter(Boolean);
+  const pref = user.preferences.vencimientos;
+  const channels = [pref.email && "correo", pref.whatsapp && user.phone && "WhatsApp"].filter(Boolean);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-heading">Recordatorios</h1>
         <p className="mt-1 text-sm text-muted">
-          Te avisamos por {channels.length ? channels.join(" y ") : "ningún canal (actívalos en tu perfil)"} antes de cada fecha.
+          Te avisamos por {channels.length ? channels.join(" y ") : "ningún canal (actívalos en tu perfil, sección Avisos)"} antes de cada fecha.
           Los de pólizas, SOAT y tecnomecánica se crean solos.
         </p>
       </div>

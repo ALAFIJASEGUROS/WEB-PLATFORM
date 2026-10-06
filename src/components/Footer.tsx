@@ -25,6 +25,7 @@ export function Footer() {
           <p className="font-semibold text-heading">Ayuda</p>
           <Link className="block text-muted hover:text-heading" href="/como-funciona">Cómo funciona</Link>
           <Link className="block text-muted hover:text-heading" href="/ayuda">Preguntas frecuentes</Link>
+          <Link className="block text-muted hover:text-heading" href="/siniestros">¿Tuviste un siniestro?</Link>
           <Link className="block text-muted hover:text-heading" href="/pqr">Peticiones, quejas y reclamos</Link>
         </nav>
       </div>

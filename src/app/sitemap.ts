@@ -5,7 +5,7 @@ export const dynamic = "force-static";
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://segualafija.co";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return ["", "/cotizar", "/cotizar/auto", "/cotizar/moto", "/como-funciona", "/ayuda", "/pqr", "/legal/terminos", "/legal/privacidad", "/legal/retracto"].map(
+  return ["", "/cotizar", "/cotizar/auto", "/cotizar/moto", "/como-funciona", "/ayuda", "/siniestros", "/pqr", "/legal/terminos", "/legal/privacidad", "/legal/retracto"].map(
     (p) => ({ url: `${BASE}${p}`, changeFrequency: "weekly", priority: p === "" ? 1 : 0.6 }),
   );
 }

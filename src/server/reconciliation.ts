@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { applyPaymentUpdate, processIssuanceQueue } from "./orders";
-import { paymentProvider } from "./payments";
+import { providerById } from "./payments";
 
 /** Tiempo tras el cual un pago pendiente se considera atascado. */
 const STALE_MS = 30 * 60 * 1000;
@@ -37,7 +37,6 @@ export const lastReconciliation = () => g.__safReconciliation ?? null;
  */
 export async function reconcilePayments(now = Date.now()): Promise<ReconciliationReport> {
   const d = db();
-  const provider = paymentProvider();
   const issues: ReconciliationIssue[] = [];
   let checked = 0;
   // Primero se reintentan las emisiones que ya les toca.
@@ -47,7 +46,9 @@ export async function reconcilePayments(now = Date.now()): Promise<Reconciliatio
     checked++;
     const age = now - new Date(order.createdAt).getTime();
     if (order.status === "pendiente") {
-      if (order.providerTransactionId && provider.fetchTransaction) {
+      // Se consulta la pasarela con la que se creó el cobro, no la predeterminada.
+      const provider = providerById(order.provider);
+      if (order.providerTransactionId && provider?.fetchTransaction) {
         const tx = await provider.fetchTransaction(order.providerTransactionId);
         if (tx && tx.reference === order.reference && tx.status !== "PENDING") {
           await applyPaymentUpdate(tx);

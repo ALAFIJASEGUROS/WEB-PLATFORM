@@ -19,6 +19,8 @@
   --color-sun-soft: #fff6e0;
   --color-coral: #e5484d;
   --color-coral-soft: #fdecec;
+  /* Texto sobre coral-soft con contraste AA. */
+  --color-coral-ink: #b42318;
   --color-canvas: #f7f8fa;
   --color-surface: #ffffff;
   --color-ink: #10213f;
@@ -51,6 +53,7 @@ html {
     --color-sun-ink: #f3c867;
     --color-coral: #ff7f83;
     --color-coral-soft: #3a1b1e;
+    --color-coral-ink: #ff9a9d;
     --color-canvas: #0b1220;
     --color-surface: #131d31;
     --color-ink: #dfe7f3;
@@ -75,6 +78,7 @@ html {
   --color-sun-ink: #f3c867;
   --color-coral: #ff7f83;
   --color-coral-soft: #3a1b1e;
+  --color-coral-ink: #ff9a9d;
   --color-canvas: #0b1220;
   --color-surface: #131d31;
   --color-ink: #dfe7f3;

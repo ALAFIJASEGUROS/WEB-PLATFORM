@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ error: "Solicitud inválida" }, { status: 400 });
   const { reference, token, outcome } = parsed.data;
   const order = findOrderByReference(reference);
-  if (!order || order.accessToken !== token) {
+  if (!order || order.accessToken !== token || order.provider !== "simulado") {
     return Response.json({ error: "Orden no encontrada" }, { status: 404 });
   }
   if (!isAccepted(order)) return Response.json({ error: "Falta aceptar las condiciones" }, { status: 409 });

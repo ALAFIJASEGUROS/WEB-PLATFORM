@@ -4,6 +4,7 @@ import { db, sendMessage, type Installment, type Policy, type Reminder } from ".
 import { daysUntil, overdueInstallment } from "./queries";
 import { renewalSuggestions } from "./renewals";
 import { formatCOP } from "@/domain/labels";
+import { channelFor } from "@/domain/messaging";
 
 /**
  * Ventana de contacto de la Ley 2300 de 2023: lunes a viernes 7:00–19:00 y
@@ -50,20 +51,24 @@ export async function dispatchDueReminders(now = new Date()) {
   for (const [userId, due] of byUser) {
     const user = d.users.get(userId);
     if (!user || lastContact().get(userId) === today) continue;
-    const channel = user.channels.whatsapp && user.phone ? "whatsapp" : user.channels.email ? "email" : null;
-    if (!channel) continue;
+    // Preferencias: los vencimientos pueden apagarse; la mora es transaccional y siempre se avisa.
+    const hasPhone = !!user.phone;
     const overdue = overdueByUser.get(userId) ?? [];
+    const dueChannel = channelFor(user.preferences, "vencimientos", hasPhone);
+    const sendable = dueChannel ? due : [];
+    if (!overdue.length && !sendable.length) continue;
+    const channel = overdue.length ? channelFor(user.preferences, "transaccional", hasPhone)! : dueChannel!;
     const moraLines = overdue.map(
       ({ policy, inst }) =>
         `⚠ La cuota ${inst.n} de ${policy.planName} (${formatCOP(inst.amount)}) venció el ${inst.dueDate}. Si no la pagas, el seguro puede terminar por mora (art. 1068 del Código de Comercio) y quedarías sin cobertura; pagar después no lo reactiva.`,
     );
-    const lines = due.map((r) => {
+    const lines = sendable.map((r) => {
       const left = daysUntil(r.dueDate, now);
       return `• ${r.title}: vence ${left === 0 ? "hoy" : `en ${left} días (${r.dueDate})`}`;
     });
     // Si alguna póliza por renovar tiene una opción mejor, se menciona en el mismo mensaje.
-    const renewing = new Set(due.filter((r) => r.kind === "poliza").map((r) => r.policyId));
-    if (renewing.size) {
+    const renewing = new Set(sendable.filter((r) => r.kind === "poliza").map((r) => r.policyId));
+    if (renewing.size && channelFor(user.preferences, "renovacion", hasPhone)) {
       for (const s of await renewalSuggestions(userId, now)) {
         if (renewing.has(s.policy.id)) {
           lines.push(`  ↳ Encontramos ${s.offer.planName} de ${s.offer.insurerName} con la misma cobertura y ${formatCOP(s.savings)} menos al año.`);
@@ -73,12 +78,13 @@ export async function dispatchDueReminders(now = new Date()) {
     sendMessage({
       to: channel === "whatsapp" ? user.phone! : user.email,
       channel,
+      kind: moraLines.length ? "transaccional" : "vencimientos",
       subject: moraLines.length
         ? "Tienes una cuota vencida: evita perder tu cobertura"
-        : due.length === 1 ? `Recordatorio: ${due[0].title}` : `Tienes ${due.length} vencimientos próximos`,
+        : sendable.length === 1 ? `Recordatorio: ${sendable[0].title}` : `Tienes ${sendable.length} vencimientos próximos`,
       body: `${[...moraLines, ...lines].join("\n")}\n\nGestiona tus seguros en SeguAlaFija.`,
     });
-    due.forEach((r) => (r.lastSentAt = today));
+    sendable.forEach((r) => (r.lastSentAt = today));
     overdue.forEach(({ inst }) => (inst.moraNotifiedAt = today));
     lastContact().set(userId, today);
     sent++;

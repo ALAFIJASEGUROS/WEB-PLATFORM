@@ -364,7 +364,7 @@ export async function startInstallmentPayment(policyId: string, userId: string, 
   if (active?.redirectUrl) return { redirectUrl: active.redirectUrl };
   const reference = `${order.reference}-C${next.n}-${randomToken(2).toUpperCase()}`;
   const amountInCents = next.amount * 100;
-  const attempt = { reference, policyId: p.id, n: next.n, amountInCents, status: "pendiente" as const, createdAt: Date.now() };
+  const attempt = { reference, policyId: p.id, n: next.n, amountInCents, status: "pendiente" as const, createdAt: Date.now(), provider: provider.id };
   db().installmentPayments.set(reference, attempt);
   const checkout = await provider.createCheckout({ ...order, reference, amountInCents }, baseUrl);
   db().installmentPayments.set(reference, { ...attempt, redirectUrl: checkout.redirectUrl });
