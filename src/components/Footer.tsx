@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { VersionTag } from "./VersionTag";
 
 export function Footer() {
   return (
@@ -31,6 +32,9 @@ export function Footer() {
         Proyecto en desarrollo. Las aseguradoras mostradas y sus precios son
         simulados con fines de demostración.
       </p>
+      <div className="flex justify-center px-4 pb-4">
+        <VersionTag />
+      </div>
     </footer>
   );
 }

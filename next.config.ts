@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
+import { buildEnv } from "./build-env.mjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  env: buildEnv("servidor"),
 };
 
 export default nextConfig;

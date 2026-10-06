@@ -75,3 +75,10 @@ test("abre una cotización compartida por enlace", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /opciones para tu Yamaha NMAX 155 2023/ })).toBeVisible({ timeout: 15_000 });
   await expect(page).toHaveURL(/\/resultados$/);
 });
+
+test("el footer muestra la versión desplegada", async ({ page }) => {
+  const { readFileSync } = await import("node:fs");
+  const { version } = JSON.parse(readFileSync("package.json", "utf8"));
+  await page.goto("/");
+  await expect(page.getByTestId("app-version")).toHaveText(`v${version}`);
+});

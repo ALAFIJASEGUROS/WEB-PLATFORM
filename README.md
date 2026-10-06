@@ -66,4 +66,4 @@ regístrala en el agregador. Para agregar otra línea de seguro, extiende
 - Correo y WhatsApp están simulados: los mensajes van a la bandeja de `/admin`.
 - Los textos legales son borradores y falta definir la figura de intermediación ante la SFC.
 
-Ver el plan en [`docs/plan.md`](docs/plan.md).
+Documentación en [`docs/`](docs/README.md): [estado](docs/estado.md), [backlog](docs/04-backlog.md), [versionamiento](docs/versionamiento.md) y [CHANGELOG](CHANGELOG.md). La versión desplegada aparece en el footer.

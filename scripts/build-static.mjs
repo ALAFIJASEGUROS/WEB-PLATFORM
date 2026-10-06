@@ -6,6 +6,7 @@
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { buildEnv } from "../build-env.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const build = join(root, ".static-build");
@@ -29,6 +30,7 @@ writeFileSync(
   join(build, "next.config.ts"),
   `import type { NextConfig } from "next";
 const config: NextConfig = {
+  env: ${JSON.stringify(buildEnv("pages"))},
   output: "export",
   basePath: ${JSON.stringify(basePath)},
   trailingSlash: true,
