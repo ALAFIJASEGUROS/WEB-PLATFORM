@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { requestCodeAction, verifyCodeAction, type FormState } from "@/app/cuenta/actions";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 
-export function LoginForm({ defaultEmail = "" }: { defaultEmail?: string }) {
+export function LoginForm({ defaultEmail = "", next = "/cuenta" }: { defaultEmail?: string; next?: string }) {
   const [sent, request, requesting] = useActionState<FormState, FormData>(requestCodeAction, {});
   const [verify, check, checking] = useActionState<FormState, FormData>(verifyCodeAction, {});
   const email = verify.email ?? sent.email;
@@ -31,6 +31,7 @@ export function LoginForm({ defaultEmail = "" }: { defaultEmail?: string }) {
       ) : (
         <form action={check} className="space-y-4">
           <input type="hidden" name="email" value={email} />
+          <input type="hidden" name="next" value={next} />
           <p className="text-sm text-ink">Enviamos un código de 6 dígitos a <strong>{email}</strong>.</p>
           {sent.demoCode && (
             <p className="rounded-xl bg-sun-soft p-3 text-sm text-sun-ink">

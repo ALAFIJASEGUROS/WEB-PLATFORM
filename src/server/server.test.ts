@@ -119,13 +119,13 @@ describe("recordatorios", () => {
     expect(withinContactHours(new Date("2026-10-11T15:00:00Z"))).toBe(false); // domingo
   });
 
-  it("envía una sola vez dentro de la ventana de aviso", () => {
+  it("envía una sola vez dentro de la ventana de aviso", async () => {
     const user = getOrCreateUser("b@example.com");
     db().reminders.set("r1", { id: "r1", userId: user.id, kind: "soat", title: "SOAT", dueDate: "2026-10-12", daysBefore: 15, auto: true });
     db().reminders.set("r2", { id: "r2", userId: user.id, kind: "soat", title: "Lejano", dueDate: "2027-03-01", daysBefore: 15, auto: true });
     const now = new Date("2026-10-05T15:00:00Z");
-    expect(dispatchDueReminders(now).sent).toBe(1);
-    expect(dispatchDueReminders(now).sent).toBe(0);
+    expect((await dispatchDueReminders(now)).sent).toBe(1);
+    expect((await dispatchDueReminders(now)).sent).toBe(0);
   });
 });
 
@@ -208,7 +208,7 @@ describe("cuotas con Wompi", () => {
 });
 
 describe("recordatorios: festivos y un contacto al día", () => {
-  it("no contacta en festivos y agrupa varios avisos en un solo mensaje", () => {
+  it("no contacta en festivos y agrupa varios avisos en un solo mensaje", async () => {
     (globalThis as { __safLastContact?: unknown }).__safLastContact = undefined;
     expect(withinContactHours(new Date("2026-10-12T15:00:00Z"))).toBe(false); // lunes festivo
     const user = getOrCreateUser("c@example.com");
@@ -216,8 +216,56 @@ describe("recordatorios: festivos y un contacto al día", () => {
       db().reminders.set(id, { id, userId: user.id, kind: "soat", title: `Aviso ${id}`, dueDate: "2026-10-14", daysBefore: 15, auto: true });
     }
     const before = db().outbox.length;
-    expect(dispatchDueReminders(new Date("2026-10-06T15:00:00Z")).sent).toBe(1);
+    expect((await dispatchDueReminders(new Date("2026-10-06T15:00:00Z"))).sent).toBe(1);
     expect(db().outbox.length - before).toBe(1);
     expect(db().outbox[0].body).toMatch(/Aviso a[\s\S]*Aviso b/);
+  });
+});
+
+describe("re-cotización al renovar", () => {
+  it("sugiere una opción con la misma cobertura y al menos 5% de ahorro", async () => {
+    const { renewalSuggestions } = await import("./renewals");
+    (globalThis as { __safQuoteCache?: unknown }).__safQuoteCache = undefined;
+    const user = getOrCreateUser("r@example.com");
+    const order = await createOrder({ ...input, offerId: "bolivar:moto-basico" }, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "ren1" });
+    const policy = [...db().policies.values()].find((p) => p.orderId === order.id)!;
+    const now = new Date();
+    const end = new Date(now.getTime() + 20 * 86_400_000).toISOString().slice(0, 10);
+
+    policy.endDate = end;
+    expect(await renewalSuggestions(user.id, now)).toHaveLength(0); // ya es lo más barato con esa cobertura
+
+    policy.annualPremium = order.offer.annualPremium * 3;
+    const [s] = await renewalSuggestions(user.id, now);
+    expect(s.offer.coverages.rc && s.offer.coverages.perdidaTotalHurto).toBe(true);
+    expect(s.savings).toBeGreaterThan(0);
+
+    policy.endDate = new Date(now.getTime() + 90 * 86_400_000).toISOString().slice(0, 10);
+    expect(await renewalSuggestions(user.id, now)).toHaveLength(0); // fuera de la ventana
+  });
+});
+
+describe("roles de administración", () => {
+  it("interpreta ADMIN_EMAILS e ignora roles desconocidos", async () => {
+    const { adminRoles } = await import("./admin");
+    const roles = adminRoles(" Ana@X.co:admin, luis@x.co:analista, eve@x.co:root ,");
+    expect(roles.get("ana@x.co")).toBe("admin");
+    expect(roles.get("luis@x.co")).toBe("analista");
+    expect(roles.has("eve@x.co")).toBe(false);
+  });
+});
+
+describe("PQR", () => {
+  it("radica con plazo de 15 días hábiles y notifica la respuesta", async () => {
+    const { createPqr, updatePqr } = await import("./pqr");
+    const { addBusinessDays, todayInColombia } = await import("@/domain/holidays");
+    const pqr = createPqr({ type: "reclamo", name: "Ana Gómez", email: "Ana@Example.com", message: "No me llegó la póliza al correo." });
+    expect(pqr.radicado).toMatch(/^PQR-\d{4}-000001$/);
+    expect(pqr.dueDate).toBe(addBusinessDays(todayInColombia(), 15));
+    expect(db().outbox[0].subject).toContain(pqr.radicado);
+    updatePqr(pqr.id, "respondida", "Te reenviamos la póliza.");
+    expect(pqr.status).toBe("respondida");
+    expect(db().outbox[0]).toMatchObject({ to: "ana@example.com", body: "Te reenviamos la póliza." });
   });
 });

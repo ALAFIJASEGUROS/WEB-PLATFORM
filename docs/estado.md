@@ -1,0 +1,59 @@
+# Estado del proyecto · v0.6.0 (2026-10-06)
+
+Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está en el
+[backlog](04-backlog.md) y el historial de cambios en el [CHANGELOG](../CHANGELOG.md).
+
+## Cómo verlo
+- **Demo estática:** https://alafijaseguros.github.io/WEB-PLATFORM/. Se publica desde `main`. Sin servidor: la compra, la póliza y "Mis seguros" se simulan en el navegador.
+- **Versión completa:** `npm run dev` (ver README). Incluye cuenta, admin, PQR, recordatorios y pagos.
+- **Versión desplegada:** visible en el footer (`vX.Y.Z · commit · destino`).
+
+## Lo hecho
+
+| Área | Qué funciona | Cómo se verifica |
+| --- | --- | --- |
+| Cotización | Placa colombiana o marca, línea y año. Cuestionario de 5 pasos (uso, parqueo, kilometraje, conductores, financiación, prioridad o pesos, deducible, servicios, siniestros) | E2E de compra |
+| Aseguradoras | Adaptadores simulados de SURA y Seguros Bolívar detrás de `InsurerAdapter`. Agregador con timeouts y resultados parciales. Caché de 15 min | Pruebas unitarias del agregador y la caché |
+| Recomendación | Puntaje de afinidad (precio, cobertura, servicios) con pesos editables, explicaciones y avisos. Página "Cómo funciona" | Pruebas de puntaje |
+| Resultados | Recomendación destacada, filtros, comparador de 3 con "Mejor" por fila, ficha con exclusiones, IVA y condicionado. Compartir por enlace o WhatsApp | E2E y axe |
+| Compra | Checkout sin registro, consentimientos separados con evidencia, Wompi (Web Checkout + webhook firmado) o pasarela simulada, pago anual o 12 cuotas | Pruebas de órdenes y E2E |
+| Póliza | Emisión simulada, certificado imprimible, retracto en 5 días hábiles | Pruebas de retracto |
+| Cuenta | Acceso con código por correo, reclamación de compras como invitado, billetera de pólizas y vehículos, pago de cuotas, sugerencia de renovación con ahorro | Pruebas y E2E |
+| Comunicaciones | Recordatorios de póliza, SOAT, tecnomecánica y cuotas (Ley 2300: horario, festivos, un contacto al día). Centro de ofertas con consentimiento | Pruebas de recordatorios |
+| Atención | PQR con radicado y plazo de 15 días hábiles. Sección del Defensor del Consumidor Financiero | Pruebas de PQR |
+| Administración | Roles `admin` y `analista` por correo, órdenes, recaudo, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
+| Calidad | CI con lint, typecheck, 42 pruebas unitarias, build, 24 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
+| Diseño | Mobile-first, modo oscuro con selector, tokens de color con contraste AA, versión visible en el footer | axe |
+
+## Lo pendiente
+
+### Bloqueado por terceros (requiere cuentas, llaves o convenios)
+| Tema | Historia | Qué se necesita |
+| --- | --- | --- |
+| Persistencia real | HU-09.6 | Proyecto de Supabase/PostgreSQL. Hoy los datos están **en memoria** y se pierden al reiniciar |
+| Correo real | HU-10.5, HU-08.1 | Cuenta de Resend y dominio verificado. Hoy el código de acceso se muestra en pantalla |
+| Pagos reales | HU-07.2, HU-07.4 | Llaves de Wompi sandbox y luego producción. Tokenización para débito automático |
+| Aseguradoras reales | HU-02.5 | Convenio y API de al menos una aseguradora |
+| Datos del vehículo | HU-03.5, HU-03.6 | Licencia de la Guía Fasecolda y proveedor autorizado de RUNT |
+| WhatsApp | HU-10.4 | Cuenta de WhatsApp Business API |
+| Monitoreo | HU-01.5, HU-12.4 | Sentry y PostHog |
+| Legal | HU-14.1, HU-14.2, HU-14.4 | Figura de intermediación ante la SFC, textos revisados por un abogado y registro en el RNBD |
+| Defensor del Consumidor | HU-14.3 | Datos oficiales de contacto de cada aseguradora |
+| Marca | HU-13.6 | Logos oficiales con autorización |
+
+### Solo código (siguientes candidatos)
+- HU-02.4: metadatos regulatorios por adaptador (figura contractual, productos y campos KYC).
+- HU-06.4 y HU-06.5: aceptación con OTP y campos SARLAFT configurables por aseguradora.
+- HU-07.5: conciliación diaria de pagos.
+- HU-04.4: pruebas A/B de pesos del recomendador.
+- HU-16.1 y HU-16.2: nuevas líneas de seguro y SOAT.
+- HU-09.4: lectura automática de pólizas en PDF.
+
+### Investigación pendiente
+Pasarelas (tarifas, recurrencia, Bre-B), métodos del recomendador y riesgo de que se considere asesoría, APIs de aseguradoras y proveedores de RUNT, pruebas con usuarios y costos de WhatsApp y SMS. Ver [01-investigacion.md](01-investigacion.md).
+
+## Riesgos conocidos
+- **Datos en memoria:** no apto para usuarios reales hasta tener Supabase.
+- **Marcas reales con datos simulados:** toda la app muestra avisos de "Demo", pero se requiere autorización antes de operar.
+- **Sin figura legal:** no se puede cobrar ni intermediar de verdad hasta definirla.
+- **Integración con Wompi sin probar:** la firma y los nombres de parámetros salen de la documentación conocida y deben validarse en sandbox.

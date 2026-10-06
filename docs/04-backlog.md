@@ -13,7 +13,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | ID | Historia | Estado | Prio | Rel | Pts |
 | --- | --- | --- | --- | --- | --- |
 | HU-01.1 | Como equipo quiero un repo Next.js + TS + Tailwind con CI (lint, typecheck, tests, build) | ✅ | M | MVP | 3 |
-| HU-01.2 | Como usuario quiero una interfaz accesible (WCAG 2.2 AA: foco visible, labels, objetivos táctiles de 44 px o más, reduced motion) | 🟡 | M | MVP | 5 |
+| HU-01.2 | Como usuario quiero una interfaz accesible (WCAG 2.2 AA: foco visible, labels, objetivos táctiles de 44 px o más, reduced motion) | ✅ | M | MVP | 5 |
 | HU-01.3 | Como equipo quiero tokens de diseño y modo oscuro | ✅ | S | MVP | 3 |
 | HU-01.4 | Como equipo quiero pruebas E2E automatizadas (Playwright) en CI | ✅ | S | V1 | 5 |
 | HU-01.5 | Como equipo quiero monitoreo de errores (Sentry) | ⬜ Dep | S | V1 | 2 |
@@ -31,7 +31,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-02.3 | Como equipo quiero mocks realistas de 2 aseguradoras con tarifas, latencias y errores | ✅ | M | MVP | 5 |
 | HU-02.4 | Como equipo quiero metadatos regulatorios por adaptador (figura contractual, productos habilitados, campos KYC) | ⬜ | S | V1 | 3 |
 | HU-02.5 | Como plataforma quiero integrar la API real de la primera aseguradora | ⬜ Dep | M | V1 | 13 |
-| HU-02.6 | Como plataforma quiero caché de cotizaciones con la vigencia del precio | ⬜ | C | V1 | 3 |
+| HU-02.6 | Como plataforma quiero caché de cotizaciones con la vigencia del precio | ✅ | C | V1 | 3 |
 
 **HU-02.2 · Criterios**
 - Con timeout por aseguradora, si una falla se muestran las demás más un aviso.
@@ -61,7 +61,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-04.2 | Como usuario quiero avisos cuando una opción no me conviene (financiación, deducible, hurto) | ✅ | M | MVP | 2 |
 | HU-04.3 | Como usuario quiero saber cómo se calcula y que la comisión no influye | ✅ | M | MVP | 2 |
 | HU-04.4 | Como equipo quiero A/B testing de los pesos con datos de conversión | ⬜ | C | V2 | 8 |
-| HU-04.5 | Como usuario quiero que me avisen cuando aparezca una opción mejor al renovar (re-cotización) | ⬜ | S | V1 | 5 |
+| HU-04.5 | Como usuario quiero que me avisen cuando aparezca una opción mejor al renovar (re-cotización) | ✅ | S | V1 | 5 |
 
 ## E05 · Resultados y comparador
 | ID | Historia | Estado | Prio | Rel | Pts |
@@ -70,7 +70,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-05.2 | Como usuario quiero comparar hasta 3 opciones, con lo mejor de cada fila marcado | ✅ | M | MVP | 3 |
 | HU-05.3 | Como usuario quiero una ficha completa con exclusiones, prima con IVA y enlace al condicionado (Ley 1328) | ✅ | M | V1 | 5 |
 | HU-05.4 | Como usuario de escritorio quiero un panel con mi perfil y los filtros al lado de los resultados | ✅ | S | MVP | 3 |
-| HU-05.5 | Como usuario quiero compartir mi cotización por enlace o WhatsApp | ⬜ | C | V1 | 3 |
+| HU-05.5 | Como usuario quiero compartir mi cotización por enlace o WhatsApp | ✅ | C | V1 | 3 |
 
 ## E06 · Checkout sin registro
 | ID | Historia | Estado | Prio | Rel | Pts |
@@ -133,7 +133,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | --- | --- | --- | --- | --- | --- |
 | HU-12.1 | Como admin quiero ver órdenes, recaudo y pólizas por aseguradora | ✅ | S | MVP | 3 |
 | HU-12.2 | Como equipo quiero un embudo de conversión anónimo por paso | ✅ | S | MVP | 3 |
-| HU-12.3 | Como equipo quiero roles de admin y auditoría | ⬜ | S | V1 | 5 |
+| HU-12.3 | Como equipo quiero roles de admin y auditoría | ✅ | S | V1 | 5 |
 | HU-12.4 | Como equipo quiero exportar a PostHog | ⬜ Dep | C | V1 | 2 |
 
 ## E13 · Diseño visual
@@ -151,7 +151,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | --- | --- | --- | --- | --- | --- |
 | HU-14.1 | Como plataforma quiero definir la figura de intermediación (corresponsalía, agencia o corredor) | ⬜ Dep | M | V1 | — |
 | HU-14.2 | Como usuario quiero términos, política de datos y retracto revisados por un abogado | 🟡 (borradores) | M | V1 | 3 |
-| HU-14.3 | Como plataforma quiero un canal de PQR y el enlace al Defensor del Consumidor Financiero | ⬜ | M | V1 | 3 |
+| HU-14.3 | Como plataforma quiero un canal de PQR y el enlace al Defensor del Consumidor Financiero | ✅ | M | V1 | 3 |
 | HU-14.4 | Como plataforma quiero el registro en el RNBD (SIC) | ⬜ Dep | M | V1 | — |
 
 ## E15 · Investigación pendiente
@@ -179,10 +179,16 @@ HU-08.3 (retracto), HU-10.3 (festivos y tope diario), HU-13.5 (selector de tema)
 más las correcciones de la revisión automática del PR #1 (eventos falsificables, doble cobro de cuotas,
 contraste en modo oscuro, cuota pendiente, header tras login, recaudo de cuotas).
 
-## Próximo sprint sugerido (solo código)
-HU-04.5 (aviso de re-cotización al renovar), HU-12.3 (roles de admin y auditoría), HU-14.3 (PQR y
-Defensor del Consumidor), HU-05.5 (compartir cotización), HU-02.6 (caché de cotizaciones),
-HU-01.2 (auditoría de accesibilidad con Lighthouse). **Total: unos 22 puntos.**
+## Sprint 4 (completado)
+HU-02.6 (caché de cotizaciones), HU-05.5 (compartir cotización), HU-04.5 (re-cotización al renovar),
+HU-12.3 (roles de admin por correo y bitácora), HU-14.3 (PQR con radicado y Defensor),
+HU-01.2 (auditoría automática con axe, WCAG 2.2 AA, modo claro y oscuro).
+
+## Próximo sprint sugerido
+Con lo que queda solo de código casi agotado, lo siguiente depende de terceros: Supabase (HU-09.6),
+Resend (HU-10.5), llaves de Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).
+De código quedan HU-02.4 (metadatos regulatorios por adaptador), HU-07.5 (conciliación),
+HU-04.4 (A/B de pesos) y HU-16.1 (nuevas líneas de seguro).
 
 ## Bloqueados por terceros
 - Supabase (HU-09.6)

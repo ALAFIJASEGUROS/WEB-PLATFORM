@@ -127,6 +127,25 @@ export interface Campaign {
   createdAt: string;
 }
 
+export type PqrType = "peticion" | "queja" | "reclamo" | "sugerencia";
+export type PqrStatus = "radicada" | "en_tramite" | "respondida";
+
+export interface Pqr {
+  id: string;
+  radicado: string;
+  type: PqrType;
+  name: string;
+  email: string;
+  policyNumber?: string;
+  message: string;
+  createdAt: string;
+  /** Fecha límite de respuesta (15 días hábiles). */
+  dueDate: string;
+  status: PqrStatus;
+  response?: string;
+  respondedAt?: string;
+}
+
 export interface OutboxMessage {
   id: string;
   to: string;
@@ -154,6 +173,7 @@ interface Db {
   otps: Map<string, Otp>;
   processedEvents: Set<string>;
   installmentPayments: Map<string, InstallmentPayment>;
+  pqrs: Map<string, Pqr>;
 }
 
 function seed(db: Db) {
@@ -202,6 +222,7 @@ export function db(): Db {
       otps: new Map(),
       processedEvents: new Set(),
       installmentPayments: new Map(),
+      pqrs: new Map(),
     };
     seed(g.__safDb);
   }
