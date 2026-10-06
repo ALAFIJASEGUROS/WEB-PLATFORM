@@ -9,10 +9,13 @@ import {
   newId,
   randomToken,
   sendMessage,
+  syncInstallmentReminder,
+  type Installment,
   type Order,
   type Policy,
 } from "./db";
 import { paymentProvider, type PaymentUpdate } from "./payments";
+import { recordEvent } from "./analytics";
 
 export class CheckoutError extends Error {}
 
@@ -49,6 +52,7 @@ export async function createOrder(input: CheckoutInput, userId?: string) {
     provider: paymentProvider().id,
     accessToken: randomToken(),
     userId,
+    analyticsSid: input.analyticsSid,
   };
   db().orders.set(order.id, order);
   return order;
@@ -73,6 +77,14 @@ export function getOrderForViewer(reference: string, token?: string, userId?: st
 export async function applyPaymentUpdate(u: PaymentUpdate) {
   const d = db();
   if (d.processedEvents.has(u.eventId)) return findOrderByReference(u.reference);
+  const installment = d.installmentPayments.get(u.reference);
+  if (installment) {
+    d.processedEvents.add(u.eventId);
+    if (u.status === "APPROVED" && u.amountInCents === installment.amountInCents) {
+      markInstallmentPaid(installment.policyId, installment.n);
+    }
+    return null;
+  }
   const order = findOrderByReference(u.reference);
   if (!order) return null;
   d.processedEvents.add(u.eventId);
@@ -87,6 +99,7 @@ export async function applyPaymentUpdate(u: PaymentUpdate) {
       return order;
     }
     order.status = "aprobada";
+    if (order.analyticsSid) recordEvent("pago_aprobado", order.analyticsSid, { aseguradora: order.offer.insurerId, plan: order.paymentPlan });
     await issuePolicy(order);
   } else if (u.status === "PENDING") {
     order.status = "pendiente";
@@ -94,6 +107,27 @@ export async function applyPaymentUpdate(u: PaymentUpdate) {
     order.status = "rechazada";
   }
   return order;
+}
+
+function addMonths(iso: string, n: number) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  const day = d.getUTCDate();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() + n);
+  const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+  d.setUTCDate(Math.min(day, last));
+  return d.toISOString().slice(0, 10);
+}
+
+/** 12 cuotas mensuales; la primera se paga al comprar. */
+export function buildInstallments(startDate: string, amount: number): Installment[] {
+  return Array.from({ length: 12 }, (_, i) => ({
+    n: i + 1,
+    dueDate: addMonths(startDate, i),
+    amount,
+    status: i === 0 ? "pagada" : "pendiente",
+    paidAt: i === 0 ? new Date().toISOString() : undefined,
+  }));
 }
 
 function addYears(iso: string, n: number) {
@@ -133,6 +167,10 @@ async function issuePolicy(order: Order) {
       endDate: addYears(startDate, 1),
       annualPremium: order.offer.annualPremium,
       paymentPlan: order.paymentPlan,
+      installments:
+        order.paymentPlan === "mensual"
+          ? buildInstallments(startDate, order.amountInCents / 100)
+          : undefined,
       accessToken: order.accessToken,
     };
     db().policies.set(policy.id, policy);
@@ -169,4 +207,41 @@ export function getPolicyForViewer(id: string, token?: string, userId?: string) 
   if (!p) return null;
   if ((token && token === p.accessToken) || (userId && p.userId === userId)) return p;
   return null;
+}
+
+export function markInstallmentPaid(policyId: string, n: number) {
+  const p = db().policies.get(policyId);
+  const inst = p?.installments?.find((i) => i.n === n);
+  if (!p || !inst || inst.status === "pagada") return;
+  inst.status = "pagada";
+  inst.paidAt = new Date().toISOString();
+  syncInstallmentReminder(p);
+  sendMessage({
+    to: p.holderEmail,
+    channel: "email",
+    subject: `Recibimos el pago de la cuota ${n} de ${p.installments!.length}`,
+    body: `Pagaste ${formatCOP(inst.amount)} de tu póliza ${p.number} (${p.planName}).`,
+  });
+}
+
+/**
+ * Inicia el pago de la próxima cuota pendiente. Con la pasarela simulada se
+ * aprueba de inmediato; con Wompi se redirige al checkout y el webhook la marca.
+ */
+export async function startInstallmentPayment(policyId: string, userId: string, baseUrl: string) {
+  const p = db().policies.get(policyId);
+  if (!p || p.userId !== userId) throw new CheckoutError("Póliza no encontrada.");
+  const next = p.installments?.find((i) => i.status === "pendiente");
+  if (!next) throw new CheckoutError("No tienes cuotas pendientes.");
+  const provider = paymentProvider();
+  if (provider.id === "simulado") {
+    markInstallmentPaid(p.id, next.n);
+    return { redirectUrl: `/cuenta/seguros?cuota=${next.n}` };
+  }
+  const order = p.orderId ? db().orders.get(p.orderId) : undefined;
+  if (!order) throw new CheckoutError("No encontramos la compra original.");
+  const reference = `${order.reference}-C${next.n}-${randomToken(2).toUpperCase()}`;
+  const amountInCents = next.amount * 100;
+  db().installmentPayments.set(reference, { reference, policyId: p.id, n: next.n, amountInCents });
+  return provider.createCheckout({ ...order, reference, amountInCents }, baseUrl);
 }

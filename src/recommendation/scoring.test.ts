@@ -9,6 +9,8 @@ const answers: Answers = {
   priority: "equilibrio",
   use: "particular",
   parking: "cerrado",
+  mileage: "medio",
+  drivers: "solo",
   financed: false,
   deductibleTolerance: "medio",
   services: [],
@@ -67,6 +69,13 @@ describe("tarifas simuladas", () => {
     const delivery = priceOffers({ ...req, answers: { ...answers, use: "domicilios" } }, SURA_CONFIG)[1].annualPremium;
     expect(young).toBeGreaterThan(base);
     expect(delivery).toBeGreaterThan(base);
+  });
+
+  it("ajustan por kilometraje y número de conductores", () => {
+    const at = (a: Partial<Answers>) => priceOffers({ ...req, answers: { ...answers, ...a } }, SURA_CONFIG)[1].annualPremium;
+    expect(at({ mileage: "bajo" })).toBeLessThan(at({ mileage: "medio" }));
+    expect(at({ mileage: "alto" })).toBeGreaterThan(at({ mileage: "medio" }));
+    expect(at({ drivers: "varios" })).toBeGreaterThan(at({ drivers: "solo" }));
   });
 
   it("solo devuelve planes del tipo de vehículo pedido", () => {

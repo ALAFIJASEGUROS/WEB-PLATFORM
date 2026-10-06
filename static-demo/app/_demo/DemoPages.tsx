@@ -30,7 +30,7 @@ function withSuspense(C: () => React.ReactNode) {
 
 function StaticNotice({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex gap-2 rounded-xl bg-sun-soft p-3 text-sm text-[#8a5a00]">
+    <p className="flex gap-2 rounded-xl bg-sun-soft p-3 text-sm text-sun-ink">
       <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
       <span>{children}</span>
     </p>
@@ -59,7 +59,7 @@ export const GatewayPage = withSuspense(function Gateway() {
       <Card className="space-y-5 p-6">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Pasarela simulada</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-navy">{formatCOP(order.amount)}</h1>
+          <h1 className="mt-1 text-2xl font-extrabold text-heading">{formatCOP(order.amount)}</h1>
           <p className="text-sm text-muted">{order.offer.planName} · {order.offer.insurerName}</p>
         </div>
         <StaticNotice>En la versión completa aquí se abre el checkout de Wompi (PSE, tarjeta, Nequi).</StaticNotice>
@@ -82,7 +82,7 @@ export const ResultPage = withSuspense(function Result() {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <XCircle className="mx-auto size-16 text-coral" aria-hidden />
-        <h1 className="mt-4 text-2xl font-extrabold text-navy">Tu pago no fue aprobado</h1>
+        <h1 className="mt-4 text-2xl font-extrabold text-heading">Tu pago no fue aprobado</h1>
         <p className="mt-2 text-muted">No se hizo ningún cobro. Puedes intentarlo de nuevo.</p>
         <ButtonLink href={`/checkout?oferta=${encodeURIComponent(order.offer.id)}`} className="mt-6">Intentar de nuevo</ButtonLink>
       </div>
@@ -91,7 +91,7 @@ export const ResultPage = withSuspense(function Result() {
   return (
     <div className="mx-auto max-w-lg px-4 py-10 text-center">
       <CheckCircle2 className="mx-auto size-16 text-mint" aria-hidden />
-      <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-navy">¡Listo, ya estás asegurado!</h1>
+      <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-heading">¡Listo, ya estás asegurado!</h1>
       <p className="mt-2 text-muted">Pagaste {formatCOP(order.amount)}. En la versión completa te enviamos la póliza a <strong>{order.input.policyholder.email}</strong>.</p>
       <div className="mt-6 grid gap-3">
         <ButtonLink href={`/poliza?id=${order.policy.id}`}>Ver mi póliza</ButtonLink>
@@ -112,11 +112,11 @@ export const PolicyPage = withSuspense(function Policy() {
   const v = order.input.quote.vehicle;
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <Link href="/cuenta" className="mb-3 inline-flex min-h-11 items-center text-sm font-semibold text-muted hover:text-navy">← Mis seguros</Link>
+      <Link href="/cuenta" className="mb-3 inline-flex min-h-11 items-center text-sm font-semibold text-muted hover:text-heading">← Mis seguros</Link>
       <Card className="space-y-6 p-6">
         <div>
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-mint"><ShieldCheck className="size-4" aria-hidden /> Póliza vigente</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-navy">{offer.planName}</h1>
+          <h1 className="mt-1 text-2xl font-extrabold text-heading">{offer.planName}</h1>
           <p className="text-muted">{offer.insurerName}</p>
         </div>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -140,7 +140,7 @@ export function AccountPage() {
   const orders = hydrated ? readDemoOrders().filter((o) => o.policy) : [];
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-navy">Mis seguros</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-heading">Mis seguros</h1>
       <StaticNotice>
         Esta es la versión estática del prototipo. En la versión completa la cuenta tiene acceso con código
         por correo, vehículos con SOAT y tecnomecánica, recordatorios, ofertas de aseguradoras y perfil.
@@ -148,7 +148,7 @@ export function AccountPage() {
       </StaticNotice>
       {hydrated && orders.length === 0 && (
         <Card className="flex flex-col items-start gap-3 p-5">
-          <p className="font-bold text-navy">Aún no has comprado desde este navegador</p>
+          <p className="font-bold text-heading">Aún no has comprado desde este navegador</p>
           <ButtonLink href="/cotizar">Cotizar</ButtonLink>
         </Card>
       )}
@@ -158,7 +158,7 @@ export function AccountPage() {
             <div className="flex items-center gap-3">
               <InsurerLogo id={o.offer.insurerId} name={o.offer.insurerName} />
               <div className="flex-1">
-                <p className="font-bold text-navy">{o.offer.planName}</p>
+                <p className="font-bold text-heading">{o.offer.planName}</p>
                 <p className="text-sm text-muted">{o.offer.insurerName} · {o.input.quote.vehicle.plate ?? o.input.quote.vehicle.model}</p>
               </div>
             </div>
@@ -182,7 +182,7 @@ export function AdminPage() {
 function NotFoundCard() {
   return (
     <div className="mx-auto max-w-md px-4 py-24 text-center">
-      <h1 className="text-2xl font-extrabold text-navy">No encontramos esta compra</h1>
+      <h1 className="text-2xl font-extrabold text-heading">No encontramos esta compra</h1>
       <p className="mt-2 text-muted">En la demo estática las compras se guardan solo en este navegador.</p>
       <ButtonLink href="/cotizar" className="mt-6">Cotizar</ButtonLink>
     </div>

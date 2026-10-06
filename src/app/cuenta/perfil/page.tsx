@@ -10,7 +10,7 @@ export default async function Page() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-navy">Perfil y preferencias</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-heading">Perfil y preferencias</h1>
       <Card className="p-5">
         <ActionForm action={updateProfileAction} submitLabel="Guardar cambios" resetOnSuccess={false}>
           <p className="text-sm text-muted">Correo: <strong className="text-ink">{user.email}</strong></p>
@@ -23,7 +23,7 @@ export default async function Page() {
             </Field>
           </div>
           <fieldset className="space-y-2">
-            <legend className="mb-1 text-sm font-semibold text-navy">¿Por dónde te avisamos?</legend>
+            <legend className="mb-1 text-sm font-semibold text-heading">¿Por dónde te avisamos?</legend>
             <label className="flex items-center gap-3 text-sm"><input type="checkbox" name="ch_email" defaultChecked={user.channels.email} className="size-5 accent-brand" />Correo electrónico</label>
             <label className="flex items-center gap-3 text-sm"><input type="checkbox" name="ch_whatsapp" defaultChecked={user.channels.whatsapp} className="size-5 accent-brand" />WhatsApp</label>
           </fieldset>

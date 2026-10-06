@@ -23,8 +23,8 @@ export default function Page() {
     <ContentPage title="Ayuda" intro="Respuestas rápidas a las dudas más comunes.">
       <div className="space-y-2">
         {FAQ.map(([q, a]) => (
-          <details key={q} className="rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]">
-            <summary className="cursor-pointer font-semibold text-navy">{q}</summary>
+          <details key={q} className="rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)]">
+            <summary className="cursor-pointer font-semibold text-heading">{q}</summary>
             <p className="mt-2 text-muted">{a}</p>
           </details>
         ))}

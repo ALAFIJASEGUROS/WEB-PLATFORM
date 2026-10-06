@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { CheckoutInput } from "@/domain/schemas";
 import { claimGuestPurchases, db, getOrCreateUser } from "./db";
-import { applyPaymentUpdate, createOrder, CheckoutError } from "./orders";
+import { applyPaymentUpdate, buildInstallments, createOrder, CheckoutError, startInstallmentPayment } from "./orders";
 import { parseWompiEvent, wompiIntegritySignature } from "./payments";
 import { dispatchDueReminders, withinContactHours } from "./reminders";
 
@@ -12,7 +12,7 @@ const input: CheckoutInput = {
   quote: {
     vehicle: { type: "moto", plate: "XYZ12A", brand: "Yamaha", model: "NMAX 155", year: 2023, commercialValue: 13_000_000 },
     driver: { birthdate: "1995-03-03", city: "Bogotá" },
-    answers: { priority: "precio", use: "domicilios", parking: "calle", financed: false, deductibleTolerance: "alto", services: [], claimsLast3Years: 0 },
+    answers: { priority: "precio", use: "domicilios", parking: "calle", mileage: "alto", drivers: "solo", financed: false, deductibleTolerance: "alto", services: [], claimsLast3Years: 0 },
   },
   offerId: "bolivar:moto-plus",
   paymentPlan: "anual",
@@ -86,6 +86,31 @@ describe("órdenes y emisión", () => {
   });
 });
 
+describe("pago mensual", () => {
+  it("genera 12 cuotas mensuales respetando fin de mes", () => {
+    const list = buildInstallments("2026-01-31", 100);
+    expect(list).toHaveLength(12);
+    expect(list[0].status).toBe("pagada");
+    expect(list.slice(0, 3).map((i) => i.dueDate)).toEqual(["2026-01-31", "2026-02-28", "2026-03-31"]);
+  });
+
+  it("crea el recordatorio de la próxima cuota y lo mueve al pagar", async () => {
+    const user = getOrCreateUser("ana@example.com");
+    const order = await createOrder({ ...input, paymentPlan: "mensual" }, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "m1" });
+    const policy = [...db().policies.values()][0];
+    expect(policy.installments?.filter((i) => i.status === "pagada")).toHaveLength(1);
+    const reminder = () => [...db().reminders.values()].find((r) => r.kind === "cuota")!;
+    expect(reminder().dueDate).toBe(policy.installments![1].dueDate);
+
+    const res = await startInstallmentPayment(policy.id, user.id, "http://x");
+    expect(res.redirectUrl).toBe("/cuenta/seguros?cuota=2");
+    expect(policy.installments![1].status).toBe("pagada");
+    expect(reminder().dueDate).toBe(policy.installments![2].dueDate);
+    await expect(startInstallmentPayment(policy.id, "otro", "http://x")).rejects.toBeInstanceOf(CheckoutError);
+  });
+});
+
 describe("recordatorios", () => {
   it("respeta el horario de la Ley 2300", () => {
     expect(withinContactHours(new Date("2026-10-05T15:00:00Z"))).toBe(true); // lunes 10:00
@@ -101,5 +126,20 @@ describe("recordatorios", () => {
     const now = new Date("2026-10-05T15:00:00Z");
     expect(dispatchDueReminders(now).sent).toBe(1);
     expect(dispatchDueReminders(now).sent).toBe(0);
+  });
+});
+
+describe("analítica", () => {
+  it("cuenta sesiones únicas por paso del embudo", async () => {
+    const { recordEvent, funnel } = await import("./analytics");
+    (globalThis as { __safEvents?: unknown }).__safEvents = undefined;
+    recordEvent("cotizacion_iniciada", "s1");
+    recordEvent("cotizacion_iniciada", "s1");
+    recordEvent("cotizacion_iniciada", "s2");
+    recordEvent("vehiculo_identificado", "s1");
+    const [start, vehicle] = funnel();
+    expect(start.sessions).toBe(2);
+    expect(vehicle.sessions).toBe(1);
+    expect(vehicle.fromPrevious).toBe(0.5);
   });
 });

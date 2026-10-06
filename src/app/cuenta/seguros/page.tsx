@@ -3,16 +3,46 @@ import { redirect } from "next/navigation";
 import { Bike, CarFront, Trash2 } from "lucide-react";
 import { getCurrentUser } from "@/server/auth";
 import { daysUntil, userPolicies, userVehicles } from "@/server/queries";
-import { Badge, ButtonLink, Card, Field, InsurerLogo, inputClass } from "@/components/ui";
+import type { Policy } from "@/server/db";
+import { formatCOP } from "@/domain/labels";
+import { Badge, Button, ButtonLink, Card, Field, InsurerLogo, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
 import {
   addExternalPolicyAction,
   deletePolicyAction,
+  payInstallmentAction,
   deleteVehicleAction,
   saveVehicleAction,
 } from "../actions";
 
-export default async function Page() {
+function InstallmentPlan({ policy }: { policy: Policy }) {
+  const list = policy.installments!;
+  const paid = list.filter((i) => i.status === "pagada").length;
+  const next = list.find((i) => i.status === "pendiente");
+  return (
+    <div className="space-y-2 rounded-2xl bg-canvas p-3">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-semibold text-heading">Cuotas pagadas {paid} de {list.length}</span>
+        {next && <span className="text-muted">Próxima: {next.dueDate}</span>}
+      </div>
+      <div className="flex gap-1" aria-hidden>
+        {list.map((i) => (
+          <span key={i.n} className={`h-1.5 flex-1 rounded-full ${i.status === "pagada" ? "bg-mint" : "bg-line"}`} />
+        ))}
+      </div>
+      {next && (
+        <form action={payInstallmentAction.bind(null, policy.id)}>
+          <Button type="submit" variant="secondary" className="min-h-10 w-full px-4 text-sm">
+            Pagar cuota {next.n} · {formatCOP(next.amount)}
+          </Button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+export default async function Page({ searchParams }: PageProps<"/cuenta/seguros">) {
+  const { cuota, error } = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/cuenta");
   const policies = userPolicies(user.id);
@@ -22,9 +52,11 @@ export default async function Page() {
     <div className="space-y-10">
       <section aria-labelledby="polizas" className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h1 id="polizas" className="text-2xl font-extrabold tracking-tight text-navy">Mis pólizas</h1>
+          <h1 id="polizas" className="text-2xl font-extrabold tracking-tight text-heading">Mis pólizas</h1>
           <ButtonLink href="/cotizar" variant="secondary" className="min-h-10 px-4 text-sm">Cotizar otra</ButtonLink>
         </div>
+        {typeof cuota === "string" && <p role="status" className="rounded-xl bg-mint-soft p-3 text-sm font-medium text-mint">Pagaste la cuota {cuota}. Te enviamos el comprobante por correo.</p>}
+        {typeof error === "string" && <p role="alert" className="rounded-xl bg-coral-soft p-3 text-sm text-coral">{error}</p>}
         {policies.length === 0 && <p className="text-muted">Todavía no tienes pólizas registradas.</p>}
         <div className="grid gap-3 md:grid-cols-2">
           {policies.map((p) => {
@@ -34,12 +66,13 @@ export default async function Page() {
                 <div className="flex items-start gap-3">
                   <InsurerLogo id={p.insurerId} name={p.insurerName} />
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-navy">{p.planName}</p>
+                    <p className="font-bold text-heading">{p.planName}</p>
                     <p className="text-sm text-muted">{p.insurerName} · {p.vehicle.plate}</p>
                   </div>
                   {left < 0 ? <Badge tone="coral">Vencida</Badge> : left <= 30 ? <Badge tone="sun">Vence en {left} días</Badge> : <Badge tone="mint">Vigente</Badge>}
                 </div>
                 <p className="text-sm text-muted">Nº {p.number} · {p.startDate} a {p.endDate}</p>
+                {p.installments && <InstallmentPlan policy={p} />}
                 <div className="flex flex-wrap gap-2">
                   {p.source === "compra" ? (
                     <Link href={`/poliza/${p.id}`} className="text-sm font-semibold text-brand underline">Ver póliza</Link>
@@ -62,14 +95,14 @@ export default async function Page() {
       </section>
 
       <section id="vehiculos" aria-labelledby="veh" className="space-y-4">
-        <h2 id="veh" className="text-xl font-extrabold text-navy">Mis vehículos</h2>
+        <h2 id="veh" className="text-xl font-extrabold text-heading">Mis vehículos</h2>
         <p className="text-sm text-muted">Agrega las fechas de SOAT y tecnomecánica y te recordamos antes de que venzan.</p>
         <div className="grid gap-3 md:grid-cols-2">
           {vehicles.map((v) => (
             <Card key={v.id} className="space-y-3 p-5">
               <div className="flex items-center gap-3">
                 {v.type === "moto" ? <Bike className="size-6 text-brand" aria-hidden /> : <CarFront className="size-6 text-brand" aria-hidden />}
-                <p className="flex-1 font-bold text-navy">{v.plate} · {v.brand} {v.model} {v.year}</p>
+                <p className="flex-1 font-bold text-heading">{v.plate} · {v.brand} {v.model} {v.year}</p>
                 <form action={deleteVehicleAction.bind(null, v.id)}>
                   <button aria-label={`Eliminar ${v.plate}`} className="flex size-10 items-center justify-center rounded-full text-muted hover:bg-coral-soft hover:text-coral"><Trash2 className="size-4" aria-hidden /></button>
                 </form>
@@ -93,8 +126,8 @@ export default async function Page() {
           ))}
         </div>
 
-        <details className="rounded-[var(--radius-card)] bg-white p-5 shadow-[var(--shadow-card)]">
-          <summary className="cursor-pointer font-semibold text-navy">+ Agregar vehículo</summary>
+        <details className="rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
+          <summary className="cursor-pointer font-semibold text-heading">+ Agregar vehículo</summary>
           <ActionForm action={saveVehicleAction} submitLabel="Agregar vehículo" className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Placa" htmlFor="nv-plate"><input id="nv-plate" name="plate" required className={`${inputClass} uppercase`} placeholder="ABC123" /></Field>
             <Field label="Marca" htmlFor="nv-brand"><input id="nv-brand" name="brand" required className={inputClass} /></Field>
@@ -106,8 +139,8 @@ export default async function Page() {
         </details>
 
         {vehicles.length > 0 && (
-          <details className="rounded-[var(--radius-card)] bg-white p-5 shadow-[var(--shadow-card)]">
-            <summary className="cursor-pointer font-semibold text-navy">+ Registrar una póliza que ya tengo</summary>
+          <details className="rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
+            <summary className="cursor-pointer font-semibold text-heading">+ Registrar una póliza que ya tengo</summary>
             <ActionForm action={addExternalPolicyAction} submitLabel="Registrar póliza" className="mt-4 grid gap-3 sm:grid-cols-2">
               <Field label="Aseguradora" htmlFor="ep-ins"><input id="ep-ins" name="insurerName" required className={inputClass} /></Field>
               <Field label="Producto o plan" htmlFor="ep-plan"><input id="ep-plan" name="planName" required className={inputClass} /></Field>

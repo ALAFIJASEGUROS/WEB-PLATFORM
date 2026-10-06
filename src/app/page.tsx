@@ -34,23 +34,23 @@ function HeroPreview() {
     <div aria-hidden className="relative mx-auto w-full max-w-sm">
       <div className="absolute -right-4 -top-4 size-40 rounded-full bg-mint/15 blur-2xl" />
       <div className="absolute -bottom-6 -left-6 size-40 rounded-full bg-brand/15 blur-2xl" />
-      <div className="relative rotate-2 rounded-[var(--radius-card)] bg-white/70 p-4 shadow-[var(--shadow-card)]">
+      <div className="relative rotate-2 rounded-[var(--radius-card)] bg-surface/70 p-4 shadow-[var(--shadow-card)]">
         <div className="h-3 w-24 rounded bg-line" />
         <div className="mt-2 h-3 w-16 rounded bg-line" />
       </div>
-      <div className="relative -mt-10 -rotate-1 rounded-[var(--radius-card)] bg-white p-5 shadow-[0_12px_40px_rgb(11_61_145/0.16)]">
+      <div className="relative -mt-10 -rotate-1 rounded-[var(--radius-card)] bg-surface p-5 shadow-[0_12px_40px_rgb(11_61_145/0.16)]">
         <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand-strong">
           <Sparkles className="size-3" /> Recomendado para ti
         </span>
         <div className="mt-3 flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-xl bg-[#00843d] text-sm font-extrabold text-white">BO</span>
           <div className="flex-1">
-            <p className="font-bold text-navy">Auto Plus</p>
+            <p className="font-bold text-heading">Auto Plus</p>
             <p className="text-sm text-muted">Seguros Bolívar</p>
           </div>
           <span className="text-lg font-extrabold text-mint">92</span>
         </div>
-        <p className="mt-4 text-2xl font-extrabold tracking-tight text-navy">
+        <p className="mt-4 text-2xl font-extrabold tracking-tight text-heading">
           $1.513.000<span className="text-sm font-semibold text-muted"> /año</span>
         </p>
         <ul className="mt-3 space-y-1.5 text-sm">
@@ -69,11 +69,11 @@ export default function Home() {
       <section className="overflow-hidden bg-gradient-to-b from-brand-soft via-brand-soft/60 to-canvas">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-8 md:grid-cols-[1.1fr_1fr] md:pb-20 md:pt-16">
           <div>
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-navy shadow-sm">
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-heading shadow-sm">
               <ShieldCheck className="size-4 text-mint" aria-hidden />
               Seguros de carro y moto en Colombia
             </p>
-            <h1 className="text-[2.5rem] font-extrabold leading-[1.05] tracking-tight text-navy md:text-6xl">
+            <h1 className="text-[2.5rem] font-extrabold leading-[1.05] tracking-tight text-heading md:text-6xl">
               El seguro que te sirve, <span className="text-brand">a la fija.</span>
             </h1>
             <p className="mt-4 max-w-lg text-lg text-muted">
@@ -89,13 +89,13 @@ export default function Home() {
                 <Link
                   key={o.href}
                   href={o.href}
-                  className="group flex items-center gap-3 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:ring-2 hover:ring-brand"
+                  className="group flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:ring-2 hover:ring-brand"
                 >
                   <span className="flex size-11 items-center justify-center rounded-xl bg-brand text-white">
                     <o.icon className="size-6" aria-hidden />
                   </span>
                   <span>
-                    <span className="block font-bold text-navy">{o.label}</span>
+                    <span className="block font-bold text-heading">{o.label}</span>
                     <span className="block text-xs font-semibold text-brand group-hover:underline">Cotizar →</span>
                   </span>
                 </Link>
@@ -107,18 +107,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section aria-label="Aseguradoras" className="border-y border-line bg-white">
+      <section aria-label="Aseguradoras" className="border-y border-line bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-4 py-5 text-sm">
           <span className="text-muted">Comparamos opciones de</span>
           {INSURERS.map((n) => (
-            <span key={n} className="font-extrabold tracking-tight text-navy/70">{n}</span>
+            <span key={n} className="font-extrabold tracking-tight text-heading/70">{n}</span>
           ))}
           <span className="text-muted">y pronto más</span>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-14" aria-labelledby="como">
-        <h2 id="como" className="text-2xl font-extrabold tracking-tight text-navy md:text-3xl">Así de fácil</h2>
+        <h2 id="como" className="text-2xl font-extrabold tracking-tight text-heading md:text-3xl">Así de fácil</h2>
         <ol className="mt-6 grid gap-4 md:grid-cols-3">
           {STEPS.map((s, i) => (
             <li key={s.title}>
@@ -129,7 +129,7 @@ export default function Home() {
                   </span>
                   <span className="text-4xl font-extrabold text-line">{i + 1}</span>
                 </div>
-                <h3 className="font-bold text-navy">{s.title}</h3>
+                <h3 className="font-bold text-heading">{s.title}</h3>
                 <p className="mt-1 text-sm text-muted">{s.text}</p>
               </Card>
             </li>
@@ -137,9 +137,9 @@ export default function Home() {
         </ol>
       </section>
 
-      <section className="bg-white py-14" aria-labelledby="por-que">
+      <section className="bg-surface py-14" aria-labelledby="por-que">
         <div className="mx-auto max-w-6xl px-4">
-          <h2 id="por-que" className="text-2xl font-extrabold tracking-tight text-navy md:text-3xl">¿Por qué SeguAlaFija?</h2>
+          <h2 id="por-que" className="text-2xl font-extrabold tracking-tight text-heading md:text-3xl">¿Por qué SeguAlaFija?</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             {BENEFITS.map((b) => (
               <div key={b.title} className="flex gap-4">
@@ -147,7 +147,7 @@ export default function Home() {
                   <b.icon className="size-5" aria-hidden />
                 </span>
                 <div>
-                  <h3 className="font-bold text-navy">{b.title}</h3>
+                  <h3 className="font-bold text-heading">{b.title}</h3>
                   <p className="mt-1 text-sm text-muted">{b.text}</p>
                 </div>
               </div>

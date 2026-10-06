@@ -35,6 +35,10 @@ function coverageWeights(a: Answers): Record<CoverageKey, number> {
     w.perdidaTotalHurto += 1.5;
     w.perdidaParcialHurto += 1;
   }
+  if (a.mileage === "alto") {
+    w.perdidaParcialDanos += 1;
+    w.eventosNaturaleza += 0.5;
+  }
   if (a.use === "domicilios" || a.use === "trabajo") {
     w.accidentesPersonales += 1.5;
     w.rc += 1;
@@ -119,6 +123,8 @@ export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
           .map((s) => SERVICE_LABELS[s].toLowerCase())
           .join(", ")}.`,
       );
+    if (answers.mileage === "alto" && o.services.includes("grua") && o.services.includes("asistenciaViaje"))
+      reasons.push("Incluye grúa y asistencia en viaje, útiles si recorres muchos kilómetros.");
     if (answers.financed && meetsFinancingRequirements(o))
       reasons.push("Cumple lo que normalmente exige el banco para vehículos financiados.");
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Pencil, SlidersHorizontal } from "lucide-react";
 import { PRIORITY_LABELS } from "@/domain/labels";
 import { fetchQuote } from "@/lib/api-client";
+import { track } from "@/lib/analytics";
 import {
   quoteStore,
   useCompare,
@@ -41,6 +42,12 @@ export function ResultsView() {
     };
   }, [request, data, error]);
 
+  const quoteId = data?.quoteId;
+  useEffect(() => {
+    if (quoteId) track("resultados_vistos", { ofertas: data?.offers.length ?? 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- una vez por cotización
+  }, [quoteId]);
+
   const offers = useMemo(() => {
     if (!data) return [];
     let list = data.offers.filter(
@@ -69,7 +76,7 @@ export function ResultsView() {
   if (hydrated && !request) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-extrabold text-navy">Aún no has cotizado</h1>
+        <h1 className="text-2xl font-extrabold text-heading">Aún no has cotizado</h1>
         <p className="mt-2 text-muted">Responde unas preguntas y te mostramos tus opciones.</p>
         <ButtonLink href="/cotizar" className="mt-6">Empezar</ButtonLink>
       </div>
@@ -80,7 +87,7 @@ export function ResultsView() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <AlertCircle className="mx-auto size-10 text-coral" aria-hidden />
-        <p className="mt-4 font-semibold text-navy">{error}</p>
+        <p className="mt-4 font-semibold text-heading">{error}</p>
         <Button className="mt-6" onClick={() => setError(null)}>Reintentar</Button>
       </div>
     );
@@ -89,11 +96,11 @@ export function ResultsView() {
   if (!data || !request) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-6" role="status" aria-live="polite">
-        <p className="text-2xl font-extrabold tracking-tight text-navy">Consultando aseguradoras…</p>
+        <p className="text-2xl font-extrabold tracking-tight text-heading">Consultando aseguradoras…</p>
         <p className="mt-1 text-sm text-muted">Comparamos precios, coberturas y servicios para ti. Toma unos segundos.</p>
         <div className="mt-6 space-y-4" aria-hidden>
           {[0, 1, 2].map((i) => (
-            <div key={i} className="animate-pulse rounded-[var(--radius-card)] bg-white p-5 shadow-[var(--shadow-card)]">
+            <div key={i} className="animate-pulse rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
               <div className="flex items-center gap-3">
                 <div className="size-12 rounded-xl bg-line" />
                 <div className="flex-1 space-y-2">
@@ -117,7 +124,7 @@ export function ResultsView() {
     <div className="mx-auto max-w-3xl px-4 py-6">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-navy">
+          <h1 className="text-2xl font-extrabold tracking-tight text-heading">
             {data.offers.length} opciones para tu {v.brand} {v.model} {v.year}
           </h1>
           <p className="mt-1 text-sm text-muted">
@@ -158,13 +165,13 @@ export function ResultsView() {
       <div className="hide-scrollbar -mx-4 mt-8 flex items-center gap-2 overflow-x-auto px-4 pb-1">
         <SlidersHorizontal className="size-4 shrink-0 text-muted" aria-hidden />
         <label className="sr-only" htmlFor="sort">Ordenar por</label>
-        <select id="sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="min-h-10 rounded-full border-2 border-line bg-white px-3 text-sm font-semibold text-navy">
+        <select id="sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="min-h-10 rounded-full border-2 border-line bg-surface px-3 text-sm font-semibold text-heading">
           <option value="afinidad">Más afines</option>
           <option value="precio">Menor precio</option>
           <option value="cobertura">Mayor cobertura</option>
         </select>
         <label className="sr-only" htmlFor="insurer">Aseguradora</label>
-        <select id="insurer" value={insurer} onChange={(e) => setInsurer(e.target.value)} className="min-h-10 rounded-full border-2 border-line bg-white px-3 text-sm font-semibold text-navy">
+        <select id="insurer" value={insurer} onChange={(e) => setInsurer(e.target.value)} className="min-h-10 rounded-full border-2 border-line bg-surface px-3 text-sm font-semibold text-heading">
           <option value="todas">Todas las aseguradoras</option>
           {insurers.map(([id, name]) => (
             <option key={id} value={id}>{name}</option>
@@ -174,7 +181,7 @@ export function ResultsView() {
           type="button"
           aria-pressed={onlyFull}
           onClick={() => setOnlyFull(!onlyFull)}
-          className={`min-h-10 shrink-0 rounded-full border-2 px-3 text-sm font-semibold ${onlyFull ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-navy"}`}
+          className={`min-h-10 shrink-0 rounded-full border-2 px-3 text-sm font-semibold ${onlyFull ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-heading"}`}
         >
           Todo riesgo
         </button>
@@ -208,7 +215,7 @@ export function ResultsView() {
               <button type="button" className="min-h-11 px-3 text-sm text-white/80" onClick={() => quoteStore.setCompare([])}>
                 Limpiar
               </button>
-              <Button variant="accent" onClick={() => router.push("/comparar")}>Comparar</Button>
+              <Button variant="accent" onClick={() => { track("comparacion_abierta", { ofertas: compare.length }); router.push("/comparar"); }}>Comparar</Button>
             </div>
           </div>
         </div>

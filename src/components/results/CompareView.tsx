@@ -7,6 +7,7 @@ import { COVERAGE_KEYS, SERVICE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
 import { useCompare, useHydrated, useQuoteResponse } from "@/lib/quote-store";
 import { ButtonLink, InsurerLogo } from "@/components/ui";
+import { track } from "@/lib/analytics";
 
 function Yes({ ok }: { ok: boolean }) {
   return ok ? (
@@ -29,7 +30,7 @@ export function CompareView() {
   if (offers.length < 2) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-extrabold text-navy">Elige al menos 2 opciones</h1>
+        <h1 className="text-2xl font-extrabold text-heading">Elige al menos 2 opciones</h1>
         <ButtonLink href="/resultados" className="mt-6">Volver a resultados</ButtonLink>
       </div>
     );
@@ -69,23 +70,23 @@ export function CompareView() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
-      <Link href="/resultados" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-navy">
+      <Link href="/resultados" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading">
         <ArrowLeft className="size-4" aria-hidden /> Volver a opciones
       </Link>
-      <h1 className="mb-4 text-2xl font-extrabold tracking-tight text-navy">Comparación</h1>
-      <div className="overflow-x-auto rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)]">
+      <h1 className="mb-4 text-2xl font-extrabold tracking-tight text-heading">Comparación</h1>
+      <div className="overflow-x-auto rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)]">
         <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: 104 + offers.length * 120 }}>
           <caption className="sr-only">Comparación de seguros seleccionados</caption>
           <thead>
             <tr>
-              <th scope="col" className="sticky left-0 w-[104px] bg-white p-2 text-left text-xs text-muted sm:w-40 sm:p-3">
+              <th scope="col" className="sticky left-0 w-[104px] bg-surface p-2 text-left text-xs text-muted sm:w-40 sm:p-3">
                 Plan
               </th>
               {offers.map((o) => (
                 <th key={o.id} scope="col" className="p-2 align-top sm:p-3">
                   <div className="flex flex-col items-center gap-2 text-center">
                     <InsurerLogo id={o.insurerId} name={o.insurerName} />
-                    <span className="font-bold text-navy">{o.planName}</span>
+                    <span className="font-bold text-heading">{o.planName}</span>
                     <span className="text-xs font-normal text-muted">{o.insurerName}</span>
                   </div>
                 </th>
@@ -95,7 +96,7 @@ export function CompareView() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.label} className="border-t border-line">
-                <th scope="row" className="sticky left-0 bg-white p-2 text-left text-xs font-medium text-muted sm:p-3 sm:text-sm">
+                <th scope="row" className="sticky left-0 bg-surface p-2 text-left text-xs font-medium text-muted sm:p-3 sm:text-sm">
                   {r.label}
                 </th>
                 {offers.map((o) => (
@@ -104,10 +105,14 @@ export function CompareView() {
               </tr>
             ))}
             <tr className="border-t border-line">
-              <td className="sticky left-0 bg-white" />
+              <td className="sticky left-0 bg-surface" />
               {offers.map((o) => (
                 <td key={o.id} className="p-2 sm:p-3">
-                  <ButtonLink href={`/checkout?oferta=${encodeURIComponent(o.id)}`} className="w-full px-3">
+                  <ButtonLink
+                    href={`/checkout?oferta=${encodeURIComponent(o.id)}`}
+                    className="w-full px-3"
+                    onClick={() => track("oferta_elegida", { aseguradora: o.insurerId, plan: o.planName, recomendado: o.labels.includes("recomendado"), desde: "comparador" })}
+                  >
                     Lo quiero
                   </ButtonLink>
                 </td>

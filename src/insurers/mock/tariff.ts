@@ -70,6 +70,9 @@ function riskFactor(req: QuoteRequest, config: MockInsurerConfig): number {
   if (answers.use === "trabajo") f *= 1.2;
   if (answers.use === "domicilios") f *= vehicle.type === "moto" ? 1.45 : 1.3;
   if (answers.parking === "calle") f *= 1.12;
+  if (answers.mileage === "bajo") f *= 0.9;
+  if (answers.mileage === "alto") f *= 1.15;
+  if (answers.drivers === "varios") f *= 1.08;
   f *= 1 + Math.min(answers.claimsLast3Years, 3) * 0.15;
   f *= config.cityFactor[driver.city] ?? 1;
   return f;

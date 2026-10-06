@@ -25,6 +25,7 @@ export interface Order {
   /** Token para que un comprador sin cuenta pueda ver su compra. */
   accessToken: string;
   userId?: string;
+  analyticsSid?: string;
 }
 
 export interface Policy {
@@ -43,7 +44,25 @@ export interface Policy {
   endDate: string;
   annualPremium?: number;
   paymentPlan?: "anual" | "mensual";
+  /** Plan de cuotas cuando el pago es mensual. */
+  installments?: Installment[];
   accessToken: string;
+}
+
+export interface Installment {
+  n: number;
+  dueDate: string;
+  amount: number;
+  status: "pagada" | "pendiente";
+  paidAt?: string;
+}
+
+/** Pago de una cuota en curso (referencia → póliza y número de cuota). */
+export interface InstallmentPayment {
+  reference: string;
+  policyId: string;
+  n: number;
+  amountInCents: number;
 }
 
 export interface User {
@@ -123,6 +142,7 @@ interface Db {
   outbox: OutboxMessage[];
   otps: Map<string, Otp>;
   processedEvents: Set<string>;
+  installmentPayments: Map<string, InstallmentPayment>;
 }
 
 function seed(db: Db) {
@@ -170,6 +190,7 @@ export function db(): Db {
       outbox: [],
       otps: new Map(),
       processedEvents: new Set(),
+      installmentPayments: new Map(),
     };
     seed(g.__safDb);
   }
@@ -260,6 +281,26 @@ export function attachPolicyToUser(p: Policy, userId: string) {
       policyId: p.id,
       auto: true,
     };
+    d.reminders.set(r.id, r);
+  }
+  syncInstallmentReminder(p);
+}
+
+/** Mantiene un único recordatorio para la próxima cuota pendiente. */
+export function syncInstallmentReminder(p: Policy) {
+  if (!p.userId || !p.installments) return;
+  const d = db();
+  const existing = [...d.reminders.values()].find((r) => r.policyId === p.id && r.kind === "cuota");
+  const next = p.installments.find((i) => i.status === "pendiente");
+  if (!next) {
+    if (existing) d.reminders.delete(existing.id);
+    return;
+  }
+  const title = `Cuota ${next.n} de ${p.installments.length} · ${p.planName} (${p.vehicle.plate ?? p.vehicle.model})`;
+  if (existing) {
+    Object.assign(existing, { title, dueDate: next.dueDate, lastSentAt: undefined });
+  } else {
+    const r: Reminder = { id: newId(), userId: p.userId, kind: "cuota", title, dueDate: next.dueDate, daysBefore: 3, policyId: p.id, auto: true };
     d.reminders.set(r.id, r);
   }
 }

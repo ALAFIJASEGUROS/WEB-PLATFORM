@@ -23,7 +23,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 print:py-0">
-      <Link href={user ? "/cuenta/seguros" : "/"} className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-navy print:hidden">
+      <Link href={user ? "/cuenta/seguros" : "/"} className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading print:hidden">
         <ArrowLeft className="size-4" aria-hidden /> {user ? "Mis seguros" : "Inicio"}
       </Link>
       <Card className="space-y-6 p-6 print:shadow-none">
@@ -32,7 +32,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-mint">
               <ShieldCheck className="size-4" aria-hidden /> Póliza vigente
             </p>
-            <h1 className="mt-1 text-2xl font-extrabold text-navy">{policy.planName}</h1>
+            <h1 className="mt-1 text-2xl font-extrabold text-heading">{policy.planName}</h1>
             <p className="text-muted">{policy.insurerName}</p>
           </div>
           <PrintButton />
@@ -52,7 +52,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
         {offer && (
           <div className="grid gap-6 border-t border-line pt-6 sm:grid-cols-2">
             <div>
-              <h2 className="mb-2 font-bold text-navy">Coberturas</h2>
+              <h2 className="mb-2 font-bold text-heading">Coberturas</h2>
               <ul className="space-y-1 text-sm">
                 {COVERAGE_KEYS.filter((k) => offer.coverages[k]).map((k) => (
                   <li key={k}>• {COVERAGE_LABELS[k]}{k === "rc" && ` (${formatMillions(offer.rcLimit)})`}</li>
@@ -63,7 +63,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
               </p>
             </div>
             <div>
-              <h2 className="mb-2 font-bold text-navy">Asistencias</h2>
+              <h2 className="mb-2 font-bold text-heading">Asistencias</h2>
               <ul className="space-y-1 text-sm">
                 {offer.services.map((s) => <li key={s}>• {SERVICE_LABELS[s]}</li>)}
               </ul>
@@ -71,7 +71,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
           </div>
         )}
 
-        <div className="rounded-xl bg-brand-soft p-4 text-sm text-navy">
+        <div className="rounded-xl bg-brand-soft p-4 text-sm text-heading">
           <p className="font-bold">¿Tuviste un accidente?</p>
           <p>Llama a la línea de asistencia de {policy.insurerName} y ten a mano tu número de póliza. Revisa la guía en <Link className="font-semibold underline" href="/ayuda#siniestros">Ayuda</Link>.</p>
         </div>

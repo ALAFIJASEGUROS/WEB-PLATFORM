@@ -31,6 +31,15 @@ recomendación basada en cuestionario y compra desde el celular.
 | E11 | Backoffice: ventas, campañas | ✅ básico |
 | E12 | Legal, ayuda, SEO, analítica | ✅ base |
 
+## Iteración 2 (solo código)
+
+- Cuestionario con kilometraje y número de conductores (afectan tarifa y recomendación).
+- Header con la sesión iniciada.
+- Pago mensual: plan de 12 cuotas, recordatorio de la próxima cuota y pago desde la cuenta.
+- Analítica propia y anónima del embudo, con panel en `/admin` (lista para cambiar a PostHog).
+- Modo oscuro según la preferencia del sistema.
+- Distintivos de aseguradoras sin logotipos registrados.
+
 ## Próximos pasos (después del MVP)
 
 1. Base de datos real (Supabase) y envío de correos/WhatsApp (Resend / WhatsApp Business).

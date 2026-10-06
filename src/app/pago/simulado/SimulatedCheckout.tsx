@@ -34,11 +34,11 @@ export function SimulatedCheckout({
       <Card className="space-y-5 p-6">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Pasarela simulada</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-navy">{formatCOP(amount)}</h1>
+          <h1 className="mt-1 text-2xl font-extrabold text-heading">{formatCOP(amount)}</h1>
           <p className="text-sm text-muted">{description}</p>
           <p className="mt-1 text-xs text-muted">Referencia {reference}</p>
         </div>
-        <p className="rounded-xl bg-sun-soft p-3 text-sm text-[#8a5a00]">
+        <p className="rounded-xl bg-sun-soft p-3 text-sm text-sun-ink">
           Configura WOMPI_PUBLIC_KEY, WOMPI_INTEGRITY_SECRET y WOMPI_EVENTS_SECRET para usar el checkout real de Wompi (sandbox).
         </p>
         <div className="grid gap-2">

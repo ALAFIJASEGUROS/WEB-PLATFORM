@@ -4,7 +4,7 @@ export function Logo({ className = "" }: { className?: string }) {
       <svg width="28" height="28" viewBox="0 0 48 48" aria-hidden>
         <path
           d="M24 4L8 12v14c0 9 8 16 16 18 8-2 16-9 16-18V12L24 4z"
-          fill="#0B3D91"
+          fill="var(--color-heading)"
         />
         <path
           d="M16 25l6 6 11-12"
@@ -15,7 +15,7 @@ export function Logo({ className = "" }: { className?: string }) {
           fill="none"
         />
       </svg>
-      <span className="text-lg font-extrabold tracking-tight text-navy">
+      <span className="text-lg font-extrabold tracking-tight text-heading">
         Segu<span className="text-brand">AlaFija</span>
       </span>
     </span>

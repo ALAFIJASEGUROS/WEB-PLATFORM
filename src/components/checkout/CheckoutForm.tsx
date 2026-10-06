@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { startCheckout } from "@/lib/api-client";
+import { analyticsSessionId, track } from "@/lib/analytics";
 import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { policyholderSchema, type Policyholder } from "@/domain/schemas";
@@ -49,7 +50,7 @@ export function CheckoutForm({
   if (!offer || !request) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-extrabold text-navy">Esta oferta ya no está disponible</h1>
+        <h1 className="text-2xl font-extrabold text-heading">Esta oferta ya no está disponible</h1>
         <p className="mt-2 text-muted">Vuelve a cotizar para ver precios actualizados.</p>
         <ButtonLink href="/cotizar" className="mt-6">Cotizar</ButtonLink>
       </div>
@@ -81,7 +82,9 @@ export function CheckoutForm({
     }
     setSubmitting(true);
     try {
+      track("checkout_enviado", { plan, aseguradora: offer!.insurerId });
       const { redirectUrl } = await startCheckout({
+        analyticsSid: analyticsSessionId(),
         quote: request!,
         offerId,
         paymentPlan: plan,
@@ -101,10 +104,10 @@ export function CheckoutForm({
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-28 pt-6 md:pb-6">
-      <Link href="/resultados" className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-navy">
+      <Link href="/resultados" className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading">
         <ArrowLeft className="size-4" aria-hidden /> Volver a opciones
       </Link>
-      <h1 className="text-2xl font-extrabold tracking-tight text-navy">Compra tu seguro</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-heading">Compra tu seguro</h1>
       <p className="mt-1 text-muted">No necesitas crear cuenta. Te enviamos la póliza a tu correo.</p>
 
       <form onSubmit={submit} noValidate className="mt-6 grid gap-6 md:grid-cols-[1fr_340px]">
@@ -112,13 +115,13 @@ export function CheckoutForm({
           <Card className="flex items-center gap-3 p-4 md:hidden">
             <InsurerLogo id={offer.insurerId} name={offer.insurerName} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-bold text-navy">{offer.planName}</p>
+              <p className="truncate font-bold text-heading">{offer.planName}</p>
               <p className="truncate text-sm text-muted">{offer.insurerName} · {v.brand} {v.model} {v.plate ?? ""}</p>
             </div>
           </Card>
 
           <Card className="space-y-4 p-5">
-            <h2 className="font-bold text-navy">Datos del tomador</h2>
+            <h2 className="font-bold text-heading">Datos del tomador</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Nombres" htmlFor="firstName" error={errors.firstName}>
                 <input id="firstName" className={inputClass} autoComplete="given-name" value={holder.firstName} aria-invalid={!!errors.firstName} onChange={(e) => set("firstName", e.target.value)} />
@@ -152,13 +155,13 @@ export function CheckoutForm({
 
           <Card className="space-y-3 p-5">
             <fieldset>
-              <legend className="mb-3 font-bold text-navy">¿Cómo quieres pagar?</legend>
+              <legend className="mb-3 font-bold text-heading">¿Cómo quieres pagar?</legend>
               <div className="grid gap-2.5 sm:grid-cols-2">
                 {(["anual", "mensual"] as const).map((p) => (
                   <label key={p} className={`flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 p-4 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand ${plan === p ? "border-brand bg-brand-soft" : "border-line"}`}>
                     <input type="radio" name="plan" className="sr-only" checked={plan === p} onChange={() => setPlan(p)} />
                     <span>
-                      <span className="block font-semibold text-navy">{p === "anual" ? "Pago único anual" : "Pago mensual"}</span>
+                      <span className="block font-semibold text-heading">{p === "anual" ? "Pago único anual" : "Pago mensual"}</span>
                       <span className="block text-sm text-muted">
                         {p === "anual" ? formatCOP(offer.annualPremium) : `${formatCOP(offer.monthlyPremium)} x 12`}
                       </span>
@@ -174,7 +177,7 @@ export function CheckoutForm({
           </Card>
 
           <Card className="space-y-3 p-5">
-            <h2 className="font-bold text-navy">Autorizaciones</h2>
+            <h2 className="font-bold text-heading">Autorizaciones</h2>
             <label className="flex gap-3 text-sm">
               <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-brand" checked={terms} onChange={(e) => setTerms(e.target.checked)} />
               <span>Leí y acepto los <Link href="/legal/terminos" target="_blank" className="font-semibold text-brand underline">términos y condiciones</Link> y el condicionado del seguro. Conozco mi <Link href="/legal/retracto" target="_blank" className="font-semibold text-brand underline">derecho de retracto</Link>.</span>
@@ -195,7 +198,7 @@ export function CheckoutForm({
             <div className="flex items-center gap-3">
               <InsurerLogo id={offer.insurerId} name={offer.insurerName} />
               <div>
-                <p className="font-bold text-navy">{offer.planName}</p>
+                <p className="font-bold text-heading">{offer.planName}</p>
                 <p className="text-sm text-muted">{offer.insurerName}</p>
               </div>
             </div>
@@ -207,7 +210,7 @@ export function CheckoutForm({
             </dl>
             <div className="border-t border-line pt-4">
               <p className="text-sm text-muted">Pagas hoy</p>
-              <p className="text-3xl font-extrabold tracking-tight text-navy">{formatCOP(amount)}</p>
+              <p className="text-3xl font-extrabold tracking-tight text-heading">{formatCOP(amount)}</p>
             </div>
             {serverError && <p role="alert" className="rounded-xl bg-coral-soft p-3 text-sm text-coral">{serverError}</p>}
             <Button type="submit" className="hidden w-full md:inline-flex" disabled={submitting}>
@@ -219,18 +222,18 @@ export function CheckoutForm({
               PSE, tarjeta, Nequi o botón Bancolombia. No guardamos los datos de tu tarjeta.
             </p>
             {simulatedPayments && (
-              <p className="text-xs text-[#8a5a00]">Modo demo: el pago es simulado.</p>
+              <p className="text-xs text-sun-ink">Modo demo: el pago es simulado.</p>
             )}
             <SimulatedDataNotice />
           </Card>
         </aside>
 
-        <div className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white px-4 pt-3 shadow-[0_-4px_16px_rgb(16_33_63/0.06)] md:hidden">
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface px-4 pt-3 shadow-[0_-4px_16px_rgb(16_33_63/0.06)] md:hidden">
           {serverError && <p role="alert" className="mb-2 rounded-xl bg-coral-soft p-2 text-xs text-coral">{serverError}</p>}
           <div className="flex items-center gap-3">
             <div className="min-w-0">
               <p className="text-xs text-muted">{plan === "anual" ? "Pago anual" : "Primera cuota"}</p>
-              <p className="text-lg font-extrabold leading-tight text-navy">{formatCOP(amount)}</p>
+              <p className="text-lg font-extrabold leading-tight text-heading">{formatCOP(amount)}</p>
             </div>
             <Button type="submit" className="flex-1" disabled={submitting}>
               <Lock className="size-4" aria-hidden />

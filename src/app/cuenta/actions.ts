@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { logout, requestOtp, requireUser, verifyOtp } from "@/server/auth";
+import { baseUrl, logout, requestOtp, requireUser, verifyOtp } from "@/server/auth";
+import { CheckoutError, startInstallmentPayment } from "@/server/orders";
 import {
   attachPolicyToUser,
   db,
@@ -226,4 +227,19 @@ export async function updateReminderDaysAction(id: string, daysBefore: number) {
   if (!r || r.userId !== user.id) return;
   r.daysBefore = Math.max(0, Math.min(90, Math.round(daysBefore)));
   revalidatePath("/cuenta", "layout");
+}
+
+// ── Cuotas ─────────────────────────────────────────────────────────────────
+
+export async function payInstallmentAction(policyId: string) {
+  const user = await requireUser();
+  let url: string;
+  try {
+    ({ redirectUrl: url } = await startInstallmentPayment(policyId, user.id, await baseUrl()));
+  } catch (e) {
+    if (e instanceof CheckoutError) redirect(`/cuenta/seguros?error=${encodeURIComponent(e.message)}`);
+    throw e;
+  }
+  revalidatePath("/cuenta", "layout");
+  redirect(url);
 }

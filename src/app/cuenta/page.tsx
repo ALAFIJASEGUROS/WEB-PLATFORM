@@ -26,7 +26,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-navy">
+      <h1 className="text-2xl font-extrabold tracking-tight text-heading">
         Hola{user.name ? `, ${user.name.split(" ")[0]}` : ""}
       </h1>
 
@@ -35,7 +35,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
           <Link key={t.label} href={t.href}>
             <Card className="p-4 transition hover:ring-2 hover:ring-brand">
               <t.icon className="size-5 text-brand" aria-hidden />
-              <p className="mt-3 text-2xl font-extrabold text-navy">{t.value}</p>
+              <p className="mt-3 text-2xl font-extrabold text-heading">{t.value}</p>
               <p className="text-sm text-muted">{t.label}</p>
             </Card>
           </Link>
@@ -43,7 +43,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
       </div>
 
       <Card className="p-5">
-        <h2 className="font-bold text-navy">Próximos vencimientos</h2>
+        <h2 className="font-bold text-heading">Próximos vencimientos</h2>
         {upcoming.length === 0 ? (
           <p className="mt-2 text-sm text-muted">
             No tienes vencimientos próximos. Agrega la fecha del SOAT y la tecnomecánica de tus vehículos
@@ -56,7 +56,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
               return (
                 <li key={r.id} className="flex items-center justify-between gap-3 py-3 text-sm">
                   <span>{r.title}</span>
-                  <span className={`shrink-0 font-bold ${d <= 15 ? "text-coral" : "text-navy"}`}>
+                  <span className={`shrink-0 font-bold ${d <= 15 ? "text-coral" : "text-heading"}`}>
                     {d === 0 ? "Hoy" : `en ${d} días`}
                   </span>
                 </li>
@@ -68,7 +68,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
 
       {policies.length === 0 && (
         <Card className="flex flex-col items-start gap-3 p-5">
-          <h2 className="font-bold text-navy">Aún no tienes pólizas aquí</h2>
+          <h2 className="font-bold text-heading">Aún no tienes pólizas aquí</h2>
           <p className="text-sm text-muted">Cotiza en 2 minutos o registra una póliza que ya tengas con otra aseguradora.</p>
           <div className="flex flex-wrap gap-2">
             <ButtonLink href="/cotizar">Cotizar</ButtonLink>
