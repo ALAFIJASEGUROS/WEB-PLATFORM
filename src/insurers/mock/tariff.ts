@@ -27,6 +27,8 @@ export interface MockPlan {
   exclusions: string[];
   /** Usos aceptados. Si se omite, el plan acepta todos. */
   allowedUses?: VehicleUse[];
+  /** Cilindraje máximo que asegura (motos). */
+  maxEngineCc?: number;
 }
 
 export interface MockInsurerConfig {
@@ -83,6 +85,11 @@ function riskFactor(req: QuoteRequest, config: MockInsurerConfig): number {
   if (vehicleAge > 10) f *= 1.15;
   else if (vehicleAge <= 2) f *= 0.95;
 
+  // Motos: a más cilindraje, más valor de reparación y más riesgo de hurto.
+  if (vehicle.type === "moto" && vehicle.engineCc) {
+    if (vehicle.engineCc > 250) f *= 1.2;
+    else if (vehicle.engineCc > 125) f *= 1.08;
+  }
   if (answers.use === "trabajo") f *= 1.2;
   if (answers.use === "domicilios") f *= vehicle.type === "moto" ? 1.45 : 1.3;
   if (answers.parking === "calle") f *= 1.12;
@@ -145,6 +152,7 @@ export function priceOffers(
         conditionsUrl: `/condicionado/${config.id}/${plan.code}`,
         validUntil,
         ...(plan.allowedUses && { allowedUses: plan.allowedUses }),
+        ...(plan.maxEngineCc && { maxEngineCc: plan.maxEngineCc }),
       };
     });
 }

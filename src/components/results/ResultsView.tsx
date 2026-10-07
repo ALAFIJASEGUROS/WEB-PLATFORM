@@ -306,7 +306,7 @@ function ProfileCard({ request }: { request: QuoteRequest }) {
   const rows = [
     ["Vehículo", `${v.brand} ${v.model} ${v.year}`],
     ["Placa", v.plate ?? "—"],
-    ["Valor", formatCOP(v.commercialValue)],
+    ["Valor asegurado", formatCOP(v.commercialValue)],
     ["Ciudad", driver.city],
     ["Uso", a.use === "particular" ? "Personal" : a.use === "trabajo" ? "Trabajo" : "Domicilios / plataformas"],
     ["Prioridad", a.weights ? `P ${a.weights.price} · C ${a.weights.coverage} · S ${a.weights.services}` : PRIORITY_LABELS[a.priority]],

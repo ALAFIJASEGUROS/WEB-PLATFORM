@@ -162,14 +162,14 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | INV-3 | Pasarelas en Colombia: tarifas de Wompi, recurrencia, Bre-B | ✅ [payments](investigacion/payments.md) |
 | INV-4 | Recomendador: métodos de ponderación y riesgo de considerarlo asesoría | ✅ [recommender](investigacion/recommender.md) |
 | INV-5 | APIs de aseguradoras y proveedores de RUNT | ✅ [integrations](investigacion/integrations.md) |
-| INV-6 | Auditoría UX (heurística); pruebas con usuarios pendientes | ✅ parcial [ux](investigacion/ux.md) |
+| INV-6 | Auditoría UX (heurística) y kit de pruebas; faltan las sesiones con usuarios | ✅ parcial [ux](investigacion/ux.md) · [kit](pruebas-usuarios.md) |
 | INV-7 | Canales y costos de WhatsApp y SMS, cuenta y mensajería | ✅ [account](investigacion/account.md) |
 
 ## E16 · Extensibilidad
 | ID | Historia | Estado | Prio | Rel | Pts |
 | --- | --- | --- | --- | --- | --- |
 | HU-16.1 | Como plataforma quiero agregar líneas nuevas (hogar, viaje) sin rehacer el núcleo | ✅ | C | V2 | 13 |
-| HU-16.2 | Como usuario quiero comprar el SOAT (gancho de entrada) | ⬜ Dep | S | V1 | 8 |
+| HU-16.2 | Como usuario quiero comprar el SOAT (gancho de entrada) | ⏸ En pausa (foco carro y moto) | S | V1 | 8 |
 
 ## E17 · Hallazgos de la investigación
 Funcionalidades nuevas que salen de los documentos de [investigacion/](investigacion/). "Código" = no depende de terceros.
@@ -213,6 +213,14 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-19.6 | Como indeciso quiero pedir que me asesoren (con autorización y horario Ley 2300) | ⬜ Dep (canal y equipo de asesores) | S | V1 | 5 |
 | HU-19.7 | Como visitante quiero guardar mi cotización y retomarla después | ⬜ Dep (Resend) | S | V1 | 3 |
 
+## E20 · Carro y moto en profundidad
+| ID | Historia | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- |
+| HU-20.1 | Como motociclista quiero que el cilindraje cuente en el precio y en qué planes me sirven | ✅ | M | MVP | 3 |
+| HU-20.2 | Como motociclista quiero que la recomendación priorice el hurto, mi mayor riesgo | ✅ | M | MVP | 2 |
+| HU-20.3 | Como usuario quiero ajustar el valor asegurado y entender su efecto | ✅ | S | MVP | 3 |
+| HU-20.4 | Como equipo quiero un kit para probar con usuarios de carro, moto y domicilios | ✅ (falta hacer las sesiones) | M | MVP | 2 |
+
 ---
 
 ## Sprint 3 (completado)
@@ -250,12 +258,15 @@ HU-18.6 (impacto de los descuentos en la conversión), HU-04.4 (experimentos A/B
 HU-19.1 a HU-19.5: placa en la portada, textos orientados al beneficio, botón fijo en el celular, precio y garantías en
 el botón de compra, y experimentos A/B de interfaz.
 
+## Sprint 11 (completado)
+HU-20.1 a HU-20.4: cilindraje de la moto, peso del hurto en motos, valor asegurado ajustable y kit de pruebas con usuarios.
+
 ## Próximo sprint sugerido
 Lo pendiente de solo código está agotado. Lo siguiente depende de terceros o de decisiones del negocio:
 Supabase (HU-09.6) para persistir datos, analítica y configuración; Resend (HU-10.5); Wompi sandbox (HU-07.2);
 convenio con una aseguradora (HU-02.5) y sus tarifas especiales (HU-18.4); WhatsApp/SMS (HU-17.13); figura legal
-(HU-14.1, HU-18.5) y marcas en el prototipo (HU-17.12). Mientras tanto se puede habilitar una línea nueva (hogar o
-viaje) o hacer pruebas con usuarios (INV-6).
+(HU-14.1, HU-18.5) y marcas en el prototipo (HU-17.12). El foco es carro y moto (nuevas líneas en pausa); mientras
+tanto se pueden hacer las pruebas con usuarios con el kit (INV-6).
 
 ## Bloqueados por terceros
 - Supabase (HU-09.6)

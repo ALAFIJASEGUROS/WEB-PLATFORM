@@ -16,7 +16,7 @@ export function plateType(plate: string): VehicleType | null {
   return null;
 }
 
-export const CATALOG: Record<VehicleType, { brand: string; models: { name: string; newValue: number }[] }[]> = {
+export const CATALOG: Record<VehicleType, { brand: string; models: { name: string; newValue: number; cc?: number }[] }[]> = {
   auto: [
     { brand: "Chevrolet", models: [{ name: "Onix", newValue: 72_000_000 }, { name: "Tracker", newValue: 105_000_000 }] },
     { brand: "Renault", models: [{ name: "Logan", newValue: 62_000_000 }, { name: "Duster", newValue: 88_000_000 }] },
@@ -26,11 +26,11 @@ export const CATALOG: Record<VehicleType, { brand: string; models: { name: strin
     { brand: "Volkswagen", models: [{ name: "T-Cross", newValue: 115_000_000 }, { name: "Polo", newValue: 82_000_000 }] },
   ],
   moto: [
-    { brand: "Yamaha", models: [{ name: "NMAX 155", newValue: 15_500_000 }, { name: "MT-03", newValue: 26_000_000 }] },
-    { brand: "Honda", models: [{ name: "CB 125F", newValue: 7_800_000 }, { name: "XRE 300", newValue: 21_000_000 }] },
-    { brand: "Bajaj", models: [{ name: "Boxer CT 100", newValue: 5_600_000 }, { name: "Pulsar NS 200", newValue: 11_900_000 }] },
-    { brand: "AKT", models: [{ name: "NKD 125", newValue: 5_300_000 }, { name: "TT 200", newValue: 8_900_000 }] },
-    { brand: "Suzuki", models: [{ name: "Gixxer 150", newValue: 10_500_000 }, { name: "V-Strom 250", newValue: 22_000_000 }] },
+    { brand: "Yamaha", models: [{ name: "NMAX 155", newValue: 15_500_000, cc: 155 }, { name: "MT-03", newValue: 26_000_000, cc: 321 }] },
+    { brand: "Honda", models: [{ name: "CB 125F", newValue: 7_800_000, cc: 125 }, { name: "XRE 300", newValue: 21_000_000, cc: 286 }] },
+    { brand: "Bajaj", models: [{ name: "Boxer CT 100", newValue: 5_600_000, cc: 100 }, { name: "Pulsar NS 200", newValue: 11_900_000, cc: 199 }] },
+    { brand: "AKT", models: [{ name: "NKD 125", newValue: 5_300_000, cc: 125 }, { name: "TT 200", newValue: 8_900_000, cc: 196 }] },
+    { brand: "Suzuki", models: [{ name: "Gixxer 150", newValue: 10_500_000, cc: 155 }, { name: "V-Strom 250", newValue: 22_000_000, cc: 249 }] },
   ],
 };
 
@@ -71,5 +71,25 @@ export function lookupPlate(rawPlate: string): Vehicle | null {
     model: m.name,
     year,
     commercialValue: estimateValue(m.newValue, year),
+    ...(m.cc && { engineCc: m.cc }),
   };
+}
+
+/** Máximo ajuste del valor asegurado frente al de referencia, en %. */
+export const VALUE_ADJUST_RANGE = 20;
+
+/**
+ * Valor asegurado ajustado por el usuario sobre el valor de referencia. Se
+ * conserva el de referencia en `estimatedValue` para poder volver a él.
+ */
+export function withInsuredValue<V extends Vehicle>(v: V, adjustPct: number): V {
+  const base = v.estimatedValue ?? v.commercialValue;
+  const pct = Math.max(-VALUE_ADJUST_RANGE, Math.min(VALUE_ADJUST_RANGE, adjustPct));
+  return { ...v, estimatedValue: base, commercialValue: Math.round((base * (1 + pct / 100)) / 100_000) * 100_000 };
+}
+
+/** Ajuste (%) que corresponde a un vehículo ya ajustado, redondeado a pasos de 5. */
+export function insuredValueAdjust(v: Pick<Vehicle, "commercialValue" | "estimatedValue">) {
+  if (!v.estimatedValue) return 0;
+  return Math.round(((v.commercialValue / v.estimatedValue - 1) * 100) / 5) * 5;
 }

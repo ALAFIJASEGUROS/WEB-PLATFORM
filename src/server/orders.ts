@@ -57,7 +57,7 @@ export async function createOrder(
   }
   const offer = offers.find((o) => o.id === input.offerId);
   if (!offer) throw new CheckoutError("La oferta ya no está disponible. Cotiza de nuevo.");
-  const notEligible = eligibility(offer, input.quote.answers);
+  const notEligible = eligibility(offer, input.quote.answers, input.quote.vehicle);
   if (notEligible) throw new CheckoutError(`Este plan no aplica para ti: ${notEligible}`);
   const kyc = validateKyc(adapter.regulatory.kycFields, input.kyc ?? {});
   if (!kyc.ok) throw new CheckoutError("Completa las preguntas de conocimiento del cliente.");

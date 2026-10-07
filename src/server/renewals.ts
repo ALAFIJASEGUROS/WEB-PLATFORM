@@ -38,7 +38,7 @@ export async function renewalSuggestions(userId: string, now = new Date()): Prom
     const { offers } = await quoteWithCache(order.quote);
     // Solo ofertas elegibles para el uso y la financiación declarados, comparadas
     // contra la cobertura de la póliza que se compró.
-    const { offers: scored } = recommend(withDiscounts(offers), order.quote.answers);
+    const { offers: scored } = recommend(withDiscounts(offers), order.quote.answers, { vehicle: order.quote.vehicle });
     const current = order.offer;
     const best = scored
       .filter((o) => o.id !== order.offer.id && coversAtLeast(o, current))

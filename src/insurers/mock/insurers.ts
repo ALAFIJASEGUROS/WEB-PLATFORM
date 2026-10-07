@@ -216,6 +216,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
       substituteCarDays: 0,
       exclusions: ["Daños a tu propia moto", "Hurto de partes"],
       allowedUses: ["particular"],
+      maxEngineCc: 250,
     },
     {
       code: "moto-plus",

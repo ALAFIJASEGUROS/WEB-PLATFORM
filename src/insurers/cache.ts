@@ -19,7 +19,7 @@ const cache = () => (g.__safQuoteCache ??= new Map());
 export function tariffKey(req: QuoteRequest) {
   const { vehicle: v, driver: d, answers: a } = req;
   return JSON.stringify([
-    v.type, v.plate ?? "", v.brand, v.model, v.year, v.commercialValue,
+    v.type, v.plate ?? "", v.brand, v.model, v.year, v.commercialValue, v.engineCc ?? 0,
     d.birthdate, d.city,
     a.use, a.parking, a.mileage, a.drivers, a.financed, a.claimsLast3Years,
   ]);
