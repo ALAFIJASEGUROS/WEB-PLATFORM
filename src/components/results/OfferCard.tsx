@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, ChevronDown, Minus, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Minus, Sparkles, Tag } from "lucide-react";
 import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
+import { discountTotal } from "@/domain/discounts";
 import { Badge, Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
 import { track } from "@/lib/analytics";
 
@@ -39,6 +40,12 @@ export function OfferCard({
           <InsurerLogo id={offer.insurerId} name={offer.insurerName} />
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap gap-1.5">
+              {offer.discounts?.map((d) => (
+                <Badge key={d.ruleId} tone="mint">
+                  <Tag className="size-3" aria-hidden />
+                  {d.label}
+                </Badge>
+              ))}
               {offer.labels.map((l) => (
                 <Badge key={l} tone={LABELS[l].tone}>
                   {l === "recomendado" && <Sparkles className="size-3" aria-hidden />}
@@ -56,6 +63,13 @@ export function OfferCard({
 
         <div className="mt-4 flex items-end justify-between gap-3 rounded-2xl bg-canvas p-4 md:col-start-2 md:row-span-2 md:row-start-1 md:mt-0 md:flex-col md:items-stretch md:justify-center">
           <div>
+            {offer.listPremium && (
+              <p className="text-sm text-muted">
+                <span className="sr-only">Antes: </span>
+                <s>{formatCOP(offer.listPremium)}</s>{" "}
+                <span className="font-semibold text-mint">−{formatCOP(discountTotal(offer))}</span>
+              </p>
+            )}
             <p className="whitespace-nowrap text-2xl font-extrabold tracking-tight text-heading">
               {formatCOP(offer.annualPremium)}
               <span className="text-sm font-semibold text-muted"> /año</span>
@@ -149,6 +163,9 @@ export function OfferCard({
             <div className="text-sm">
               <h4 className="mb-2 font-bold text-heading">Prima anual</h4>
               <dl className="space-y-1">
+                {offer.discounts?.map((d) => (
+                  <div key={d.ruleId} className="flex justify-between text-mint"><dt>{d.label}</dt><dd>−{formatCOP(d.amount)}</dd></div>
+                ))}
                 <div className="flex justify-between"><dt className="text-muted">Prima sin IVA</dt><dd>{formatCOP(offer.netPremium)}</dd></div>
                 <div className="flex justify-between"><dt className="text-muted">IVA (19%)</dt><dd>{formatCOP(offer.iva)}</dd></div>
                 <div className="flex justify-between font-bold text-heading"><dt>Total</dt><dd>{formatCOP(offer.annualPremium)}</dd></div>

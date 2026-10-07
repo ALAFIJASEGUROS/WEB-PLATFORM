@@ -132,3 +132,28 @@ test("es instalable y muestra una página sin conexión", async ({ page, context
   await expect(page.getByRole("heading", { name: "Estás sin conexión" })).toBeVisible();
   await context.setOffline(false);
 });
+
+test("muestra los descuentos y el admin puede apagarlos", async ({ page }) => {
+  await cotizar(page);
+  await expect(page.getByText("Tarifa digital SURA").first()).toBeVisible();
+
+  await page.goto("/admin");
+  await page.getByLabel("Correo electrónico").fill("admin@e2e.test");
+  await page.getByRole("button", { name: "Enviarme el código" }).click();
+  await page.getByLabel("Código").fill(await page.locator("strong.tracking-widest").innerText());
+  await page.getByRole("button", { name: "Entrar" }).click();
+  const panel = page.locator("section", { has: page.getByRole("heading", { name: "Descuentos y tarifas especiales" }) });
+  await expect(panel).toBeVisible();
+  await panel.getByLabel("Descuentos activos (interruptor general)").uncheck();
+  await panel.getByRole("button", { name: "Guardar configuración" }).click();
+  await expect(panel.getByText("Apagados", { exact: true })).toBeVisible();
+
+  await cotizar(page);
+  await expect(page.getByText("Tarifa digital SURA")).toHaveCount(0);
+
+  // Deja la configuración como estaba para las demás pruebas.
+  await page.goto("/admin");
+  await panel.getByLabel("Descuentos activos (interruptor general)").check();
+  await panel.getByRole("button", { name: "Guardar configuración" }).click();
+  await expect(panel.getByText(/Activos · tope/)).toBeVisible();
+});

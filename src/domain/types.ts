@@ -104,6 +104,10 @@ export interface Offer {
   validUntil: string;
   /** Usos del vehículo que el plan acepta. Si no viene, acepta todos. */
   allowedUses?: VehicleUse[];
+  /** Prima anual antes de descuentos (solo si se aplicó alguno). */
+  listPremium?: number;
+  /** Descuentos aplicados (ver domain/discounts.ts). */
+  discounts?: { ruleId: string; label: string; source: "aseguradora" | "plataforma"; amount: number }[];
 }
 
 export interface ScoredOffer extends Offer {

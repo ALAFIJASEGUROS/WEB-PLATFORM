@@ -7,6 +7,15 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 
+## [0.10.0] - 2026-10-07 · Sprint 8
+### Agregado
+- Motor de descuentos y tarifas especiales: reglas por aseguradora que se prenden y apagan, con fuente (la aseguradora o la plataforma), porcentaje o valor fijo, tope en pesos, tipo de vehículo, planes y vigencia.
+- Configuración general en `/admin`: interruptor de todos los descuentos y descuento total máximo (apetito de descuento). Los cambios rigen en la siguiente cotización y quedan en la bitácora.
+- La oferta muestra el precio de lista tachado y el nombre del descuento; el detalle, el comparador y el checkout muestran cada descuento. La orden guarda los descuentos aplicados.
+- Guía en `docs/descuentos.md`.
+### Cambiado
+- El desglose de precio (IVA y cuota mensual) se calcula en un solo lugar (`src/domain/pricing.ts`).
+
 ## [0.9.0] - 2026-10-06 · Sprint 7
 ### Agregado
 - Registro de pasarelas (`configuredProviders`, `PAYMENT_PROVIDER`) y webhook genérico `/api/webhooks/<pasarela>`. Cada orden y cuota se consulta con la pasarela con la que se creó. Guía en `docs/pasarelas.md`.
@@ -96,7 +105,8 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Cotización por placa, motor de recomendación explicable, adaptadores simulados de SURA y Seguros Bolívar, resultados y comparador.
 
-[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.9.0...HEAD
+[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.6.0...v0.7.0

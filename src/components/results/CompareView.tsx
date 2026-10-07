@@ -55,6 +55,7 @@ export function CompareView() {
   const rows: { label: string; render: (o: ScoredOffer) => React.ReactNode }[] = [
     { label: "Precio anual", render: (o) => best(cheapest, o, <strong>{formatCOP(o.annualPremium)}</strong>) },
     { label: "Precio mensual", render: (o) => formatCOP(o.monthlyPremium) },
+    { label: "Descuento", render: (o) => (o.discounts?.length ? o.discounts.map((d) => `${d.label} (−${formatCOP(d.amount)})`).join(", ") : "—") },
     { label: "Afinidad contigo", render: (o) => best(topScore, o, <span className="font-bold text-brand">{o.score}%</span>) },
     { label: "Deducible", render: (o) => best(lowDed, o, o.deductiblePct ? `${o.deductiblePct}%` : "Sin deducible") },
     { label: "Límite RC", render: (o) => best(topRc, o, formatMillions(o.rcLimit)) },

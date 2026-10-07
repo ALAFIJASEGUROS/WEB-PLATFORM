@@ -2,6 +2,7 @@ import "server-only";
 import { COVERAGE_KEYS, type Offer, type ScoredOffer } from "@/domain/types";
 import { quoteWithCache } from "@/insurers/cache";
 import { recommend } from "@/recommendation/scoring";
+import { withDiscounts } from "./discounts";
 import { db, type Policy } from "./db";
 import { daysUntil } from "./queries";
 
@@ -37,7 +38,7 @@ export async function renewalSuggestions(userId: string, now = new Date()): Prom
     const { offers } = await quoteWithCache(order.quote);
     // Solo ofertas elegibles para el uso y la financiación declarados, comparadas
     // contra la cobertura de la póliza que se compró.
-    const { offers: scored } = recommend(offers, order.quote.answers);
+    const { offers: scored } = recommend(withDiscounts(offers), order.quote.answers);
     const current = order.offer;
     const best = scored
       .filter((o) => o.id !== order.offer.id && coversAtLeast(o, current))

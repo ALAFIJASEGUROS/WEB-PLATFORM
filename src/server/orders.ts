@@ -23,6 +23,7 @@ import { consentRecord } from "@/domain/consents";
 import { eligibility } from "@/recommendation/scoring";
 import { transition } from "./order-state";
 import { adminRoles } from "./admin";
+import { withDiscounts } from "./discounts";
 
 export class CheckoutError extends Error {}
 
@@ -50,7 +51,7 @@ export async function createOrder(
   if (!adapter) throw new CheckoutError("Aseguradora no disponible.");
   let offers;
   try {
-    offers = await adapter.quote(input.quote, AbortSignal.timeout(8000));
+    offers = withDiscounts(await adapter.quote(input.quote, AbortSignal.timeout(8000)));
   } catch {
     throw new CheckoutError(`${adapter.name} no respondió. Intenta de nuevo.`);
   }

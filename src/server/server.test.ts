@@ -458,3 +458,24 @@ describe("centro de preferencias", () => {
     expect(db().outbox[0]).toMatchObject({ channel: "email", kind: "transaccional" });
   });
 });
+
+describe("descuentos en la compra", () => {
+  it("cobra el precio con descuento y pide confirmar si la regla se apaga antes de pagar", async () => {
+    const { discountConfig } = await import("./discounts");
+    (globalThis as { __safDiscounts?: unknown }).__safDiscounts = undefined;
+    const cfg = discountConfig();
+    // Bolívar motos: 8% con tope de $60.000 (regla inicial).
+    const order = await createOrder(input);
+    expect(order.offer.discounts?.[0]).toMatchObject({ ruleId: "bolivar-motos", source: "aseguradora" });
+    const paid = order.amountInCents / 100;
+    expect(order.offer.listPremium! - paid).toBe(order.offer.discounts![0].amount);
+
+    cfg.rules.find((r) => r.id === "bolivar-motos")!.enabled = false;
+    await expect(createOrder({ ...input, expectedAmount: paid })).rejects.toBeInstanceOf(PriceChangedError);
+    cfg.settings.enabled = false;
+    const full = await createOrder(input);
+    expect(full.offer.discounts).toBeUndefined();
+    expect(full.amountInCents / 100).toBe(order.offer.listPremium);
+    (globalThis as { __safDiscounts?: unknown }).__safDiscounts = undefined;
+  });
+});
