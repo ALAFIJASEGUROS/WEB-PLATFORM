@@ -39,7 +39,7 @@ for (const scheme of ["light", "dark"] as const) {
       await page.getByRole("button", { name: "Ver mis opciones" }).click();
       await expect(page.getByText("Nuestra recomendación")).toBeVisible({ timeout: 15_000 });
       await audit(page, "/resultados");
-      await page.getByRole("link", { name: "Lo quiero" }).first().click();
+      await page.getByRole("link", { name: /^(Lo quiero|Comprar por)/ }).first().click();
       await expect(page.getByLabel("Nombres")).toBeVisible();
       await audit(page, "/checkout");
     });

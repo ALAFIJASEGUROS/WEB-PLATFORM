@@ -1,6 +1,7 @@
 import { experimentResults, MIN_SAMPLE } from "@/server/analytics";
 import { experiments } from "@/server/experiments";
 import { ALGORITHM_VERSION } from "@/recommendation/scoring";
+import { UI_EXPERIMENTS } from "@/recommendation/experiments";
 import { Badge, Button, Card } from "@/components/ui";
 import { toggleExperimentAction } from "./actions";
 
@@ -9,12 +10,16 @@ const pct = (n: number | null) => (n === null ? "—" : `${(n * 100).toFixed(1)}
 export function ExperimentsPanel({ canEdit }: { canEdit: boolean }) {
   return (
     <section className="space-y-3" aria-labelledby="experimentos">
-      <h2 id="experimentos" className="text-lg font-bold text-heading">Experimentos del recomendador</h2>
+      <h2 id="experimentos" className="text-lg font-bold text-heading">Experimentos A/B</h2>
       <p className="text-sm text-muted">
-        Cada sesión cae siempre en la misma variante. El experimento solo cambia los pesos de una prioridad: no toca la
-        elegibilidad, el precio ni a quien ajustó sus propios pesos. Algoritmo {ALGORITHM_VERSION}.
+        Cada sesión cae siempre en la misma variante. Los de pesos solo cambian el orden de las ofertas (no la elegibilidad,
+        el precio ni a quien ajustó sus pesos) y se inician o detienen aquí. Los de interfaz prueban textos y diseño de los
+        llamados a la acción y se activan en el código. Algoritmo {ALGORITHM_VERSION}.
       </p>
-      {experiments().map((exp) => {
+      {[
+        ...experiments().map((exp) => ({ exp, kind: "pesos" as const })),
+        ...UI_EXPERIMENTS.map((exp) => ({ exp, kind: "interfaz" as const })),
+      ].map(({ exp, kind }) => {
         const rows = experimentResults(exp);
         const small = rows.some((r) => r.exposed < MIN_SAMPLE);
         return (
@@ -22,22 +27,24 @@ export function ExperimentsPanel({ canEdit }: { canEdit: boolean }) {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-heading">{exp.question}</p>
-                <p className="text-xs text-muted">{exp.id}</p>
+                <p className="text-xs text-muted">{exp.id} · {kind === "pesos" ? "pesos del recomendador" : "interfaz"}</p>
               </div>
-              {canEdit ? (
+              {canEdit && kind === "pesos" ? (
                 <form action={toggleExperimentAction.bind(null, exp.id, !exp.active)}>
                   <Button variant={exp.active ? "secondary" : "primary"} className="min-h-10 px-4 text-sm">{exp.active ? "Detener" : "Iniciar"}</Button>
                 </form>
               ) : (
-                <Badge tone={exp.active ? "mint" : "neutral"}>{exp.active ? "Activo" : "Detenido"}</Badge>
+                <Badge tone={exp.active ? "mint" : "neutral"}>{exp.active ? "Activo" : "Detenido"}{kind === "interfaz" && " (en el código)"}</Badge>
               )}
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[36rem] text-sm">
+              <table className="w-full min-w-[46rem] text-sm">
                 <thead>
                   <tr className="text-left text-muted">
                     <th scope="col" className="py-2 font-medium">Variante</th>
                     <th scope="col" className="py-2 text-right font-medium">Sesiones</th>
+                    <th scope="col" className="py-2 text-right font-medium">Inició cotización</th>
+                    <th scope="col" className="py-2 text-right font-medium">Eligió oferta</th>
                     <th scope="col" className="py-2 text-right font-medium">Eligió la recomendada</th>
                     <th scope="col" className="py-2 text-right font-medium">Fue a pagar</th>
                     <th scope="col" className="py-2 text-right font-medium">Compró</th>
@@ -54,6 +61,8 @@ export function ExperimentsPanel({ canEdit }: { canEdit: boolean }) {
                         <span className="block text-xs text-muted">{r.label}</span>
                       </th>
                       <td className="py-2 text-right">{r.exposed}</td>
+                      <td className="py-2 text-right">{r.exposed ? pct(r.started / r.exposed) : "—"}</td>
+                      <td className="py-2 text-right">{r.exposed ? pct(r.chose / r.exposed) : "—"}</td>
                       <td className="py-2 text-right">{r.exposed ? pct(r.choseRecommended / r.exposed) : "—"}</td>
                       <td className="py-2 text-right">{r.checkout}</td>
                       <td className="py-2 text-right">{r.paid}</td>

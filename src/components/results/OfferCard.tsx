@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, ChevronDown, Minus, Sparkles, Tag } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Lock, Minus, Sparkles, Tag } from "lucide-react";
+import { useUiVariant } from "@/lib/experiments";
 import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
@@ -31,6 +32,8 @@ export function OfferCard({
   highlight?: boolean;
 }) {
   const [open, setOpen] = useState(highlight);
+  // Experimento A/B: texto del botón de compra ("Lo quiero" o con el precio).
+  const priceInButton = useUiVariant("boton-oferta-1") === "comprar-precio";
   const detailId = `detalle-${offer.id.replace(":", "-")}`;
 
   return (
@@ -177,7 +180,7 @@ export function OfferCard({
           </div>
         )}
 
-        <div className="mt-4 grid grid-cols-2 gap-2 md:col-start-2 md:row-start-3 md:mt-3 [&>*]:whitespace-nowrap [&>*]:px-3">
+        <div className={`mt-4 grid gap-2 md:col-start-2 md:row-start-3 md:mt-3 [&>*]:whitespace-nowrap [&>*]:px-3 ${priceInButton ? "grid-cols-[auto_1fr]" : "grid-cols-2"}`}>
           <Button
             variant="secondary"
             type="button"
@@ -191,9 +194,14 @@ export function OfferCard({
             href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}
             onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado"), ...discountProps(offer) })}
           >
-            Lo quiero
+            {priceInButton ? `Comprar por ${formatCOP(offer.annualPremium)}` : "Lo quiero"}
           </ButtonLink>
         </div>
+        {highlight && (
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted md:col-start-2 md:row-start-4">
+            <Lock className="size-3.5" aria-hidden /> Pago seguro con Wompi · 5 días hábiles para arrepentirte
+          </p>
+        )}
       </article>
     </Card>
   );

@@ -8,6 +8,7 @@ import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/do
 import { useCompare, useHydrated, useQuoteResponse } from "@/lib/quote-store";
 import { ButtonLink, InsurerLogo } from "@/components/ui";
 import { discountProps, track } from "@/lib/analytics";
+import { useUiVariant } from "@/lib/experiments";
 
 function Yes({ ok }: { ok: boolean }) {
   return ok ? (
@@ -19,6 +20,7 @@ function Yes({ ok }: { ok: boolean }) {
 
 export function CompareView() {
   const hydrated = useHydrated();
+  const priceInButton = useUiVariant("boton-oferta-1") === "comprar-precio";
   const ids = useCompare();
   const response = useQuoteResponse();
   const all = response?.offers ?? [];
@@ -114,7 +116,7 @@ export function CompareView() {
                     className="w-full px-3"
                     onClick={() => track("oferta_elegida", { aseguradora: o.insurerId, plan: o.planName, recomendado: o.labels.includes("recomendado"), desde: "comparador", ...discountProps(o) })}
                   >
-                    Lo quiero
+                    {priceInButton ? `Comprar · ${formatCOP(o.annualPremium)}` : "Lo quiero"}
                   </ButtonLink>
                 </td>
               ))}

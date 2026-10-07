@@ -51,3 +51,31 @@ describe("experimentos A/B", () => {
     expect(ids(buildQuoteResponse(offers, [], answers, assignment))).toEqual(ids(buildQuoteResponse(offers, [], answers)));
   });
 });
+
+describe("experimentos de interfaz", () => {
+  it("el script de arranque asigna lo mismo que assignVariantOf", async () => {
+    const { runInNewContext } = await import("node:vm");
+    const { experimentBootScript, assignVariantOf, UI_EXPERIMENTS } = await import("./experiments");
+    for (const sid of ["a", "sesion-123", "f3b1c2d4-0000-4000-8000-000000000000"]) {
+      const attrs: Record<string, string> = {};
+      runInNewContext(experimentBootScript(UI_EXPERIMENTS), {
+        sessionStorage: { getItem: () => sid, setItem: () => {} },
+        document: { documentElement: { setAttribute: (k: string, v: string) => (attrs[k] = v) } },
+        self: {},
+        Math,
+        String,
+        Date,
+      });
+      for (const e of UI_EXPERIMENTS.filter((x) => x.active)) {
+        expect(attrs[`data-x-${e.id}`]).toBe(assignVariantOf(e, sid).id);
+      }
+    }
+  });
+
+  it("el CSS oculta las variantes que no tocan y deja el control sin asignación", async () => {
+    const { experimentCss } = await import("./experiments");
+    const css = experimentCss([{ id: "x", question: "", active: true, variants: [{ id: "a", label: "", split: 50 }, { id: "b", label: "", split: 50 }] }]);
+    expect(css).toContain(`html:not([data-x-x]) [data-xv^="x:"]:not([data-xv="x:a"]){display:none!important}`);
+    expect(css).toContain(`html[data-x-x="b"] [data-xv^="x:"]:not([data-xv="x:b"]){display:none!important}`);
+  });
+});

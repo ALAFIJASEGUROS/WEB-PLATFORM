@@ -3,11 +3,11 @@
 import type { AnalyticsEvent } from "@/domain/events";
 import type { Offer } from "@/domain/types";
 import { STATIC_DEMO } from "./api-client";
+import { SID_KEY } from "@/recommendation/experiments";
 
 // Analítica propia y anónima: un id aleatorio por pestaña, sin datos personales.
 // Para cambiar a PostHog u otro proveedor basta con reemplazar `send`.
 
-const SID_KEY = "saf:sid";
 
 function sessionId() {
   try {

@@ -517,3 +517,18 @@ describe("reportes de experimentos y descuentos", () => {
     expect(rows.find((r) => r.key === NO_DISCOUNT)).toMatchObject({ chosen: 1, paid: 0 });
   });
 });
+
+describe("experimentos de interfaz en el reporte", () => {
+  it("toma la exposición de experimento_visto y mide si empezó a cotizar", async () => {
+    const { recordEvent, experimentResults } = await import("./analytics");
+    const { UI_EXPERIMENTS } = await import("@/recommendation/experiments");
+    (globalThis as { __safEvents?: unknown }).__safEvents = undefined;
+    const exp = UI_EXPERIMENTS[0];
+    recordEvent("experimento_visto", "u1", { variante: `${exp.id}:placa` });
+    recordEvent("cotizacion_iniciada", "u1", { tipo: "auto", origen: "portada" });
+    recordEvent("experimento_visto", "u2", { variante: `${exp.id}:tarjetas` });
+    const [control, placa] = experimentResults(exp);
+    expect(control).toMatchObject({ variantId: "tarjetas", exposed: 1, started: 0 });
+    expect(placa).toMatchObject({ variantId: "placa", exposed: 1, started: 1 });
+  });
+});

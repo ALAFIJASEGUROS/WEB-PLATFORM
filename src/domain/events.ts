@@ -9,7 +9,7 @@ export const FUNNEL_EVENTS = [
   "pago_aprobado",
 ] as const;
 
-export const OTHER_EVENTS = ["comparacion_abierta", "detalle_abierto"] as const;
+export const OTHER_EVENTS = ["comparacion_abierta", "detalle_abierto", "experimento_visto"] as const;
 
 export type FunnelEvent = (typeof FUNNEL_EVENTS)[number];
 export type AnalyticsEvent = FunnelEvent | (typeof OTHER_EVENTS)[number];
