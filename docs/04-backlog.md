@@ -60,7 +60,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-04.1 | Como usuario quiero un puntaje de afinidad y la razón de la recomendación | ✅ | M | MVP | 5 |
 | HU-04.2 | Como usuario quiero avisos cuando una opción no me conviene (financiación, deducible, hurto) | ✅ | M | MVP | 2 |
 | HU-04.3 | Como usuario quiero saber cómo se calcula y que la comisión no influye | ✅ | M | MVP | 2 |
-| HU-04.4 | Como equipo quiero A/B testing de los pesos con datos de conversión | ⬜ | C | V2 | 8 |
+| HU-04.4 | Como equipo quiero A/B testing de los pesos con datos de conversión | ✅ | C | V2 | 8 |
 | HU-04.5 | Como usuario quiero que me avisen cuando aparezca una opción mejor al renovar (re-cotización) | ✅ | S | V1 | 5 |
 
 ## E05 · Resultados y comparador
@@ -108,7 +108,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | HU-09.1 | Como usuario quiero entrar con un código por correo, sin contraseña | ✅ (código en pantalla hasta tener Resend) | M | MVP | 3 |
 | HU-09.2 | Como comprador invitado quiero que mis pólizas aparezcan al crear la cuenta | ✅ | M | MVP | 3 |
 | HU-09.3 | Como usuario quiero registrar pólizas y vehículos de otros canales | ✅ | S | MVP | 3 |
-| HU-09.4 | Como usuario quiero subir el PDF de una póliza y que se lean sus datos | ⬜ | C | V2 | 8 |
+| HU-09.4 | Como usuario quiero subir el PDF de una póliza y que se lean sus datos | ✅ | C | V2 | 8 |
 | HU-09.5 | Como usuario quiero ver mi sesión en el header | ✅ | C | MVP | 1 |
 | HU-09.6 | Como plataforma quiero persistencia real (Supabase/PostgreSQL) | ⬜ Dep | M | V1 | 8 |
 
@@ -200,7 +200,7 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-18.3 | Como usuario quiero ver el precio de lista, el descuento y quién lo ofrece | ✅ | M | MVP | 3 |
 | HU-18.4 | Como negocio quiero cargar las tarifas especiales reales de cada aseguradora | ⬜ Dep (convenios) | M | V1 | 3 |
 | HU-18.5 | Como negocio quiero validar legalmente los descuentos que salen de la comisión | ⬜ Dep (legal) | M | V1 | — |
-| HU-18.6 | Como negocio quiero medir el efecto de cada descuento en la conversión | ⬜ Código | S | V1 | 3 |
+| HU-18.6 | Como negocio quiero medir el efecto de cada descuento en la conversión | ✅ | S | V1 | 3 |
 
 ---
 
@@ -232,8 +232,14 @@ faltan los contactos verificados) y HU-17.9 (PWA instalable con página sin cone
 ## Sprint 8 (completado)
 HU-18.1, HU-18.2 y HU-18.3: motor de descuentos y tarifas especiales parametrizable por aseguradora, con panel en /admin.
 
+## Sprint 9 (completado)
+HU-18.6 (impacto de los descuentos en la conversión), HU-04.4 (experimentos A/B de pesos) y HU-09.4 (lectura de pólizas en PDF).
+
 ## Próximo sprint sugerido
-De solo código quedan HU-18.6 (efecto de los descuentos en la conversión), HU-04.4 (A/B de pesos) y HU-09.4 (lectura de pólizas en PDF). Lo demás depende de terceros o
+Lo pendiente de solo código está agotado. Lo siguiente depende de terceros: Supabase (HU-09.6) para persistir datos,
+analítica y configuración; Resend (HU-10.5); Wompi sandbox (HU-07.2); convenio con una aseguradora (HU-02.5) y sus
+tarifas especiales (HU-18.4); figura legal (HU-14.1, HU-18.5). Mientras tanto se puede habilitar una línea nueva
+(hogar o viaje) o hacer pruebas con usuarios (INV-6). Lo demás depende de terceros o
 de decisiones del negocio: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2), convenio con una aseguradora
 (HU-02.5), WhatsApp/SMS (HU-17.13), figura legal (HU-14.1) y marcas en el prototipo (HU-17.12).
 Con terceros: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).

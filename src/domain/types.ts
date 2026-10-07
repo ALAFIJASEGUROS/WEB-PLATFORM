@@ -142,4 +142,6 @@ export interface QuoteResponse {
   excluded?: ExcludedOffer[];
   /** Versión del algoritmo de recomendación que ordenó las ofertas. */
   algorithm?: string;
+  /** Variante del experimento A/B de pesos que recibió esta sesión. */
+  experiment?: { id: string; variant: string };
 }

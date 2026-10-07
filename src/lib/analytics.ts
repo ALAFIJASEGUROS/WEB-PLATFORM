@@ -1,6 +1,7 @@
 "use client";
 
 import type { AnalyticsEvent } from "@/domain/events";
+import type { Offer } from "@/domain/types";
 import { STATIC_DEMO } from "./api-client";
 
 // Analítica propia y anónima: un id aleatorio por pestaña, sin datos personales.
@@ -33,3 +34,9 @@ export function track(event: AnalyticsEvent, props: Record<string, string | numb
 
 /** Id de sesión para asociar eventos del servidor (p. ej. el pago) con el embudo. */
 export const analyticsSessionId = () => (typeof window === "undefined" ? undefined : sessionId());
+
+/** Reglas de descuento de una oferta, para medir su efecto en la conversión. */
+export function discountProps(offer: Pick<Offer, "discounts">): Record<string, string> {
+  const ids = offer.discounts?.map((d) => d.ruleId).join(",");
+  return ids ? { descuentos: ids.slice(0, 80) } : {};
+}

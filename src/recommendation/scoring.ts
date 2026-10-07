@@ -12,6 +12,7 @@ import type {
 } from "@/domain/types";
 import { SERVICE_KEYS } from "@/domain/types";
 import { formatCOP, SERVICE_LABELS, USE_LABELS } from "@/domain/labels";
+import type { Assignment } from "./experiments";
 
 /** Cambia cuando cambian los pesos, las reglas o las etiquetas. */
 export const ALGORITHM_VERSION = "2026.10-2";
@@ -69,10 +70,15 @@ export function meetsFinancingRequirements(o: Offer) {
   return o.coverages.perdidaTotalDanos && o.coverages.perdidaTotalHurto;
 }
 
+export interface ScoringOptions {
+  /** Pesos por prioridad que reemplazan a PRIORITY_WEIGHTS (experimentos A/B). */
+  priorityWeights?: Partial<Record<Priority, { price: number; coverage: number; services: number }>>;
+}
+
 /** Pesos efectivos: los personalizados (0–100) o los de la prioridad elegida. */
-export function effectiveWeights(answers: Answers) {
+export function effectiveWeights(answers: Answers, opts: ScoringOptions = {}) {
   const w = answers.weights;
-  if (!w) return PRIORITY_WEIGHTS[answers.priority];
+  if (!w) return opts.priorityWeights?.[answers.priority] ?? PRIORITY_WEIGHTS[answers.priority];
   return { price: w.price / 100, coverage: w.coverage / 100, services: w.services / 100 };
 }
 
@@ -91,9 +97,9 @@ export function weightsFromPriority(p: Priority): Weights {
   return { price: Math.round(w.price * 100), coverage: Math.round(w.coverage * 100), services: Math.round(w.services * 100) };
 }
 
-export function scoreOffers(offers: Offer[], answers: Answers): ScoredOffer[] {
+export function scoreOffers(offers: Offer[], answers: Answers, opts: ScoringOptions = {}): ScoredOffer[] {
   if (offers.length === 0) return [];
-  const weights = effectiveWeights(answers);
+  const weights = effectiveWeights(answers, opts);
   const cw = coverageWeights(answers);
   const cwTotal = Object.values(cw).reduce((s, n) => s + n, 0);
 
@@ -210,7 +216,7 @@ export function eligibility(o: Offer, answers: Answers): string | null {
 }
 
 /** Filtra por elegibilidad y ordena las ofertas que quedan. */
-export function recommend(offers: Offer[], answers: Answers) {
+export function recommend(offers: Offer[], answers: Answers, opts: ScoringOptions = {}) {
   const eligible: Offer[] = [];
   const excluded: ExcludedOffer[] = [];
   for (const o of offers) {
@@ -218,9 +224,22 @@ export function recommend(offers: Offer[], answers: Answers) {
     if (reason) excluded.push({ id: o.id, insurerName: o.insurerName, planName: o.planName, reason });
     else eligible.push(o);
   }
-  return { offers: scoreOffers(eligible, answers), excluded };
+  return { offers: scoreOffers(eligible, answers, opts), excluded };
 }
 
-export function buildQuoteResponse(offers: Offer[], errors: InsurerError[], answers: Answers): QuoteResponse {
-  return { quoteId: crypto.randomUUID(), ...recommend(offers, answers), errors, algorithm: ALGORITHM_VERSION };
+export function buildQuoteResponse(
+  offers: Offer[],
+  errors: InsurerError[],
+  answers: Answers,
+  assignment?: Assignment | null,
+): QuoteResponse {
+  // Si la persona definió sus pesos, el experimento no aplica.
+  const applied = assignment && !answers.weights ? assignment : null;
+  return {
+    quoteId: crypto.randomUUID(),
+    ...recommend(offers, answers, { priorityWeights: applied?.priorityWeights }),
+    errors,
+    algorithm: ALGORITHM_VERSION,
+    ...(applied && { experiment: { id: applied.experimentId, variant: applied.variantId } }),
+  };
 }

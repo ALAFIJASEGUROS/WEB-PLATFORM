@@ -7,7 +7,7 @@ import { COVERAGE_KEYS, SERVICE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
 import { useCompare, useHydrated, useQuoteResponse } from "@/lib/quote-store";
 import { ButtonLink, InsurerLogo } from "@/components/ui";
-import { track } from "@/lib/analytics";
+import { discountProps, track } from "@/lib/analytics";
 
 function Yes({ ok }: { ok: boolean }) {
   return ok ? (
@@ -112,7 +112,7 @@ export function CompareView() {
                   <ButtonLink
                     href={`/checkout?oferta=${encodeURIComponent(o.id)}`}
                     className="w-full px-3"
-                    onClick={() => track("oferta_elegida", { aseguradora: o.insurerId, plan: o.planName, recomendado: o.labels.includes("recomendado"), desde: "comparador" })}
+                    onClick={() => track("oferta_elegida", { aseguradora: o.insurerId, plan: o.planName, recomendado: o.labels.includes("recomendado"), desde: "comparador", ...discountProps(o) })}
                   >
                     Lo quiero
                   </ButtonLink>

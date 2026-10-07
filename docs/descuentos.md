@@ -35,6 +35,16 @@ cotizar en el servidor con las reglas vigentes: si una regla se apagó entre la 
 muestra al usuario el precio nuevo y se le pide confirmar. Cada orden guarda el detalle de los descuentos
 aplicados, y cada cambio en el panel queda en la bitácora de auditoría.
 
+## Medir el impacto
+En el mismo panel, la tabla **Impacto en la conversión** muestra por regla:
+- **Elegidas:** veces que alguien escogió una oferta con ese descuento.
+- **Órdenes y pagadas.**
+- **Conversión:** pagadas sobre elegidas.
+- **Costo:** descuento otorgado en compras pagadas.
+- **Prima cobrada.**
+
+La fila "Sin descuento" sirve de referencia. Con analítica en memoria, los conteos se reinician con el servidor.
+
 ## Reglas iniciales (demo)
 - Tarifa digital SURA: 5%, activa.
 - Descuento motos Bolívar: 8% con tope de $60.000, solo motos, activa.

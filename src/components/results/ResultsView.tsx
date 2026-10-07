@@ -57,7 +57,13 @@ export function ResultsView() {
 
   const quoteId = data?.quoteId;
   useEffect(() => {
-    if (quoteId) track("resultados_vistos", { ofertas: data?.offers.length ?? 0 });
+    if (!quoteId || !data) return;
+    track("resultados_vistos", {
+      ofertas: data.offers.length,
+      con_descuento: data.offers.filter((o) => o.discounts?.length).length,
+      // Exposición al experimento A/B: el resto del embudo se cruza por sesión.
+      ...(data.experiment && { variante: `${data.experiment.id}:${data.experiment.variant}` }),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- una vez por cotización
   }, [quoteId]);
 

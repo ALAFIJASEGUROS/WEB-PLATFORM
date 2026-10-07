@@ -8,7 +8,7 @@ import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
 import { discountTotal } from "@/domain/discounts";
 import { Badge, Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
-import { track } from "@/lib/analytics";
+import { discountProps, track } from "@/lib/analytics";
 
 const LABELS = {
   recomendado: { text: "Recomendado para ti", tone: "brand" },
@@ -189,7 +189,7 @@ export function OfferCard({
           </Button>
           <ButtonLink
             href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}
-            onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado") })}
+            onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado"), ...discountProps(offer) })}
           >
             Lo quiero
           </ButtonLink>

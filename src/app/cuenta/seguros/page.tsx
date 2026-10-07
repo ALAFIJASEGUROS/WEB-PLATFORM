@@ -7,6 +7,7 @@ import type { Policy } from "@/server/db";
 import { formatCOP } from "@/domain/labels";
 import { Badge, Button, ButtonLink, Card, Field, InsurerLogo, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
+import { ExternalPolicyForm } from "@/components/account/ExternalPolicyForm";
 import {
   addExternalPolicyAction,
   deletePolicyAction,
@@ -149,18 +150,10 @@ export default async function Page({ searchParams }: PageProps<"/cuenta/seguros"
         {vehicles.length > 0 && (
           <details className="rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
             <summary className="cursor-pointer font-semibold text-heading">+ Registrar una póliza que ya tengo</summary>
-            <ActionForm action={addExternalPolicyAction} submitLabel="Registrar póliza" className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Field label="Aseguradora" htmlFor="ep-ins"><input id="ep-ins" name="insurerName" required className={inputClass} /></Field>
-              <Field label="Producto o plan" htmlFor="ep-plan"><input id="ep-plan" name="planName" required className={inputClass} /></Field>
-              <Field label="Número de póliza" htmlFor="ep-num"><input id="ep-num" name="number" required className={inputClass} /></Field>
-              <Field label="Vehículo" htmlFor="ep-veh">
-                <select id="ep-veh" name="vehicleId" required className={inputClass}>
-                  {vehicles.map((v) => <option key={v.id} value={v.id}>{v.plate} · {v.brand} {v.model}</option>)}
-                </select>
-              </Field>
-              <Field label="Inicio de vigencia" htmlFor="ep-start"><input id="ep-start" name="startDate" type="date" required className={inputClass} /></Field>
-              <Field label="Fin de vigencia" htmlFor="ep-end"><input id="ep-end" name="endDate" type="date" required className={inputClass} /></Field>
-            </ActionForm>
+            <ExternalPolicyForm
+              action={addExternalPolicyAction}
+              vehicles={vehicles.map((v) => ({ id: v.id, plate: v.plate, label: `${v.plate} · ${v.brand} ${v.model}` }))}
+            />
           </details>
         )}
       </section>

@@ -9,6 +9,7 @@ import { updatePqr } from "@/server/pqr";
 import { reconcilePayments } from "@/server/reconciliation";
 import type { FormState } from "../cuenta/actions";
 import { describeRule, type DiscountRule } from "@/domain/discounts";
+import { setExperimentActive } from "@/server/experiments";
 import { deleteDiscountRule, discountConfig, updateDiscountSettings, upsertDiscountRule } from "@/server/discounts";
 
 const campaignSchema = z.object({
@@ -157,4 +158,13 @@ export async function saveDiscountSettingsAction(_: FormState, form: FormData): 
   audit(admin.email, "Cambió la configuración de descuentos", `${settings.enabled ? "activos" : "apagados"}, tope ${settings.maxTotalPct}%`);
   revalidatePath("/admin");
   return { ok: true };
+}
+
+// ── Experimentos ───────────────────────────────────────────────────────────
+
+export async function toggleExperimentAction(id: string, active: boolean) {
+  const admin = await requireAdmin();
+  setExperimentActive(id, active);
+  audit(admin.email, active ? "Inició experimento" : "Detuvo experimento", id);
+  revalidatePath("/admin");
 }
