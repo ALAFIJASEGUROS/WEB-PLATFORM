@@ -1,4 +1,4 @@
-# Experimentos A/B del recomendador
+# Experimentos A/B
 
 Los experimentos prueban otros pesos para una prioridad del cuestionario y miden si cambian las compras. Se definen
 en `src/recommendation/experiments.ts` y se inician o detienen desde **/admin → Experimentos del recomendador**.
@@ -26,3 +26,21 @@ en `src/recommendation/experiments.ts` y se inician o detienen desde **/admin �
 ## Pendiente
 - Con analítica en memoria, los resultados se pierden al reiniciar. Con PostHog o Supabase (HU-01.5, HU-09.6) quedan
   persistentes y se pueden cruzar con retractos y quejas como métricas de control.
+
+## Experimentos de interfaz
+Prueban textos y diseño de los llamados a la acción. Se definen en `UI_EXPERIMENTS` (mismo archivo) y se activan o
+desactivan en el código.
+
+- **Sin parpadeo:** un script en `<head>` asigna la variante antes de pintar y marca `<html data-x-<id>="<variante>">`.
+  Cada variante del HTML lleva `data-xv="<id>:<variante>"` y el CSS generado oculta las demás. Sin JavaScript se ve el
+  control.
+- **En componentes del cliente**, `useUiVariant(id)` devuelve la variante.
+- **Exposición:** `useExperimentExposure(id)` registra `experimento_visto` una vez por sesión.
+- **Resultados:** en /admin, por variante: inició cotización, eligió oferta, eligió la recomendada, fue a pagar, compró,
+  conversión y valor p.
+
+Experimentos iniciales:
+| Id | Pregunta | Variantes |
+| --- | --- | --- |
+| `portada-cta-1` | ¿Empezar con la placa en la portada aumenta las cotizaciones? | Tarjetas Carro/Moto (control) · Campo de placa |
+| `boton-oferta-1` | ¿Mostrar el precio en el botón aumenta las compras? | "Lo quiero" (control) · "Comprar por $X" |

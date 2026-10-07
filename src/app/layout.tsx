@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
+import { experimentBootScript, experimentCss, UI_EXPERIMENTS } from "@/recommendation/experiments";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -35,6 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         {/* Aplica el tema guardado antes de pintar para evitar el parpadeo. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* Variante de cada experimento de interfaz, antes de pintar (sin parpadeo). */}
+        <script dangerouslySetInnerHTML={{ __html: experimentBootScript(UI_EXPERIMENTS) }} />
+        <style dangerouslySetInnerHTML={{ __html: experimentCss(UI_EXPERIMENTS) }} />
       </head>
       <body className="flex min-h-full flex-col font-sans">
         <a

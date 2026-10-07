@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   BadgePercent,
@@ -77,16 +77,27 @@ export function QuoteWizard({ type }: { type: VehicleType }) {
   // El estado inicial se lee de sessionStorage, así que solo renderizamos en cliente.
   const hydrated = useHydrated();
   if (!hydrated) return <div className="min-h-[60vh]" aria-busy />;
-  return <Wizard type={type} />;
+  // useSearchParams (placa desde la portada) requiere un límite de Suspense en páginas estáticas.
+  return (
+    <Suspense fallback={<div className="min-h-[60vh]" aria-busy />}>
+      <Wizard type={type} />
+    </Suspense>
+  );
 }
 
 function Wizard({ type }: { type: VehicleType }) {
   const router = useRouter();
-  // Reanudar una cotización previa del mismo tipo.
-  useEffect(() => track("cotizacion_iniciada", { tipo: type }), [type]);
+  // Placa enviada desde la portada (?placa=ABC123): se busca sola al abrir.
+  const params = useSearchParams();
+  const [fromHome] = useState(() => {
+    const p = normalizePlate(params.get("placa") ?? "");
+    return plateType(p) === type ? { plate: p, origin: params.get("origen") ?? "enlace" } : null;
+  });
+  useEffect(() => track("cotizacion_iniciada", { tipo: type, ...(fromHome && { origen: fromHome.origin }) }), [type, fromHome]);
+  // Reanudar una cotización previa del mismo tipo (salvo que llegue una placa nueva).
   const [prev] = useState(() => {
     const p = quoteStore.getRequest();
-    return p && p.vehicle.type === type ? p : null;
+    return p && p.vehicle.type === type && !fromHome ? p : null;
   });
   const noun = type === "auto" ? "carro" : "moto";
   const [step, setStep] = useState(0);
@@ -94,7 +105,7 @@ function Wizard({ type }: { type: VehicleType }) {
   const [fromSummary, setFromSummary] = useState(false);
 
   // Paso 1
-  const [plate, setPlate] = useState(prev?.vehicle.plate ?? "");
+  const [plate, setPlate] = useState(fromHome?.plate ?? prev?.vehicle.plate ?? "");
   const [manual, setManual] = useState(false);
   const [vehicle, setVehicle] = useState<Vehicle | null>(prev?.vehicle ?? null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -123,8 +134,8 @@ function Wizard({ type }: { type: VehicleType }) {
     };
   }, [type, brand, model, year]);
 
-  async function lookup() {
-    const p = normalizePlate(plate);
+  async function lookup(value = plate) {
+    const p = normalizePlate(value);
     setLookupError(null);
     const t = plateType(p);
     if (!t) {
@@ -148,6 +159,13 @@ function Wizard({ type }: { type: VehicleType }) {
       setLookingUp(false);
     }
   }
+
+  // Si llegó con la placa desde la portada, se busca el vehículo una vez al abrir.
+  useEffect(() => {
+    if (!fromHome) return;
+    void Promise.resolve().then(() => lookup(fromHome.plate));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar
+  }, [fromHome]);
 
   const age = birthdate
     ? CURRENT_YEAR - Number(birthdate.slice(0, 4))
@@ -278,7 +296,7 @@ function Wizard({ type }: { type: VehicleType }) {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={lookup}
+                    onClick={() => lookup()}
                     disabled={plate.length < 6 || lookingUp}
                   >
                     {lookingUp ? "Buscando…" : "Buscar"}

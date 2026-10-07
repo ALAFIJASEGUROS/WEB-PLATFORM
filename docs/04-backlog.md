@@ -202,6 +202,17 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-18.5 | Como negocio quiero validar legalmente los descuentos que salen de la comisión | ⬜ Dep (legal) | M | V1 | — |
 | HU-18.6 | Como negocio quiero medir el efecto de cada descuento en la conversión | ✅ | S | V1 | 3 |
 
+## E19 · Llamados a la acción
+| ID | Historia | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- |
+| HU-19.1 | Como visitante quiero empezar escribiendo mi placa en la portada | ✅ (en A/B) | M | MVP | 3 |
+| HU-19.2 | Como visitante quiero textos que digan qué obtengo ("Ver mis precios gratis") | ✅ | M | MVP | 1 |
+| HU-19.3 | Como visitante en el celular quiero el botón principal siempre a mano | ✅ | S | MVP | 2 |
+| HU-19.4 | Como comprador quiero ver el precio y garantías junto al botón de compra | ✅ (precio en A/B) | M | MVP | 2 |
+| HU-19.5 | Como equipo quiero A/B de textos y diseño de los llamados a la acción | ✅ | M | V1 | 5 |
+| HU-19.6 | Como indeciso quiero pedir que me asesoren (con autorización y horario Ley 2300) | ⬜ Dep (canal y equipo de asesores) | S | V1 | 5 |
+| HU-19.7 | Como visitante quiero guardar mi cotización y retomarla después | ⬜ Dep (Resend) | S | V1 | 3 |
+
 ---
 
 ## Sprint 3 (completado)
@@ -234,6 +245,10 @@ HU-18.1, HU-18.2 y HU-18.3: motor de descuentos y tarifas especiales parametriza
 
 ## Sprint 9 (completado)
 HU-18.6 (impacto de los descuentos en la conversión), HU-04.4 (experimentos A/B de pesos) y HU-09.4 (lectura de pólizas en PDF).
+
+## Sprint 10 (completado)
+HU-19.1 a HU-19.5: placa en la portada, textos orientados al beneficio, botón fijo en el celular, precio y garantías en
+el botón de compra, y experimentos A/B de interfaz.
 
 ## Próximo sprint sugerido
 Lo pendiente de solo código está agotado. Lo siguiente depende de terceros o de decisiones del negocio:

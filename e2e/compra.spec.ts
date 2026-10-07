@@ -25,7 +25,7 @@ test("cotiza, compra sin cuenta, recibe la póliza y la guarda en su cuenta", as
   const email = `e2e-${Date.now()}@example.com`;
   await cotizar(page);
 
-  await page.getByRole("link", { name: "Lo quiero" }).first().click();
+  await page.getByRole("link", { name: /^(Lo quiero|Comprar por)/ }).first().click();
   await page.getByLabel("Nombres").fill("Ana");
   await page.getByLabel("Apellidos").fill("Gómez");
   await page.getByLabel("Número de documento").fill("1020304050");
@@ -127,6 +127,7 @@ test("es instalable y muestra una página sin conexión", async ({ page, context
   await page.goto("/");
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
   await page.reload();
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await context.setOffline(true);
   await page.goto("/ayuda").catch(() => {});
   await expect(page.getByRole("heading", { name: "Estás sin conexión" })).toBeVisible();
@@ -145,7 +146,7 @@ test("muestra los descuentos y el admin puede apagarlos", async ({ page }) => {
   const panel = page.locator("section", { has: page.getByRole("heading", { name: "Descuentos y tarifas especiales" }) });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("heading", { name: "Impacto en la conversión" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Experimentos del recomendador" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Experimentos A/B" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Detener" })).toBeVisible();
   await panel.getByLabel("Descuentos activos (interruptor general)").uncheck();
   await panel.getByRole("button", { name: "Guardar configuración" }).click();
@@ -175,6 +176,7 @@ test("registra una póliza externa leyendo su PDF", async ({ page, browser }) =>
   await page.getByRole("button", { name: "Enviarme el código" }).click();
   await page.getByLabel("Código").fill(await page.locator("strong.tracking-widest").innerText());
   await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page.getByRole("heading", { name: /^Hola/ })).toBeVisible();
   await page.goto("/cuenta/seguros");
 
   await page.getByText("+ Agregar vehículo").click();
@@ -192,4 +194,20 @@ test("registra una póliza externa leyendo su PDF", async ({ page, browser }) =>
   await expect(page.getByLabel("Fin de vigencia")).toHaveValue("2027-03-15");
   await page.getByRole("button", { name: "Registrar póliza" }).click();
   await expect(page.getByText("AU-1020-55871").first()).toBeVisible();
+});
+
+test("desde la portada, la placa lleva directo al vehículo encontrado", async ({ page }) => {
+  const { UI_EXPERIMENTS, assignVariantOf } = await import("../src/recommendation/experiments");
+  const exp = UI_EXPERIMENTS.find((e) => e.id === "portada-cta-1")!;
+  // Una sesión que cae en la variante "placa".
+  let sid = "";
+  for (let i = 0; assignVariantOf(exp, sid).id !== "placa"; i++) sid = `e2e-${i}`;
+  await page.addInitScript((s) => sessionStorage.setItem("saf:sid", s), sid);
+
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /Carro\s*Ver mis precios/ })).toBeHidden();
+  await page.getByLabel("Escribe tu placa").fill("ABC123");
+  await page.getByRole("button", { name: "Ver mis precios" }).click();
+  await expect(page).toHaveURL(/\/cotizar\/auto\?placa=ABC123/);
+  await expect(page.getByText("Encontramos tu carro")).toBeVisible();
 });

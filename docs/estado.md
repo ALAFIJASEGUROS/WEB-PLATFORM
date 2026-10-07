@@ -1,4 +1,4 @@
-# Estado del proyecto · v0.11.0 (2026-10-07)
+# Estado del proyecto · v0.12.0 (2026-10-07)
 
 Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está en el
 [backlog](04-backlog.md) y el historial de cambios en el [CHANGELOG](../CHANGELOG.md).
@@ -12,7 +12,7 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 
 | Área | Qué funciona | Cómo se verifica |
 | --- | --- | --- |
-| Cotización | Placa colombiana o marca, línea y año. Cuestionario de 5 pasos (uso, parqueo, kilometraje, conductores, financiación, prioridad o pesos, deducible, servicios, siniestros) | E2E de compra |
+| Cotización | Inicio con la placa desde la portada. Placa colombiana o marca, línea y año. Cuestionario de 5 pasos (uso, parqueo, kilometraje, conductores, financiación, prioridad o pesos, deducible, servicios, siniestros) | E2E de compra |
 | Aseguradoras | Adaptadores simulados de SURA y Seguros Bolívar detrás de `InsurerAdapter`. Agregador con timeouts y resultados parciales. Caché de 15 min | Pruebas unitarias del agregador y la caché |
 | Recomendación | Elegibilidad (uso y financiación) antes del puntaje, puntaje de afinidad (precio relativo, cobertura, servicios) con pesos editables, empate técnico, explicaciones y versión del algoritmo. Página "Cómo funciona" | Pruebas de puntaje y E2E |
 | Resultados | Descuentos y tarifas especiales con precio de lista tachado, recomendación destacada, filtros, comparador de 3 con "Mejor" por fila, ficha con exclusiones, IVA y condicionado. Compartir por enlace o WhatsApp | E2E y axe |
@@ -21,8 +21,8 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Cuenta | Acceso con código por correo, reclamación de compras como invitado, billetera de pólizas y vehículos (con lectura de pólizas en PDF), pago de cuotas, sugerencia de renovación con ahorro | Pruebas y E2E |
 | Comunicaciones | Centro de preferencias por tipo de mensaje y canal. Recordatorios de póliza, SOAT, tecnomecánica y cuotas, y avisos de mora (Ley 2300: horario, festivos, un contacto al día). Centro de ofertas con consentimiento | Pruebas de recordatorios |
 | Atención | Guía de siniestros por aseguradora. PQR con radicado y plazo de 15 días hábiles. Sección del Defensor del Consumidor Financiero | Pruebas de PQR |
-| Administración | Descuentos por aseguradora (prender, apagar, magnitud, tope, vigencia y tope global) y su impacto en la conversión, experimentos A/B de pesos con valor p, roles `admin` y `analista` por correo, órdenes, recaudo, conciliación de pagos, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
-| Calidad | CI con lint, typecheck, 75 pruebas unitarias, build, 31 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
+| Administración | Descuentos por aseguradora (prender, apagar, magnitud, tope, vigencia y tope global) y su impacto en la conversión, experimentos A/B de pesos y de interfaz con valor p, roles `admin` y `analista` por correo, órdenes, recaudo, conciliación de pagos, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
+| Calidad | CI con lint, typecheck, 78 pruebas unitarias, build, 32 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
 | Diseño | Mobile-first, app instalable (PWA) con página sin conexión, modo oscuro con selector, tokens de color con contraste AA, versión visible en el footer | axe |
 
 ## Lo pendiente

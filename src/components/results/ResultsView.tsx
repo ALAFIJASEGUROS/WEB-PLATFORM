@@ -8,6 +8,7 @@ import { formatCOP, PRIORITY_LABELS } from "@/domain/labels";
 import type { QuoteRequest } from "@/domain/types";
 import { fetchQuote } from "@/lib/api-client";
 import { track } from "@/lib/analytics";
+import { useExperimentExposure } from "@/lib/experiments";
 import {
   quoteStore,
   useCompare,
@@ -55,6 +56,7 @@ export function ResultsView() {
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
+  useExperimentExposure("boton-oferta-1", !!data?.offers.length);
   const quoteId = data?.quoteId;
   useEffect(() => {
     if (!quoteId || !data) return;

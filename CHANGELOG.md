@@ -7,6 +7,16 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 
+## [0.12.0] - 2026-10-07 · Sprint 10
+### Agregado
+- Inicio con la placa desde la portada: "Escribe tu placa → Ver mis precios" detecta carro o moto, abre el cuestionario con el vehículo ya buscado y registra el origen.
+- Botón fijo "Ver mis precios gratis" en el celular cuando el llamado principal de la portada sale de la pantalla.
+- Línea de confianza junto al botón de la oferta recomendada: pago seguro con Wompi y 5 días hábiles para arrepentirse.
+- Experimentos A/B de interfaz: la variante se asigna antes de pintar (sin parpadeo, también en la demo estática), se registra la exposición (`experimento_visto`) y /admin muestra resultados por variante con inicio de cotización, elección, pago y valor p. Experimentos iniciales: portada con tarjetas o con placa, y botón "Lo quiero" o "Comprar por $X".
+### Cambiado
+- Textos orientados al beneficio: "Ver mis precios" en lugar de "Cotizar" en la portada y "Gratis · Sin registro · Sin llamadas de vendedores · Pagas en línea".
+- El panel de experimentos de /admin pasa a llamarse "Experimentos A/B" e incluye los de pesos y los de interfaz.
+
 ## [0.11.0] - 2026-10-07 · Sprint 9
 ### Agregado
 - Impacto de los descuentos en `/admin`: por cada regla (y sin descuento, para comparar), veces que se eligió, órdenes, compras pagadas, conversión, descuento otorgado y prima cobrada.
@@ -114,7 +124,8 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Cotización por placa, motor de recomendación explicable, adaptadores simulados de SURA y Seguros Bolívar, resultados y comparador.
 
-[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.11.0...HEAD
+[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.8.0...v0.9.0

@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { ButtonLink, Card } from "@/components/ui";
 import { Footer } from "@/components/Footer";
+import { HeroPlateStart } from "@/components/home/HeroPlateStart";
+import { StickyCta } from "@/components/home/StickyCta";
+import { ExperimentExposure } from "@/components/home/ExperimentExposure";
 
 const STEPS = [
   { icon: ListChecks, title: "Cuéntanos qué te importa", text: "Precio, cobertura o servicios. Son 2 minutos y no pedimos tu cédula para cotizar." },
@@ -92,27 +95,33 @@ export default function Home() {
               aseguradoras y compra en minutos desde tu celular.
             </p>
 
-            <div className="mt-7 grid max-w-md grid-cols-2 gap-3">
-              {[
-                { href: "/cotizar/auto", icon: CarFront, label: "Carro" },
-                { href: "/cotizar/moto", icon: Bike, label: "Moto" },
-              ].map((o) => (
-                <Link
-                  key={o.href}
-                  href={o.href}
-                  className="group flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:ring-2 hover:ring-brand"
-                >
-                  <span className="flex size-11 items-center justify-center rounded-xl bg-brand-fill text-white">
-                    <o.icon className="size-6" aria-hidden />
-                  </span>
-                  <span>
-                    <span className="block font-bold text-heading">{o.label}</span>
-                    <span className="block text-xs font-semibold text-brand group-hover:underline">Cotizar →</span>
-                  </span>
-                </Link>
-              ))}
+            <div id="hero-cta" className="mt-7">
+              <div data-xv="portada-cta-1:tarjetas" className="grid max-w-md grid-cols-2 gap-3">
+                {[
+                  { href: "/cotizar/auto", icon: CarFront, label: "Carro" },
+                  { href: "/cotizar/moto", icon: Bike, label: "Moto" },
+                ].map((o) => (
+                  <Link
+                    key={o.href}
+                    href={o.href}
+                    className="group flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:ring-2 hover:ring-brand"
+                  >
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-brand-fill text-white">
+                      <o.icon className="size-6" aria-hidden />
+                    </span>
+                    <span>
+                      <span className="block font-bold text-heading">{o.label}</span>
+                      <span className="block text-xs font-semibold text-brand group-hover:underline">Ver mis precios →</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+              <div data-xv="portada-cta-1:placa">
+                <HeroPlateStart />
+              </div>
             </div>
-            <p className="mt-4 text-sm text-muted">Gratis · Sin registro · Sin llamadas de vendedores</p>
+            <p className="mt-4 text-sm text-muted">Gratis · Sin registro · Sin llamadas de vendedores · Pagas en línea</p>
+            <ExperimentExposure id="portada-cta-1" />
           </div>
           <HeroPreview />
         </div>
@@ -215,6 +224,7 @@ export default function Home() {
         </div>
       </section>
 
+      <StickyCta targetId="hero-cta" />
       <Footer />
     </>
   );

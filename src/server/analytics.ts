@@ -1,6 +1,5 @@
 import "server-only";
 import { FUNNEL_EVENTS, type AnalyticsEvent } from "@/domain/events";
-import type { WeightExperiment } from "@/recommendation/experiments";
 import type { Order, OrderStatus } from "./db";
 
 export interface StoredEvent {
@@ -54,6 +53,8 @@ export interface VariantResult {
   variantId: string;
   label: string;
   exposed: number;
+  started: number;
+  chose: number;
   choseRecommended: number;
   checkout: number;
   paid: number;
@@ -85,15 +86,16 @@ export function twoProportionPValue(x1: number, n1: number, x2: number, n2: numb
 }
 
 /**
- * Resultados de un experimento. La exposición se toma de `resultados_vistos`
- * con la etiqueta de variante; el resto del embudo se cruza por sesión.
+ * Resultados de un experimento (de pesos o de interfaz). La exposición es el
+ * primer evento de la sesión con `variante = "<experimento>:<variante>"`
+ * (`resultados_vistos` o `experimento_visto`); el embudo se cruza por sesión.
  */
-export function experimentResults(experiment: WeightExperiment): VariantResult[] {
+export function experimentResults(experiment: { id: string; variants: { id: string; label: string }[] }): VariantResult[] {
   const exposure = new Map<string, string>();
   const reached = new Map<string, Set<AnalyticsEvent>>();
   const choseRec = new Set<string>();
   for (const e of events()) {
-    if (e.event === "resultados_vistos" && typeof e.props.variante === "string" && !exposure.has(e.sid)) {
+    if (typeof e.props.variante === "string" && !exposure.has(e.sid)) {
       const [expId, variantId] = e.props.variante.split(":");
       if (expId === experiment.id) exposure.set(e.sid, variantId);
     }
@@ -109,6 +111,8 @@ export function experimentResults(experiment: WeightExperiment): VariantResult[]
       variantId: v.id,
       label: v.label,
       exposed: sids.length,
+      started: has("cotizacion_iniciada"),
+      chose: has("oferta_elegida"),
       choseRecommended: sids.filter((s) => choseRec.has(s)).length,
       checkout: has("checkout_enviado"),
       paid,
