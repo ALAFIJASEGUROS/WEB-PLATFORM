@@ -13,6 +13,7 @@ recomendación basada en cuestionario y compra desde el celular.
 | Regulación | Simplificada para el MVP: consentimientos de habeas data, términos, retracto. La figura de intermediación (corredor/agencia) queda pendiente |
 | Compra | Sin registro obligatorio. La cuenta es opcional y permite reclamar pólizas compradas como invitado |
 | Persistencia | Repositorio en memoria detrás de interfaces; migrar a PostgreSQL (Supabase) |
+| Líneas (2026-10-07) | Por ahora solo **carro y moto**. SOAT, hogar y viaje quedan en pausa; la arquitectura para agregarlas sigue lista (`docs/nuevas-lineas.md`) |
 
 ## Épicas
 

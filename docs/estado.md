@@ -43,7 +43,7 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Tarifas especiales | HU-18.4, HU-18.5 | Tarifas acordadas con cada aseguradora y validación legal de los descuentos que salen de la comisión |
 
 ### Solo código (siguientes candidatos)
-- Habilitar una nueva línea (hogar o viaje) siguiendo [nuevas-lineas.md](nuevas-lineas.md). SOAT depende del RUNT.
+- Nuevas líneas (SOAT, hogar, viaje): en pausa por decisión del negocio; el foco es carro y moto.
 
 ### Investigación
 Los 7 frentes terminaron (ver [01-investigacion.md](01-investigacion.md) y [investigacion/](investigacion/)). De ahí salen las historias de la épica E17 del backlog; los Sprints 6 y 7 implementaron las de solo código. Quedan pendientes las pruebas con usuarios reales.

@@ -169,7 +169,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | ID | Historia | Estado | Prio | Rel | Pts |
 | --- | --- | --- | --- | --- | --- |
 | HU-16.1 | Como plataforma quiero agregar líneas nuevas (hogar, viaje) sin rehacer el núcleo | ✅ | C | V2 | 13 |
-| HU-16.2 | Como usuario quiero comprar el SOAT (gancho de entrada) | ⬜ Dep | S | V1 | 8 |
+| HU-16.2 | Como usuario quiero comprar el SOAT (gancho de entrada) | ⏸ En pausa (foco carro y moto) | S | V1 | 8 |
 
 ## E17 · Hallazgos de la investigación
 Funcionalidades nuevas que salen de los documentos de [investigacion/](investigacion/). "Código" = no depende de terceros.
@@ -254,8 +254,8 @@ el botón de compra, y experimentos A/B de interfaz.
 Lo pendiente de solo código está agotado. Lo siguiente depende de terceros o de decisiones del negocio:
 Supabase (HU-09.6) para persistir datos, analítica y configuración; Resend (HU-10.5); Wompi sandbox (HU-07.2);
 convenio con una aseguradora (HU-02.5) y sus tarifas especiales (HU-18.4); WhatsApp/SMS (HU-17.13); figura legal
-(HU-14.1, HU-18.5) y marcas en el prototipo (HU-17.12). Mientras tanto se puede habilitar una línea nueva (hogar o
-viaje) o hacer pruebas con usuarios (INV-6).
+(HU-14.1, HU-18.5) y marcas en el prototipo (HU-17.12). El foco es carro y moto (nuevas líneas en pausa); mientras
+tanto se pueden preparar las pruebas con usuarios (INV-6).
 
 ## Bloqueados por terceros
 - Supabase (HU-09.6)
