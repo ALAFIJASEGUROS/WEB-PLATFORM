@@ -236,13 +236,11 @@ HU-18.1, HU-18.2 y HU-18.3: motor de descuentos y tarifas especiales parametriza
 HU-18.6 (impacto de los descuentos en la conversión), HU-04.4 (experimentos A/B de pesos) y HU-09.4 (lectura de pólizas en PDF).
 
 ## Próximo sprint sugerido
-Lo pendiente de solo código está agotado. Lo siguiente depende de terceros: Supabase (HU-09.6) para persistir datos,
-analítica y configuración; Resend (HU-10.5); Wompi sandbox (HU-07.2); convenio con una aseguradora (HU-02.5) y sus
-tarifas especiales (HU-18.4); figura legal (HU-14.1, HU-18.5). Mientras tanto se puede habilitar una línea nueva
-(hogar o viaje) o hacer pruebas con usuarios (INV-6). Lo demás depende de terceros o
-de decisiones del negocio: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2), convenio con una aseguradora
-(HU-02.5), WhatsApp/SMS (HU-17.13), figura legal (HU-14.1) y marcas en el prototipo (HU-17.12).
-Con terceros: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).
+Lo pendiente de solo código está agotado. Lo siguiente depende de terceros o de decisiones del negocio:
+Supabase (HU-09.6) para persistir datos, analítica y configuración; Resend (HU-10.5); Wompi sandbox (HU-07.2);
+convenio con una aseguradora (HU-02.5) y sus tarifas especiales (HU-18.4); WhatsApp/SMS (HU-17.13); figura legal
+(HU-14.1, HU-18.5) y marcas en el prototipo (HU-17.12). Mientras tanto se puede habilitar una línea nueva (hogar o
+viaje) o hacer pruebas con usuarios (INV-6).
 
 ## Bloqueados por terceros
 - Supabase (HU-09.6)
