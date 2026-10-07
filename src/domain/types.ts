@@ -8,8 +8,12 @@ export interface Vehicle {
   brand: string;
   model: string;
   year: number;
-  /** Valor comercial estimado en COP. */
+  /** Valor asegurado en COP (el estimado, o el que ajustó el usuario). */
   commercialValue: number;
+  /** Valor comercial de referencia antes del ajuste del usuario. */
+  estimatedValue?: number;
+  /** Cilindraje en cc (motos). */
+  engineCc?: number;
 }
 
 export type Priority = "precio" | "cobertura" | "servicios" | "equilibrio";
@@ -104,6 +108,8 @@ export interface Offer {
   validUntil: string;
   /** Usos del vehículo que el plan acepta. Si no viene, acepta todos. */
   allowedUses?: VehicleUse[];
+  /** Cilindraje máximo que asegura el plan (motos). */
+  maxEngineCc?: number;
   /** Prima anual antes de descuentos (solo si se aplicó alguno). */
   listPremium?: number;
   /** Descuentos aplicados (ver domain/discounts.ts). */

@@ -35,6 +35,8 @@ import {
   CURRENT_YEAR,
   estimateValue,
   findModel,
+  insuredValueAdjust,
+  withInsuredValue,
   normalizePlate,
   plateType,
 } from "@/vehicles/lookup";
@@ -45,6 +47,7 @@ import { Button, Card, Field, inputClass } from "@/components/ui";
 import { OptionCard, OptionGroup } from "./OptionCard";
 import { PlateInput } from "./PlateInput";
 import { WeightSliders } from "./WeightSliders";
+import { InsuredValue } from "./InsuredValue";
 import { weightsFromPriority } from "@/recommendation/scoring";
 
 const STEPS = [
@@ -131,8 +134,17 @@ function Wizard({ type }: { type: VehicleType }) {
       model,
       year: Number(year),
       commercialValue: estimateValue(m.newValue, Number(year)),
+      ...(m.cc && { engineCc: m.cc }),
     };
   }, [type, brand, model, year]);
+
+  // Valor asegurado: el de referencia con el ajuste que elija la persona (±20%).
+  const [valueAdjust, setValueAdjust] = useState(() => (prev ? insuredValueAdjust(prev.vehicle) : 0));
+  const baseVehicle = manual ? manualVehicle : vehicle;
+  const chosenVehicle = useMemo(
+    () => (baseVehicle ? withInsuredValue(baseVehicle, valueAdjust) : null),
+    [baseVehicle, valueAdjust],
+  );
 
   async function lookup(value = plate) {
     const p = normalizePlate(value);
@@ -174,7 +186,7 @@ function Wizard({ type }: { type: VehicleType }) {
     age !== null && (age < 18 || age > 90) ? "Debes ser mayor de edad." : undefined;
 
   const canContinue = [
-    !!(manual ? manualVehicle : vehicle),
+    !!chosenVehicle,
     !!birthdate && !!city && !ageError,
     true,
     true,
@@ -191,7 +203,7 @@ function Wizard({ type }: { type: VehicleType }) {
       window.scrollTo({ top: 0 });
       return;
     }
-    const v = manual ? manualVehicle : vehicle;
+    const v = chosenVehicle;
     if (!v) return;
     const req: QuoteRequest = { vehicle: v, driver: { birthdate, city }, answers };
     quoteStore.setRequest(req);
@@ -308,11 +320,17 @@ function Wizard({ type }: { type: VehicleType }) {
                   <p className="text-sm font-semibold text-mint">Encontramos tu {noun}</p>
                   <p className="mt-1 text-lg font-bold text-heading">
                     {vehicle.brand} {vehicle.model} {vehicle.year}
-                  </p>
-                  <p className="text-sm text-muted">
-                    Valor comercial estimado: {formatCOP(vehicle.commercialValue)}
+                    {vehicle.engineCc && <span className="font-semibold text-muted"> · {vehicle.engineCc} cc</span>}
                   </p>
                 </div>
+              )}
+              {chosenVehicle && (
+                <InsuredValue
+                  estimated={chosenVehicle.estimatedValue!}
+                  value={chosenVehicle.commercialValue}
+                  adjust={valueAdjust}
+                  onChange={setValueAdjust}
+                />
               )}
               <button
                 type="button"
@@ -374,10 +392,17 @@ function Wizard({ type }: { type: VehicleType }) {
                   </select>
                 </Field>
               </div>
-              {manualVehicle && (
-                <p className="rounded-2xl bg-brand-soft p-4 text-sm text-heading">
-                  Valor comercial estimado:{" "}
-                  <strong>{formatCOP(manualVehicle.commercialValue)}</strong>
+              {chosenVehicle && (
+                <InsuredValue
+                  estimated={chosenVehicle.estimatedValue!}
+                  value={chosenVehicle.commercialValue}
+                  adjust={valueAdjust}
+                  onChange={setValueAdjust}
+                />
+              )}
+              {manualVehicle?.engineCc && (
+                <p className="text-sm text-muted">
+                  Cilindraje: <strong>{manualVehicle.engineCc} cc</strong>
                 </p>
               )}
               <button
@@ -495,9 +520,9 @@ function Wizard({ type }: { type: VehicleType }) {
               </OptionGroup>
             </>
           )}
-          {step === SUMMARY_STEP && (manual ? manualVehicle : vehicle) && (
+          {step === SUMMARY_STEP && chosenVehicle && (
             <Summary
-              vehicle={(manual ? manualVehicle : vehicle)!}
+              vehicle={chosenVehicle}
               birthdate={birthdate}
               city={city}
               answers={answers}
@@ -554,7 +579,8 @@ function Summary({
       rows: [
         ["Modelo", `${v.brand} ${v.model} ${v.year}`],
         ...(v.plate ? [["Placa", v.plate] as [string, string]] : []),
-        ["Valor comercial", formatCOP(v.commercialValue)],
+        ...(v.engineCc ? [["Cilindraje", `${v.engineCc} cc`] as [string, string]] : []),
+        ["Valor asegurado", formatCOP(v.commercialValue)],
       ],
     },
     { title: "Sobre ti", step: 1, rows: [["Nacimiento", birthdate], ["Ciudad", city]] },

@@ -8,6 +8,8 @@ export const vehicleSchema = z.object({
   model: z.string().min(1).max(60),
   year: z.number().int().min(1990).max(2027),
   commercialValue: z.number().int().min(1_000_000).max(2_000_000_000),
+  estimatedValue: z.number().int().min(1_000_000).max(2_000_000_000).optional(),
+  engineCc: z.number().int().min(50).max(2000).optional(),
 });
 
 export const quoteRequestSchema = z.object({

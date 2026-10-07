@@ -40,7 +40,7 @@ export async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
     ]);
     const { offers, errors } = await quoteAll(req);
     const discounted = d.applyDiscountsToAll(offers, d.DEFAULT_DISCOUNT_RULES, d.DEFAULT_DISCOUNT_SETTINGS);
-    return buildQuoteResponse(discounted, errors, req.answers);
+    return buildQuoteResponse(discounted, errors, req.answers, null, req.vehicle);
   }
   const { analyticsSessionId } = await import("./analytics");
   const sid = analyticsSessionId();

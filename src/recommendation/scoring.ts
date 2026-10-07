@@ -8,6 +8,8 @@ import type {
   Priority,
   QuoteResponse,
   ScoredOffer,
+  Vehicle,
+  VehicleType,
   Weights,
 } from "@/domain/types";
 import { SERVICE_KEYS } from "@/domain/types";
@@ -15,7 +17,7 @@ import { formatCOP, SERVICE_LABELS, USE_LABELS } from "@/domain/labels";
 import type { Assignment } from "./experiments";
 
 /** Cambia cuando cambian los pesos, las reglas o las etiquetas. */
-export const ALGORITHM_VERSION = "2026.10-2";
+export const ALGORITHM_VERSION = "2026.10-3";
 
 /** Diferencia de puntaje por debajo de la cual dos ofertas se consideran empatadas. */
 export const TIE_THRESHOLD = 2;
@@ -32,7 +34,7 @@ export const PRIORITY_WEIGHTS: Record<
 };
 
 /** Importancia base de cada cobertura (suma no necesariamente 1). */
-function coverageWeights(a: Answers): Record<CoverageKey, number> {
+function coverageWeights(a: Answers, type: VehicleType): Record<CoverageKey, number> {
   const w: Record<CoverageKey, number> = {
     rc: 3,
     perdidaTotalDanos: 3,
@@ -42,6 +44,8 @@ function coverageWeights(a: Answers): Record<CoverageKey, number> {
     eventosNaturaleza: 1,
     accidentesPersonales: 1,
   };
+  // En motos el hurto es el riesgo más frecuente: pesa más siempre.
+  if (type === "moto") w.perdidaTotalHurto += 2;
   if (a.parking === "calle") {
     w.perdidaTotalHurto += 1.5;
     w.perdidaParcialHurto += 1;
@@ -71,6 +75,8 @@ export function meetsFinancingRequirements(o: Offer) {
 }
 
 export interface ScoringOptions {
+  /** Vehículo cotizado (para requisitos como el cilindraje). */
+  vehicle?: Pick<Vehicle, "engineCc">;
   /** Pesos por prioridad que reemplazan a PRIORITY_WEIGHTS (experimentos A/B). */
   priorityWeights?: Partial<Record<Priority, { price: number; coverage: number; services: number }>>;
 }
@@ -100,7 +106,8 @@ export function weightsFromPriority(p: Priority): Weights {
 export function scoreOffers(offers: Offer[], answers: Answers, opts: ScoringOptions = {}): ScoredOffer[] {
   if (offers.length === 0) return [];
   const weights = effectiveWeights(answers, opts);
-  const cw = coverageWeights(answers);
+  const isMoto = offers[0].vehicleType === "moto";
+  const cw = coverageWeights(answers, offers[0].vehicleType);
   const cwTotal = Object.values(cw).reduce((s, n) => s + n, 0);
 
   const prices = offers.map((o) => o.annualPremium);
@@ -145,13 +152,16 @@ export function scoreOffers(offers: Offer[], answers: Answers, opts: ScoringOpti
         `El deducible (${o.deductiblePct}%) es mayor al que prefieres.`,
       );
     }
-    if (answers.parking === "calle" && !o.coverages.perdidaTotalHurto) {
+    if (isMoto && !o.coverages.perdidaTotalHurto) {
+      warnings.push("No cubre el hurto de la moto, el riesgo más frecuente en motos.");
+    } else if (answers.parking === "calle" && !o.coverages.perdidaTotalHurto) {
       warnings.push("No cubre hurto y tu vehículo se parquea en la calle.");
     }
 
     if (price >= 0.8) reasons.push(`Precio competitivo: ${formatCOP(o.annualPremium)} al año.`);
     if (coverage >= 0.75) reasons.push("Cobertura amplia frente a las demás opciones.");
     if (o.deductiblePct === 0) reasons.push("Sin deducible.");
+    if (isMoto && o.coverages.perdidaTotalHurto) reasons.push("Cubre el hurto, el riesgo más frecuente en motos.");
     if (answers.services.length && matched.length)
       reasons.push(
         `Incluye ${matched.length} de ${answers.services.length} servicios que te importan: ${matched
@@ -207,7 +217,9 @@ export function scoreOffers(offers: Offer[], answers: Answers, opts: ScoringOpti
  * Requisitos duros: si la oferta no los cumple, se descarta antes del puntaje
  * y se informa el motivo. Devuelve null si la oferta es elegible.
  */
-export function eligibility(o: Offer, answers: Answers): string | null {
+export function eligibility(o: Offer, answers: Answers, vehicle?: Pick<Vehicle, "engineCc">): string | null {
+  if (o.maxEngineCc && vehicle?.engineCc && vehicle.engineCc > o.maxEngineCc)
+    return `No asegura motos de más de ${o.maxEngineCc} cc.`;
   if (o.allowedUses && !o.allowedUses.includes(answers.use))
     return `No cubre el uso ${USE_LABELS[answers.use]}.`;
   if (answers.financed && !meetsFinancingRequirements(o))
@@ -220,7 +232,7 @@ export function recommend(offers: Offer[], answers: Answers, opts: ScoringOption
   const eligible: Offer[] = [];
   const excluded: ExcludedOffer[] = [];
   for (const o of offers) {
-    const reason = eligibility(o, answers);
+    const reason = eligibility(o, answers, opts.vehicle);
     if (reason) excluded.push({ id: o.id, insurerName: o.insurerName, planName: o.planName, reason });
     else eligible.push(o);
   }
@@ -232,12 +244,13 @@ export function buildQuoteResponse(
   errors: InsurerError[],
   answers: Answers,
   assignment?: Assignment | null,
+  vehicle?: Pick<Vehicle, "engineCc">,
 ): QuoteResponse {
   // Si la persona definió sus pesos, el experimento no aplica.
   const applied = assignment && !answers.weights ? assignment : null;
   return {
     quoteId: crypto.randomUUID(),
-    ...recommend(offers, answers, { priorityWeights: applied?.priorityWeights }),
+    ...recommend(offers, answers, { priorityWeights: applied?.priorityWeights, vehicle }),
     errors,
     algorithm: ALGORITHM_VERSION,
     ...(applied && { experiment: { id: applied.experimentId, variant: applied.variantId } }),

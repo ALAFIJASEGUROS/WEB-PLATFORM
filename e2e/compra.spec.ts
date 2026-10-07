@@ -79,11 +79,15 @@ test("edita una respuesta desde el resumen y descarta los planes que no aplican"
   await page.getByLabel("Placa de tu moto").fill("ABC12D");
   await page.getByRole("button", { name: "Buscar" }).click();
   await expect(page.getByText("Encontramos tu moto")).toBeVisible();
+  await page.getByLabel("Valor asegurado").fill("-10");
+  await expect(page.getByText(/ajuste -10%/)).toBeVisible();
   await page.getByRole("button", { name: "Continuar" }).click();
   await page.getByLabel("Fecha de nacimiento").fill("1995-03-03");
   await page.getByLabel("Ciudad donde circula").selectOption("Cali");
   for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "Continuar" }).click();
 
+  await expect(page.getByText("Cilindraje", { exact: true })).toBeVisible();
+  await expect(page.getByText("Valor asegurado", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Editar uso" }).click();
   await page.getByText("Domicilios o plataformas").click();
   await page.getByRole("button", { name: "Guardar y volver al resumen" }).click();

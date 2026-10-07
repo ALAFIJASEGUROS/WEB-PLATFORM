@@ -16,5 +16,5 @@ export async function POST(request: Request) {
   const { offers, errors } = await quoteWithCache(parsed.data);
   // La sesión anónima de analítica decide la variante del experimento A/B de pesos.
   const sid = request.headers.get("x-saf-sid")?.slice(0, 64) || undefined;
-  return Response.json(buildQuoteResponse(withDiscounts(offers), errors, parsed.data.answers, assignmentForSession(sid)));
+  return Response.json(buildQuoteResponse(withDiscounts(offers), errors, parsed.data.answers, assignmentForSession(sid), parsed.data.vehicle));
 }

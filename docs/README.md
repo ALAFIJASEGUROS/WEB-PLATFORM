@@ -5,6 +5,7 @@
 - [Pasarelas de pago](pasarelas.md): cómo agregar una pasarela además de Wompi
 - [Descuentos y tarifas especiales](descuentos.md): reglas por aseguradora, tope global y panel
 - [Experimentos A/B](experimentos.md): pesos del recomendador, guardarraíles y lectura de resultados
+- [Pruebas con usuarios](pruebas-usuarios.md): perfiles, guion de tareas, métricas y registro
 - [Versionamiento](versionamiento.md): SemVer, changelog, releases y versión visible
 - [CHANGELOG](../CHANGELOG.md)
 
