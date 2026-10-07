@@ -211,3 +211,25 @@ test("desde la portada, la placa lleva directo al vehículo encontrado", async (
   await expect(page).toHaveURL(/\/cotizar\/auto\?placa=ABC123/);
   await expect(page.getByText("Encontramos tu carro")).toBeVisible();
 });
+
+test("en escritorio la tarjeta recomendada conserva su diseño de dos columnas", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  const c = Buffer.from(JSON.stringify({
+    vehicle: { type: "auto", plate: "ABC123", brand: "Mazda", model: "Mazda 2", year: 2022, commercialValue: 70_000_000 },
+    driver: { birthdate: "1990-05-10", city: "Medellín" },
+    answers: { priority: "equilibrio", use: "particular", parking: "cerrado", mileage: "medio", drivers: "solo", financed: false, deductibleTolerance: "medio", services: [], claimsLast3Years: 0 },
+  })).toString("base64url");
+  await page.goto(`/resultados?c=${c}`);
+  const card = page.locator("section", { hasText: "Nuestra recomendación" }).locator("article");
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  const box = (await card.boundingBox())!;
+  const title = (await card.getByRole("heading", { level: 3 }).boundingBox())!;
+  const buy = (await card.getByRole("link", { name: /^(Lo quiero|Comprar por)/ }).boundingBox())!;
+  const coverages = (await card.getByRole("heading", { name: "Coberturas" }).boundingBox())!;
+  // El título tiene espacio (no queda aplastado) y nada se sale de la tarjeta.
+  expect(title.width).toBeGreaterThan(100);
+  expect(buy.x + buy.width).toBeLessThanOrEqual(box.x + box.width + 1);
+  // El detalle empieza en la primera columna, debajo de los botones.
+  expect(coverages.x).toBeLessThan(box.x + 40);
+  expect(coverages.y).toBeGreaterThan(buy.y);
+});

@@ -123,7 +123,7 @@ export function OfferCard({
         </div>
 
         {open && (
-          <div id={detailId} className="mt-2 grid gap-4 border-t border-line pt-4 sm:grid-cols-2 md:col-span-2 md:row-start-4">
+          <div id={detailId} className="mt-2 grid gap-4 border-t border-line pt-4 sm:grid-cols-2 md:col-span-2 md:col-start-1 md:row-start-4">
             <div>
               <h4 className="mb-2 text-sm font-bold text-heading">Coberturas</h4>
               <ul className="space-y-1.5 text-sm">
@@ -180,28 +180,31 @@ export function OfferCard({
           </div>
         )}
 
-        <div className={`mt-4 grid gap-2 md:col-start-2 md:row-start-3 md:mt-3 [&>*]:whitespace-nowrap [&>*]:px-3 ${priceInButton ? "grid-cols-[auto_1fr]" : "grid-cols-2"}`}>
-          <Button
-            variant="secondary"
-            type="button"
-            aria-pressed={comparing}
-            disabled={!comparing && compareDisabled}
-            onClick={onToggleCompare}
-          >
-            {comparing ? "Quitar" : "Comparar"}
-          </Button>
-          <ButtonLink
-            href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}
-            onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado"), ...discountProps(offer) })}
-          >
-            {priceInButton ? `Comprar por ${formatCOP(offer.annualPremium)}` : "Lo quiero"}
-          </ButtonLink>
+        <div className="mt-4 md:col-start-2 md:row-start-3 md:mt-3">
+          {/* Con el precio en el botón, la compra va arriba a todo el ancho para que quepa. */}
+          <div className={`grid gap-2 [&>*]:whitespace-nowrap [&>*]:px-3 ${priceInButton ? "grid-cols-1 [&>a]:order-first" : "grid-cols-2"}`}>
+            <Button
+              variant="secondary"
+              type="button"
+              aria-pressed={comparing}
+              disabled={!comparing && compareDisabled}
+              onClick={onToggleCompare}
+            >
+              {comparing ? "Quitar" : "Comparar"}
+            </Button>
+            <ButtonLink
+              href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}
+              onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado"), ...discountProps(offer) })}
+            >
+              {priceInButton ? `Comprar por ${formatCOP(offer.annualPremium)}` : "Lo quiero"}
+            </ButtonLink>
+          </div>
+          {highlight && (
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted">
+              <Lock className="size-3.5 shrink-0" aria-hidden /> Pago seguro con Wompi · 5 días hábiles para arrepentirte
+            </p>
+          )}
         </div>
-        {highlight && (
-          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted md:col-start-2 md:row-start-4">
-            <Lock className="size-3.5" aria-hidden /> Pago seguro con Wompi · 5 días hábiles para arrepentirte
-          </p>
-        )}
       </article>
     </Card>
   );
