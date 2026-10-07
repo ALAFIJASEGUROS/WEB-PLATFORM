@@ -1,6 +1,9 @@
 import { describeRule, type DiscountRule } from "@/domain/discounts";
 import { MOCK_INSURERS } from "@/insurers/mock/insurers";
 import { discountConfig } from "@/server/discounts";
+import { discountImpact } from "@/server/analytics";
+import { db } from "@/server/db";
+import { formatCOP } from "@/domain/labels";
 import { Badge, Button, Card, Field, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
 import {
@@ -136,6 +139,8 @@ export function DiscountsPanel({ canEdit }: { canEdit: boolean }) {
         ))}
       </Card>
 
+      <ImpactTable labels={Object.fromEntries(rules.map((r) => [r.id, r.label]))} />
+
       {canEdit && (
         <Card className="p-5">
           <h3 className="mb-3 font-bold text-heading">Nueva regla</h3>
@@ -143,5 +148,50 @@ export function DiscountsPanel({ canEdit }: { canEdit: boolean }) {
         </Card>
       )}
     </section>
+  );
+}
+
+function ImpactTable({ labels }: { labels: Record<string, string> }) {
+  const rows = discountImpact([...db().orders.values()], labels);
+  const pct = (n: number | null) => (n === null ? "—" : `${(n * 100).toFixed(1)}%`);
+  return (
+    <Card className="space-y-2 p-5">
+      <h3 className="font-bold text-heading">Impacto en la conversión</h3>
+      <p className="text-xs text-muted">
+        Elegidas: veces que alguien escogió una oferta con ese descuento. Conversión: compras pagadas sobre elegidas. El costo
+        es el descuento otorgado en compras pagadas; compáralo con la fila sin descuento.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[40rem] text-sm">
+          <thead>
+            <tr className="text-left text-muted">
+              <th scope="col" className="py-2 font-medium">Descuento</th>
+              <th scope="col" className="py-2 text-right font-medium">Elegidas</th>
+              <th scope="col" className="py-2 text-right font-medium">Órdenes</th>
+              <th scope="col" className="py-2 text-right font-medium">Pagadas</th>
+              <th scope="col" className="py-2 text-right font-medium">Conversión</th>
+              <th scope="col" className="py-2 text-right font-medium">Costo</th>
+              <th scope="col" className="py-2 text-right font-medium">Prima cobrada</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.key} className="border-t border-line">
+                <th scope="row" className="py-2 pr-3 text-left font-normal">
+                  <span className="font-semibold text-ink">{r.label}</span>
+                  {r.source && <span className="block text-xs text-muted">{SOURCE_LABEL[r.source]}</span>}
+                </th>
+                <td className="py-2 text-right">{r.chosen}</td>
+                <td className="py-2 text-right">{r.orders}</td>
+                <td className="py-2 text-right">{r.paid}</td>
+                <td className="py-2 text-right font-semibold">{pct(r.conversion)}</td>
+                <td className="py-2 text-right">{formatCOP(r.granted)}</td>
+                <td className="py-2 text-right">{formatCOP(r.premium)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }

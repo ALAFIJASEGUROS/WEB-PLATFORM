@@ -167,6 +167,7 @@ const externalPolicySchema = z.object({
   vehicleId: z.string().min(1),
   startDate: z.iso.date(),
   endDate: z.iso.date(),
+  annualPremium: z.union([z.literal(""), z.coerce.number().int().min(0).max(100_000_000)]).optional(),
 });
 
 export async function addExternalPolicyAction(_: FormState, form: FormData): Promise<FormState> {
@@ -189,6 +190,7 @@ export async function addExternalPolicyAction(_: FormState, form: FormData): Pro
     vehicle: { type: v.type, plate: v.plate, brand: v.brand, model: v.model, year: v.year, commercialValue: 0 },
     startDate: data.startDate,
     endDate: data.endDate,
+    annualPremium: data.annualPremium || undefined,
     accessToken: randomToken(),
   };
   db().policies.set(policy.id, policy);

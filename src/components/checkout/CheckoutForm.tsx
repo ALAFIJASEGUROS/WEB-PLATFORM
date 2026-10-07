@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { changedPrice, startCheckout } from "@/lib/api-client";
 import { kycFieldsFor, validateKyc } from "@/insurers/registry";
 import { AcceptanceDialog } from "./AcceptanceDialog";
-import { analyticsSessionId, track } from "@/lib/analytics";
+import { analyticsSessionId, discountProps, track } from "@/lib/analytics";
 import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { policyholderSchema, type Policyholder } from "@/domain/schemas";
@@ -100,7 +100,7 @@ export function CheckoutForm({
     }
     setSubmitting(true);
     try {
-      track("checkout_enviado", { plan, aseguradora: offer!.insurerId });
+      track("checkout_enviado", { plan, aseguradora: offer!.insurerId, ...discountProps(offer!) });
       const result = await startCheckout({
         analyticsSid: analyticsSessionId(),
         quote: request!,

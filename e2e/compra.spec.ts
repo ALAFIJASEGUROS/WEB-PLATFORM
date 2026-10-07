@@ -144,6 +144,9 @@ test("muestra los descuentos y el admin puede apagarlos", async ({ page }) => {
   await page.getByRole("button", { name: "Entrar" }).click();
   const panel = page.locator("section", { has: page.getByRole("heading", { name: "Descuentos y tarifas especiales" }) });
   await expect(panel).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Impacto en la conversión" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Experimentos del recomendador" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Detener" })).toBeVisible();
   await panel.getByLabel("Descuentos activos (interruptor general)").uncheck();
   await panel.getByRole("button", { name: "Guardar configuración" }).click();
   await expect(panel.getByText("Apagados", { exact: true })).toBeVisible();
@@ -156,4 +159,37 @@ test("muestra los descuentos y el admin puede apagarlos", async ({ page }) => {
   await panel.getByLabel("Descuentos activos (interruptor general)").check();
   await panel.getByRole("button", { name: "Guardar configuración" }).click();
   await expect(panel.getByText(/Activos · tope/)).toBeVisible();
+});
+
+test("registra una póliza externa leyendo su PDF", async ({ page, browser }) => {
+  // PDF con texto, generado al vuelo con Chromium.
+  const maker = await browser.newPage();
+  await maker.setContent(`<main style="font-family:sans-serif">
+    <h1>SEGUROS BOLÍVAR S.A.</h1><p>Póliza No.: AU-1020-55871</p><p>Producto: Auto Plus</p>
+    <p>Placa: PDF123</p><p>Vigencia desde el 15/03/2026 hasta el 15/03/2027</p><p>Prima total: $1.250.000</p></main>`);
+  const pdf = await maker.pdf();
+  await maker.close();
+
+  const email = `pdf-${Date.now()}@example.com`;
+  await page.goto(`/cuenta?email=${encodeURIComponent(email)}`);
+  await page.getByRole("button", { name: "Enviarme el código" }).click();
+  await page.getByLabel("Código").fill(await page.locator("strong.tracking-widest").innerText());
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await page.goto("/cuenta/seguros");
+
+  await page.getByText("+ Agregar vehículo").click();
+  await page.getByLabel("Placa").fill("PDF123");
+  await page.getByLabel("Marca").fill("Mazda");
+  await page.getByLabel("Línea").fill("Mazda 2");
+  await page.getByLabel("Año").fill("2022");
+  await page.getByRole("button", { name: "Agregar vehículo" }).click();
+
+  await page.getByText("+ Registrar una póliza que ya tengo").click();
+  await page.getByLabel(/Llenar desde el PDF/).setInputFiles({ name: "poliza.pdf", mimeType: "application/pdf", buffer: pdf });
+  await expect(page.getByText(/Encontramos: .*número/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByLabel("Número de póliza")).toHaveValue("AU-1020-55871");
+  await expect(page.getByLabel("Aseguradora")).toHaveValue("Seguros Bolívar");
+  await expect(page.getByLabel("Fin de vigencia")).toHaveValue("2027-03-15");
+  await page.getByRole("button", { name: "Registrar póliza" }).click();
+  await expect(page.getByText("AU-1020-55871").first()).toBeVisible();
 });

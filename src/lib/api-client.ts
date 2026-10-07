@@ -42,10 +42,12 @@ export async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
     const discounted = d.applyDiscountsToAll(offers, d.DEFAULT_DISCOUNT_RULES, d.DEFAULT_DISCOUNT_SETTINGS);
     return buildQuoteResponse(discounted, errors, req.answers);
   }
+  const { analyticsSessionId } = await import("./analytics");
+  const sid = analyticsSessionId();
   return json(
     await fetch("/api/cotizaciones", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...(sid && { "x-saf-sid": sid }) },
       body: JSON.stringify(req),
     }),
   );

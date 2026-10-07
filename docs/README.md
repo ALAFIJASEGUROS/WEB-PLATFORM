@@ -4,6 +4,7 @@
 - [Nuevas líneas de seguro](nuevas-lineas.md): cómo agregar hogar, viaje o SOAT
 - [Pasarelas de pago](pasarelas.md): cómo agregar una pasarela además de Wompi
 - [Descuentos y tarifas especiales](descuentos.md): reglas por aseguradora, tope global y panel
+- [Experimentos A/B](experimentos.md): pesos del recomendador, guardarraíles y lectura de resultados
 - [Versionamiento](versionamiento.md): SemVer, changelog, releases y versión visible
 - [CHANGELOG](../CHANGELOG.md)
 

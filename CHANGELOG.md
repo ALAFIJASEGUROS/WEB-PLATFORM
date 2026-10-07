@@ -7,6 +7,15 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 
+## [0.11.0] - 2026-10-07 · Sprint 9
+### Agregado
+- Impacto de los descuentos en `/admin`: por cada regla (y sin descuento, para comparar), veces que se eligió, órdenes, compras pagadas, conversión, descuento otorgado y prima cobrada.
+- Experimentos A/B de pesos del recomendador: asignación estable por sesión anónima, sin tocar elegibilidad ni precio ni a quien ajustó sus pesos. En `/admin`, resultados por variante (elegida la recomendada, fue a pagar, compró, conversión y valor p) y botón para iniciar o detener. Guía en `docs/experimentos.md`.
+- Registro de pólizas externas desde el PDF: se leen aseguradora, número, plan, vigencia, placa y prima para que el usuario los confirme. El archivo no se guarda; los PDF escaneados (sin texto) se completan a mano.
+- Prima anual opcional al registrar una póliza externa.
+### Cambiado
+- Los eventos `oferta_elegida` y `checkout_enviado` llevan los descuentos de la oferta, y `resultados_vistos` la variante del experimento.
+
 ## [0.10.0] - 2026-10-07 · Sprint 8
 ### Agregado
 - Motor de descuentos y tarifas especiales: reglas por aseguradora que se prenden y apagan, con fuente (la aseguradora o la plataforma), porcentaje o valor fijo, tope en pesos, tipo de vehículo, planes y vigencia.
@@ -105,7 +114,8 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Cotización por placa, motor de recomendación explicable, adaptadores simulados de SURA y Seguros Bolívar, resultados y comparador.
 
-[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.10.0...HEAD
+[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.7.0...v0.8.0

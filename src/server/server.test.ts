@@ -479,3 +479,41 @@ describe("descuentos en la compra", () => {
     (globalThis as { __safDiscounts?: unknown }).__safDiscounts = undefined;
   });
 });
+
+describe("reportes de experimentos y descuentos", () => {
+  it("cruza la exposición con el embudo por sesión y calcula el valor p", async () => {
+    const { recordEvent, experimentResults, twoProportionPValue } = await import("./analytics");
+    const { WEIGHT_EXPERIMENTS } = await import("@/recommendation/experiments");
+    (globalThis as { __safEvents?: unknown }).__safEvents = undefined;
+    const exp = WEIGHT_EXPERIMENTS[0];
+    recordEvent("resultados_vistos", "s1", { variante: `${exp.id}:control` });
+    recordEvent("resultados_vistos", "s2", { variante: `${exp.id}:mas-precio` });
+    recordEvent("resultados_vistos", "s3", { variante: `${exp.id}:mas-precio` });
+    recordEvent("oferta_elegida", "s2", { recomendado: true });
+    recordEvent("checkout_enviado", "s2");
+    recordEvent("pago_aprobado", "s2");
+    recordEvent("pago_aprobado", "s9"); // sin exposición: no cuenta
+    const [control, b] = experimentResults(exp);
+    expect(control).toMatchObject({ exposed: 1, paid: 0, conversion: 0 });
+    expect(b).toMatchObject({ exposed: 2, choseRecommended: 1, checkout: 1, paid: 1, conversion: 0.5 });
+    expect(twoProportionPValue(50, 1000, 50, 1000)).toBeCloseTo(1, 5);
+    expect(twoProportionPValue(80, 1000, 50, 1000)!).toBeLessThan(0.01);
+  });
+
+  it("mide elección, compra y costo por regla de descuento", async () => {
+    const { recordEvent, discountImpact, NO_DISCOUNT } = await import("./analytics");
+    (globalThis as { __safEvents?: unknown }).__safEvents = undefined;
+    (globalThis as { __safDiscounts?: unknown }).__safDiscounts = undefined;
+    const order = await createOrder(input); // Bolívar motos con descuento
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "di1" });
+    recordEvent("oferta_elegida", "a", { descuentos: "bolivar-motos" });
+    recordEvent("oferta_elegida", "b", { descuentos: "bolivar-motos" });
+    recordEvent("oferta_elegida", "c", {});
+    const rows = discountImpact([...db().orders.values()]);
+    const rule = rows.find((r) => r.key === "bolivar-motos")!;
+    expect(rule).toMatchObject({ chosen: 2, orders: 1, paid: 1, conversion: 0.5, source: "aseguradora" });
+    expect(rule.granted).toBe(order.offer.discounts![0].amount);
+    expect(rule.premium).toBe(order.offer.annualPremium);
+    expect(rows.find((r) => r.key === NO_DISCOUNT)).toMatchObject({ chosen: 1, paid: 0 });
+  });
+});
