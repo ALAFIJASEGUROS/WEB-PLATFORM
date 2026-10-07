@@ -1,6 +1,7 @@
 import { quoteRequestSchema } from "@/domain/schemas";
 import { quoteWithCache } from "@/insurers/cache";
 import { buildQuoteResponse } from "@/recommendation/scoring";
+import { withDiscounts } from "@/server/discounts";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -12,5 +13,5 @@ export async function POST(request: Request) {
     );
   }
   const { offers, errors } = await quoteWithCache(parsed.data);
-  return Response.json(buildQuoteResponse(offers, errors, parsed.data.answers));
+  return Response.json(buildQuoteResponse(withDiscounts(offers), errors, parsed.data.answers));
 }

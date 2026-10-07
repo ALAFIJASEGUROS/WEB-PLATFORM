@@ -6,6 +6,7 @@ import type {
   VehicleType,
   VehicleUse,
 } from "@/domain/types";
+import { priceBreakdown } from "@/domain/pricing";
 import { InsurerUnavailableError, type InsurerAdapter, type RegulatoryInfo } from "../adapter";
 
 /** Definición de un plan dentro de una aseguradora simulada. */
@@ -44,8 +45,6 @@ export interface MockInsurerConfig {
 
 const CURRENT_YEAR = 2026;
 
-/** IVA sobre primas de seguros de vehículos en Colombia. */
-export const IVA_RATE = 0.19;
 
 export const COMMON_EXCLUSIONS = [
   "Conducir bajo efectos del alcohol o sustancias",
@@ -119,16 +118,13 @@ export function priceOffers(
           jitter,
         1000,
       );
-      const netPremium = Math.round(annual / (1 + IVA_RATE));
       return {
         id: `${config.id}:${plan.code}`,
         insurerId: config.id,
         insurerName: config.name,
         planName: plan.name,
         vehicleType: plan.vehicleType,
-        annualPremium: annual,
-        // Pago mensual con recargo de financiación del 6%.
-        monthlyPremium: roundTo((annual * 1.06) / 12, 100),
+        ...priceBreakdown(annual),
         rcLimit: plan.rcLimit,
         coverages: Object.fromEntries(
           [
@@ -145,8 +141,6 @@ export function priceOffers(
         deductibleMinSmmlv: plan.deductibleMinSmmlv,
         services: plan.services,
         substituteCarDays: plan.substituteCarDays,
-        netPremium,
-        iva: annual - netPremium,
         exclusions: [...COMMON_EXCLUSIONS, ...plan.exclusions],
         conditionsUrl: `/condicionado/${config.id}/${plan.code}`,
         validUntil,

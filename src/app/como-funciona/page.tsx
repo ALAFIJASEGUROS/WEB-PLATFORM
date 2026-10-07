@@ -55,14 +55,21 @@ export default function Page() {
         técnico y recomendamos la más económica. Versión del método: {ALGORITHM_VERSION}.
       </p>
 
-      <h2>4. La comisión no cambia el orden</h2>
+      <h2>4. Descuentos y tarifas especiales</h2>
+      <p>
+        Algunas aseguradoras nos dan tarifas especiales y, a veces, SeguAlaFija asume un descuento de su
+        comisión. Cuando aplica, lo verás en la oferta con el precio de lista tachado y el nombre del
+        descuento. El puntaje usa el precio final que pagas, el mismo que se cobra en el checkout.
+      </p>
+
+      <h2>5. La comisión no cambia el orden</h2>
       <p>
         Cuando compras, la aseguradora nos paga una comisión. Esa comisión no forma parte del puntaje
         de recomendación y el precio que ves es el mismo que pagarías directamente. Las ofertas
         patrocinadas siempre se marcan como publicidad.
       </p>
 
-      <h2>5. Compras desde el celular</h2>
+      <h2>6. Compras desde el celular</h2>
       <p>Pagas a través de Wompi y recibes tu póliza por correo. Si creas una cuenta, te recordamos renovaciones, SOAT y tecnomecánica.</p>
 
       <ButtonLink href="/cotizar" className="mt-4">Cotizar ahora</ButtonLink>

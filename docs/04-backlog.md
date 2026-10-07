@@ -192,6 +192,16 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-17.14 | Como plataforma quiero recaudo por aseguradora (split o comercio propio) | payments | ⬜ Dep (pasarela y figura legal) | M | V1 | 8 |
 | HU-17.15 | Como usuario quiero avisos de mora antes de que termine el contrato | payments | ✅ | M | V1 | 3 |
 
+## E18 · Descuentos y tarifas especiales
+| ID | Historia | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- |
+| HU-18.1 | Como negocio quiero prender y apagar descuentos por aseguradora con distintas magnitudes, topes, vehículos, planes y vigencia | ✅ | M | MVP | 8 |
+| HU-18.2 | Como negocio quiero un tope global de descuento (apetito) y un interruptor general | ✅ | M | MVP | 2 |
+| HU-18.3 | Como usuario quiero ver el precio de lista, el descuento y quién lo ofrece | ✅ | M | MVP | 3 |
+| HU-18.4 | Como negocio quiero cargar las tarifas especiales reales de cada aseguradora | ⬜ Dep (convenios) | M | V1 | 3 |
+| HU-18.5 | Como negocio quiero validar legalmente los descuentos que salen de la comisión | ⬜ Dep (legal) | M | V1 | — |
+| HU-18.6 | Como negocio quiero medir el efecto de cada descuento en la conversión | ⬜ Código | S | V1 | 3 |
+
 ---
 
 ## Sprint 3 (completado)
@@ -219,8 +229,11 @@ HU-17.15 (avisos de mora) y la versión del algoritmo (parte de HU-17.6).
 HU-17.1 (registro de pasarelas y webhook genérico), HU-17.10 (centro de preferencias), HU-17.11 (guía de siniestros;
 faltan los contactos verificados) y HU-17.9 (PWA instalable con página sin conexión).
 
+## Sprint 8 (completado)
+HU-18.1, HU-18.2 y HU-18.3: motor de descuentos y tarifas especiales parametrizable por aseguradora, con panel en /admin.
+
 ## Próximo sprint sugerido
-De solo código quedan HU-04.4 (A/B de pesos) y HU-09.4 (lectura de pólizas en PDF). Lo demás depende de terceros o
+De solo código quedan HU-18.6 (efecto de los descuentos en la conversión), HU-04.4 (A/B de pesos) y HU-09.4 (lectura de pólizas en PDF). Lo demás depende de terceros o
 de decisiones del negocio: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2), convenio con una aseguradora
 (HU-02.5), WhatsApp/SMS (HU-17.13), figura legal (HU-14.1) y marcas en el prototipo (HU-17.12).
 Con terceros: Supabase (HU-09.6), Resend (HU-10.5), Wompi sandbox (HU-07.2) y convenio con una aseguradora (HU-02.5).

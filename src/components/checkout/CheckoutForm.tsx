@@ -286,6 +286,12 @@ export function CheckoutForm({
               <div className="flex justify-between"><dt className="text-muted">Vigencia</dt><dd className="font-semibold">12 meses</dd></div>
               {plan === "anual" && (
                 <>
+                  {offer.listPremium && (
+                    <div className="flex justify-between"><dt className="text-muted">Precio de lista</dt><dd className="font-semibold"><s>{formatCOP(offer.listPremium)}</s></dd></div>
+                  )}
+                  {offer.discounts?.map((d) => (
+                    <div key={d.ruleId} className="flex justify-between text-mint"><dt>{d.label}</dt><dd className="font-semibold">−{formatCOP(d.amount)}</dd></div>
+                  ))}
                   <div className="flex justify-between"><dt className="text-muted">Prima sin IVA</dt><dd className="font-semibold">{formatCOP(offer.netPremium)}</dd></div>
                   <div className="flex justify-between"><dt className="text-muted">IVA (19%)</dt><dd className="font-semibold">{formatCOP(offer.iva)}</dd></div>
                 </>

@@ -33,12 +33,14 @@ export function changedPrice(err: unknown): number | undefined {
 
 export async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
   if (STATIC_DEMO) {
-    const [{ quoteAll }, { buildQuoteResponse }] = await Promise.all([
+    const [{ quoteAll }, { buildQuoteResponse }, d] = await Promise.all([
       import("@/insurers/aggregator"),
       import("@/recommendation/scoring"),
+      import("@/domain/discounts"),
     ]);
     const { offers, errors } = await quoteAll(req);
-    return buildQuoteResponse(offers, errors, req.answers);
+    const discounted = d.applyDiscountsToAll(offers, d.DEFAULT_DISCOUNT_RULES, d.DEFAULT_DISCOUNT_SETTINGS);
+    return buildQuoteResponse(discounted, errors, req.answers);
   }
   return json(
     await fetch("/api/cotizaciones", {

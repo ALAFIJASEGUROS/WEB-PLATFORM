@@ -13,6 +13,7 @@ import { createCampaignAction, reconcileAction, runRemindersAction, toggleCampai
 import { lastReconciliation } from "@/server/reconciliation";
 import { PQR_TYPE_LABELS } from "@/server/pqr";
 import { todayInColombia } from "@/domain/holidays";
+import { DiscountsPanel } from "./DiscountsPanel";
 
 export const metadata: Metadata = { title: "Administración", robots: { index: false } };
 
@@ -169,6 +170,8 @@ export default async function Page() {
           </table>
         </Card>
       </section>
+
+      <DiscountsPanel canEdit={canEdit} />
 
       <section className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
