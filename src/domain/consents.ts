@@ -15,6 +15,14 @@ export const CONSENTS = {
     version: "marketing-2026-10",
     text: "Quiero recibir ofertas e información de aseguradoras y aliados. Puedo retirarlo cuando quiera.",
   },
+  contact: {
+    version: "contacto-2026-10",
+    text: "Autorizo que SeguAlaFija me llame o me escriba por WhatsApp para asesorarme con este seguro, en el horario que elegí. Puedo pedir que no me contacten más.",
+  },
+  savedQuote: {
+    version: "cotizacion-guardada-2026-10",
+    text: "Autorizo que me envíen esta cotización al correo y un recordatorio si no he comprado.",
+  },
 } as const;
 
 export type ConsentPurpose = keyof typeof CONSENTS;

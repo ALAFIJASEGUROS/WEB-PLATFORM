@@ -577,3 +577,35 @@ describe("gestión de órdenes desde admin", () => {
     expect(snap.orders[0]).toMatchObject({ reference: order.reference, status: "emitida" });
   });
 });
+
+describe("oportunidades y cotizaciones guardadas", () => {
+  it("guarda la llamada con su autorización y avisa por correo", async () => {
+    const { createLead, updateLead } = await import("./leads");
+    const lead = createLead({ kind: "llamada", name: "Ana", phone: "3001234567", email: "ANA@x.co", slot: "tarde", contactConsent: true });
+    expect(lead.consent.purpose).toBe("contact");
+    expect(lead.status).toBe("nueva");
+    expect(db().outbox[0].to).toBe("ana@x.co");
+    updateLead(lead.id, "admin@e2e.test", "contactada", "Llamar el lunes");
+    expect(db().leads.get(lead.id)?.history).toHaveLength(1);
+  });
+
+  it("recuerda una cotización guardada una sola vez, al día siguiente y en horario", async () => {
+    const { saveQuote } = await import("./leads");
+    const saved = saveQuote("pepe@x.co", input.quote, "https://segualafija.co", undefined);
+    expect(saved.link).toMatch(/^https:\/\/segualafija\.co\/resultados\?c=/);
+    saved.createdAt = "2026-10-05T15:00:00Z";
+    expect((await dispatchDueReminders(new Date("2026-10-05T20:00:00Z"))).sent).toBe(0);
+    expect((await dispatchDueReminders(new Date("2026-10-06T15:00:00Z"))).sent).toBe(1);
+    expect((await dispatchDueReminders(new Date("2026-10-07T15:00:00Z"))).sent).toBe(0);
+  });
+
+  it("no recuerda la cotización si ya compró con ese correo", async () => {
+    const { saveQuote } = await import("./leads");
+    const saved = saveQuote("ana@example.com", input.quote, "https://segualafija.co", undefined);
+    saved.createdAt = "2026-10-05T15:00:00Z";
+    const order = await createOrder(input);
+    order.createdAt = "2026-10-05T16:00:00Z";
+    order.status = "emitida";
+    expect((await dispatchDueReminders(new Date("2026-10-06T15:00:00Z"))).sent).toBe(0);
+  });
+});

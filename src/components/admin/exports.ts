@@ -1,5 +1,6 @@
 import type { AdminSnapshot } from "@/domain/admin";
 import { ORDER_STATUS_LABELS } from "@/domain/admin";
+import { LEAD_STATUS_LABELS } from "@/domain/leads";
 import type { CsvValue } from "@/lib/csv";
 
 // Columnas de las exportaciones a CSV (las usan la ruta del servidor y la demo estática).
@@ -46,3 +47,18 @@ export const EVENT_COLUMNS = [
   { key: "sid", label: "Sesión" },
   { key: "props", label: "Propiedades" },
 ];
+
+export const LEAD_COLUMNS = [
+  { key: "createdAt", label: "Fecha (UTC)" },
+  { key: "kind", label: "Tipo" },
+  { key: "status", label: "Estado" },
+  { key: "name", label: "Nombre" },
+  { key: "phone", label: "Celular" },
+  { key: "email", label: "Correo" },
+  { key: "slot", label: "Horario" },
+  { key: "summary", label: "Detalle" },
+  { key: "notes", label: "Notas" },
+];
+
+export const leadCsvRows = (leads: AdminSnapshot["leads"]): Record<string, CsvValue>[] =>
+  leads.map((l) => ({ ...l, kind: l.kind === "flota" ? "Flota" : "Llamada", status: LEAD_STATUS_LABELS[l.status] }));

@@ -10,6 +10,7 @@ import { salesByDay } from "@/domain/sales";
 import { twoProportionPValue } from "@/domain/stats";
 import { UI_EXPERIMENTS, WEIGHT_EXPERIMENTS } from "@/recommendation/experiments";
 import { todayInColombia } from "@/domain/holidays";
+import { TIME_SLOTS } from "@/domain/leads";
 
 /** Generador pseudoaleatorio con semilla (mulberry32). */
 function rng(seed: number) {
@@ -186,6 +187,12 @@ export function demoAdminSnapshot(now = new Date(), seed = 2026): AdminSnapshot 
       { id: "q2", radicado: "PQR-2026-0015", type: "peticion", typeLabel: "Petición", name: "Mateo Díaz", email: "mateo.diaz@ejemplo.com", message: "Quiero cambiar la fecha de cobro de mis cuotas.", dueDate: addDays(9), status: "radicada" },
       { id: "q3", radicado: "PQR-2026-0009", type: "reclamo", typeLabel: "Reclamo", name: "Camila López", email: "camila.lopez@ejemplo.com", message: "Me cobraron dos veces la primera cuota.", dueDate: addDays(3), status: "respondida", response: "Verificamos el doble cobro y reversamos uno de los pagos." },
     ],
+    leads: [
+      { id: "l1", kind: "llamada", createdAt: new Date(now.getTime() - 3 * 3_600_000).toISOString(), name: "Felipe Ramírez", phone: "3004567812", email: "felipe.ramirez@ejemplo.com", slot: TIME_SLOTS.tarde, status: "nueva", summary: "Mazda CX-30 2023 · Autos Global (SURA) $3.180.000" },
+      { id: "l2", kind: "flota", createdAt: new Date(now.getTime() - 20 * 3_600_000).toISOString(), name: "Daniela Moreno", phone: "3157894561", email: "daniela.moreno@ejemplo.com", slot: TIME_SLOTS.manana, status: "contactada", summary: "Mensajería Rápida SAS · 12 vehículos · $9.840.000 al año", notes: "Enviar propuesta con pago mensual." },
+      { id: "l3", kind: "llamada", createdAt: new Date(now.getTime() - 50 * 3_600_000).toISOString(), name: "Santiago Hernández", phone: "3201239876", slot: TIME_SLOTS.sabado, status: "vendida", summary: "Yamaha NMAX 155 2024 · Moto Plus (Seguros Bolívar) $890.000" },
+    ],
+    savedQuotes: { saved: 23, reminded: 15, converted: 4 },
     outbox: orders.filter((o) => o.status === "emitida").slice(0, 6).map((o, i) => ({
       id: `m${i}`,
       to: o.email,

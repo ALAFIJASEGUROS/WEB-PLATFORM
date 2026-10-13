@@ -1,6 +1,7 @@
 import "server-only";
 import { isHoliday, todayInColombia } from "@/domain/holidays";
-import { db, sendMessage, type Installment, type Policy, type Reminder } from "./db";
+import { db, findUserByEmail, sendMessage, type Installment, type Policy, type Reminder } from "./db";
+import { dueSavedQuoteReminders, sendSavedQuoteReminder } from "./leads";
 import { daysUntil, overdueInstallment } from "./queries";
 import { renewalSuggestions } from "./renewals";
 import { formatCOP } from "@/domain/labels";
@@ -87,6 +88,15 @@ export async function dispatchDueReminders(now = new Date()) {
     sendable.forEach((r) => (r.lastSentAt = today));
     overdue.forEach(({ inst }) => (inst.moraNotifiedAt = today));
     lastContact().set(userId, today);
+    sent++;
+  }
+  // Cotizaciones guardadas sin compra: un recordatorio, como máximo un contacto al día por correo.
+  for (const q of dueSavedQuoteReminders(now)) {
+    const key = `email:${q.email}`;
+    const user = findUserByEmail(q.email);
+    if (lastContact().get(key) === today || (user && lastContact().get(user.id) === today)) continue;
+    sendSavedQuoteReminder(q, today);
+    lastContact().set(key, today);
     sent++;
   }
   return { sent };

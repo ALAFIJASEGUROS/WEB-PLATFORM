@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/account/LoginForm";
 import { paymentProvider } from "@/server/payments";
 import { Badge, Button, Card, Field, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
-import { createCampaignAction, reconcileAction, runRemindersAction, toggleCampaignAction, updatePqrAction } from "./actions";
+import { createCampaignAction, reconcileAction, runRemindersAction, toggleCampaignAction, updateLeadAction, updatePqrAction } from "./actions";
 import { todayInColombia } from "@/domain/holidays";
 import { buildAdminSnapshot } from "@/server/admin-snapshot";
 import {
@@ -13,6 +13,7 @@ import {
   CampaignList,
   FunnelView,
   KpiCards,
+  LeadList,
   OrdersTable,
   OutboxList,
   PqrList,
@@ -89,6 +90,25 @@ export default async function Page() {
       <section className="space-y-3" aria-labelledby="ordenes">
         <SectionTitle id="ordenes" action={exportLink("ordenes", "Exportar órdenes (CSV)")}>Órdenes</SectionTitle>
         <OrdersTable orders={snap.orders} detailHref={(ref) => `/admin/ordenes/${encodeURIComponent(ref)}`} />
+      </section>
+
+      <section className="space-y-3" aria-labelledby="oportunidades">
+        <SectionTitle id="oportunidades" action={exportLink("oportunidades", "Exportar oportunidades (CSV)")}>Oportunidades</SectionTitle>
+        <LeadList
+          leads={snap.leads}
+          savedQuotes={snap.savedQuotes}
+          form={canEdit ? (l) => l.status !== "vendida" && l.status !== "perdida" && (
+            <ActionForm action={updateLeadAction.bind(null, l.id)} submitLabel="Guardar" className="space-y-2" resetOnSuccess={false}>
+              <select name="status" defaultValue={l.status === "nueva" ? "contactada" : l.status} className={inputClass} aria-label={`Estado de ${l.name}`}>
+                <option value="nueva">Nueva</option>
+                <option value="contactada">Contactada</option>
+                <option value="vendida">Vendida</option>
+                <option value="perdida">Perdida</option>
+              </select>
+              <input name="note" placeholder="Nota (opcional)" className={inputClass} aria-label={`Nota sobre ${l.name}`} />
+            </ActionForm>
+          ) : undefined}
+        />
       </section>
 
       <DiscountsPanel canEdit={canEdit} discounts={snap.discounts} />

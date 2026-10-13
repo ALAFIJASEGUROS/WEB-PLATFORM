@@ -1,4 +1,4 @@
-import { EVENT_COLUMNS, ORDER_COLUMNS, orderCsvRows, PQR_COLUMNS } from "@/components/admin/exports";
+import { EVENT_COLUMNS, LEAD_COLUMNS, leadCsvRows, ORDER_COLUMNS, orderCsvRows, PQR_COLUMNS } from "@/components/admin/exports";
 import { toCsv } from "@/lib/csv";
 import { adminSession, audit } from "@/server/admin";
 import { buildAdminSnapshot } from "@/server/admin-snapshot";
@@ -15,10 +15,11 @@ export async function GET(request: Request) {
   let csv: string;
   if (tipo === "ordenes") csv = toCsv(orderCsvRows(snap.orders), ORDER_COLUMNS);
   else if (tipo === "pqr") csv = toCsv(snap.pqrs, PQR_COLUMNS);
+  else if (tipo === "oportunidades") csv = toCsv(leadCsvRows(snap.leads), LEAD_COLUMNS);
   else if (tipo === "eventos") {
     csv = toCsv(allEvents().map((e) => ({ at: e.at, event: e.event, sid: e.sid, props: JSON.stringify(e.props) })), EVENT_COLUMNS);
   } else {
-    return new Response("Tipo no válido: usa ordenes, pqr o eventos", { status: 400 });
+    return new Response("Tipo no válido: usa ordenes, oportunidades, pqr o eventos", { status: 400 });
   }
   audit(session.email, "Exportó CSV", tipo);
   return new Response(csv, {

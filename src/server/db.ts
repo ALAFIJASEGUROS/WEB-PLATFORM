@@ -4,6 +4,7 @@ import type { ConsentRecord } from "@/domain/consents";
 import type { Offer, QuoteRequest, Vehicle, VehicleType } from "@/domain/types";
 import type { StatusChange } from "./order-state";
 import { DEFAULT_PREFERENCES, type MessageType, type Preferences } from "@/domain/messaging";
+import type { Lead } from "@/domain/leads";
 
 // Persistencia EN MEMORIA para el MVP/demo. Las funciones de este módulo son
 // el único punto de acceso a datos, de modo que reemplazarlo por PostgreSQL
@@ -200,6 +201,18 @@ export interface Otp {
   attempts: number;
 }
 
+/** Cotización que la persona pidió recibir por correo para retomarla después. */
+export interface SavedQuote {
+  id: string;
+  email: string;
+  request: QuoteRequest;
+  link: string;
+  createdAt: string;
+  consent: ConsentRecord;
+  /** Fecha del recordatorio (se envía una sola vez si no compró). */
+  reminderSentAt?: string;
+}
+
 interface Db {
   orders: Map<string, Order>;
   policies: Map<string, Policy>;
@@ -213,6 +226,8 @@ interface Db {
   installmentPayments: Map<string, InstallmentPayment>;
   pqrs: Map<string, Pqr>;
   issuanceJobs: Map<string, IssuanceJob>;
+  leads: Map<string, Lead>;
+  savedQuotes: Map<string, SavedQuote>;
 }
 
 function seed(db: Db) {
@@ -263,6 +278,8 @@ export function db(): Db {
       installmentPayments: new Map(),
       pqrs: new Map(),
       issuanceJobs: new Map(),
+      leads: new Map(),
+      savedQuotes: new Map(),
     };
     seed(g.__safDb);
   }

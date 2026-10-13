@@ -14,6 +14,7 @@ import {
   FunnelView,
   ImpactTable,
   KpiCards,
+  LeadList,
   OrdersTable,
   OutboxList,
   PqrList,
@@ -22,7 +23,7 @@ import {
 } from "@/components/admin/AdminViews";
 import { SalesChart } from "@/components/admin/SalesChart";
 import { CsvDownload } from "@/components/admin/CsvDownload";
-import { ORDER_COLUMNS, orderCsvRows, PQR_COLUMNS } from "@/components/admin/exports";
+import { LEAD_COLUMNS, leadCsvRows, ORDER_COLUMNS, orderCsvRows, PQR_COLUMNS } from "@/components/admin/exports";
 import { demoAdminSnapshot } from "@/lib/demo-admin";
 import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, SERVICE_LABELS } from "@/domain/labels";
@@ -228,6 +229,13 @@ export function AdminPage() {
         </SectionTitle>
         <OrdersTable orders={snap.orders.slice(0, 25)} />
         <p className="text-xs text-muted">Se muestran las 25 más recientes de {snap.orders.length}; el CSV las incluye todas.</p>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="oportunidades">
+        <SectionTitle id="oportunidades" action={<CsvDownload filename="segualafija-oportunidades-demo.csv" rows={leadCsvRows(snap.leads)} columns={LEAD_COLUMNS} label="Exportar oportunidades (CSV)" />}>
+          Oportunidades
+        </SectionTitle>
+        <LeadList leads={snap.leads} savedQuotes={snap.savedQuotes} />
       </section>
 
       <section className="space-y-3" aria-labelledby="descuentos">
