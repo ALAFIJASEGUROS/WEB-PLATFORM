@@ -8,6 +8,7 @@ import { db, type Order } from "./db";
 import { discountConfig } from "./discounts";
 import { experiments } from "./experiments";
 import { PQR_TYPE_LABELS } from "./pqr";
+import { leadSummary, TIME_SLOTS } from "@/domain/leads";
 import { lastReconciliation } from "./reconciliation";
 
 const CONSENT_TITLES: Record<string, string> = { terms: "Términos", dataProcessing: "Datos", marketing: "Marketing" };
@@ -79,7 +80,33 @@ export function buildAdminSnapshot(now = new Date()): AdminSnapshot {
     pqrs: [...d.pqrs.values()]
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .map((q) => ({ ...q, typeLabel: PQR_TYPE_LABELS[q.type] })),
+    leads: [...d.leads.values()]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((l) => ({ id: l.id, kind: l.kind, createdAt: l.createdAt, name: l.name, phone: l.phone, email: l.email, slot: TIME_SLOTS[l.slot], status: l.status, summary: leadSummary(l), notes: l.notes })),
+    savedQuotes: savedQuoteStats(d),
+    referrals: referralStats(d),
     outbox: d.outbox.slice(0, 50).map((m) => ({ id: m.id, to: m.to, channel: m.channel, subject: m.subject, body: m.body, createdAt: m.createdAt })),
     audit: auditLog().slice(0, 100),
+  };
+}
+
+function savedQuoteStats(d: ReturnType<typeof db>) {
+  const saved = [...d.savedQuotes.values()];
+  const paid = [...d.orders.values()].filter((o) => o.status === "aprobada" || o.status === "emitida");
+  return {
+    saved: saved.length,
+    reminded: saved.filter((q) => q.reminderSentAt).length,
+    converted: saved.filter((q) => paid.some((o) => o.policyholder.email.toLowerCase() === q.email && o.createdAt >= q.createdAt)).length,
+  };
+}
+
+function referralStats(d: ReturnType<typeof db>) {
+  const all = [...d.referralRewards.values()];
+  const earned = all.filter((r) => r.status === "ganado");
+  return {
+    purchases: earned.length,
+    rewards: earned.reduce((s, r) => s + r.amount, 0),
+    voided: all.length - earned.length,
+    referrers: new Set(earned.map((r) => r.referrerUserId)).size,
   };
 }

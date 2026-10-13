@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { Bell, CarFront, Megaphone, ShieldCheck, TrendingDown } from "lucide-react";
-import { getCurrentUser } from "@/server/auth";
+import { Bell, CarFront, Gift, Megaphone, ShieldCheck, TrendingDown } from "lucide-react";
+import { baseUrl, getCurrentUser } from "@/server/auth";
+import { referralCodeFor, referralSummary } from "@/server/referrals";
+import { referralLink, REFERRER_REWARD } from "@/domain/referrals";
+import { discountConfig } from "@/server/discounts";
+import { InviteShare } from "@/components/account/InviteShare";
 import { campaignsFor, daysUntil, userPolicies, userReminders, userVehicles } from "@/server/queries";
 import { LoginForm } from "@/components/account/LoginForm";
 import { formatCOP } from "@/domain/labels";
@@ -26,6 +30,11 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
   const upcoming = userReminders(user.id).filter((r) => daysUntil(r.dueDate) >= 0).slice(0, 3);
   const offers = campaignsFor(user);
   const renewals = await renewalSuggestions(user.id);
+  // Invitar: solo si la regla de descuento por invitación está activa.
+  const inviteRule = discountConfig().rules.find((r) => r.requires === "invitacion" && r.enabled);
+  const invite = inviteRule && policies.length > 0
+    ? { link: referralLink(await baseUrl(), referralCodeFor(user)), summary: referralSummary(user.id), discount: inviteRule.kind === "valor" ? formatCOP(inviteRule.magnitude) : `${inviteRule.magnitude}%` }
+    : null;
 
   const tiles = [
     { href: "/cuenta/seguros", icon: ShieldCheck, label: "Pólizas", value: policies.length },
@@ -51,6 +60,26 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
           </Link>
         ))}
       </div>
+
+      {invite && (
+        <Card className="space-y-3 p-5">
+          <div className="flex gap-3">
+            <Gift className="mt-0.5 size-6 shrink-0 text-brand" aria-hidden />
+            <div>
+              <h2 className="font-bold text-heading">Invita y ahorra en tu renovación</h2>
+              <p className="text-sm text-muted">
+                Quien compre con tu enlace tiene {invite.discount} de descuento y tú ganas {formatCOP(REFERRER_REWARD)} por cada compra para tu próxima renovación.
+              </p>
+            </div>
+          </div>
+          <InviteShare link={invite.link} discount={invite.discount} />
+          <p className="text-sm text-ink">
+            {invite.summary.purchases === 0
+              ? "Aún nadie ha comprado con tu enlace."
+              : <>Compras con tu enlace: <strong>{invite.summary.purchases}</strong> · bonos acumulados: <strong>{formatCOP(invite.summary.balance)}</strong></>}
+          </p>
+        </Card>
+      )}
 
       {renewals.map((s) => (
         <Card key={s.policy.id} className="flex flex-col gap-3 border-2 border-mint p-5 sm:flex-row sm:items-center sm:justify-between">

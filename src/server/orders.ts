@@ -24,6 +24,7 @@ import { eligibility } from "@/recommendation/scoring";
 import { transition } from "./order-state";
 import { adminRoles } from "./admin";
 import { withDiscounts } from "./discounts";
+import { recordReferralReward, resolveReferral, voidReferralReward } from "./referrals";
 
 export class CheckoutError extends Error {}
 
@@ -49,9 +50,11 @@ export async function createOrder(
   const [insurerId] = input.offerId.split(":");
   const adapter = getAdapter(insurerId);
   if (!adapter) throw new CheckoutError("Aseguradora no disponible.");
+  // Código de invitación: válido si existe y no es de quien compra.
+  const referral = resolveReferral(input.referralCode, input.policyholder.email);
   let offers;
   try {
-    offers = withDiscounts(await adapter.quote(input.quote, AbortSignal.timeout(8000)));
+    offers = withDiscounts(await adapter.quote(input.quote, AbortSignal.timeout(8000)), { referral: !!referral });
   } catch {
     throw new CheckoutError(`${adapter.name} no respondió. Intenta de nuevo.`);
   }
@@ -90,6 +93,7 @@ export async function createOrder(
     consentEvidence: (["terms", "dataProcessing", "marketing"] as const).map((k) =>
       consentRecord(k, input.consents[k], "checkout", ctx),
     ),
+    ...(referral && { referral }),
   };
   db().orders.set(order.id, order);
   return order;
@@ -139,6 +143,7 @@ export async function applyPaymentUpdate(u: PaymentUpdate) {
       return order;
     }
     if (!transition(order, "aprobada", `Transacción ${u.transactionId}`)) return order;
+    recordReferralReward(order);
     if (order.analyticsSid) recordEvent("pago_aprobado", order.analyticsSid, { aseguradora: order.offer.insurerId, plan: order.paymentPlan });
     // La emisión se encola y se intenta de inmediato; si la aseguradora falla,
     // se reintenta después (processIssuanceQueue) sin volver a cobrar.
@@ -398,7 +403,10 @@ export function retractPolicy(policyId: string, viewer: { token?: string; userId
   const order = p.orderId ? d.orders.get(p.orderId) : undefined;
   const paidInstallments = (p.installments ?? []).filter((i) => i.n > 1 && i.status === "pagada").reduce((s, i) => s + i.amount, 0);
   const refund = (order ? order.amountInCents / 100 : 0) + paidInstallments;
-  if (order) transition(order, "retractada", `Reembolso ${formatCOP(refund)}`);
+  if (order) {
+    transition(order, "retractada", `Reembolso ${formatCOP(refund)}`);
+    voidReferralReward(order.id);
+  }
   sendMessage({
     to: p.holderEmail,
     channel: "email",
@@ -493,6 +501,7 @@ export function adminRefund(orderId: string, actor: string, reason: string) {
   }
   const amount = order.amountInCents / 100;
   order.refund = { amount, at: new Date().toISOString(), by: actor, reason };
+  voidReferralReward(order.id);
   db().issuanceJobs.delete(order.id);
   sendMessage({
     to: order.policyholder.email,

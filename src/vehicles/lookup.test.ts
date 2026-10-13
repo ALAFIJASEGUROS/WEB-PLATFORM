@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { lookupPlate } from "./lookup";
+import { findModelPage, modelPages, slugify } from "./pages";
 
 describe("lookupPlate", () => {
   it("resuelve cualquier placa válida de carro o moto", () => {
@@ -19,5 +20,18 @@ describe("lookupPlate", () => {
 
   it("rechaza formatos inválidos", () => {
     expect(lookupPlate("AB1234")).toBeNull();
+  });
+});
+
+describe("páginas por marca y línea", () => {
+  it("genera slugs limpios y únicos", () => {
+    expect(slugify("Mazda 2")).toBe("mazda-2");
+    expect(slugify("NMAX 155")).toBe("nmax-155");
+    const paths = modelPages().map((p) => `${p.tipo}/${p.marca}/${p.modelo}`);
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+  it("encuentra una página por sus slugs", () => {
+    expect(findModelPage("carro", "mazda", "mazda-2")?.model).toBe("Mazda 2");
+    expect(findModelPage("moto", "mazda", "mazda-2")).toBeNull();
   });
 });

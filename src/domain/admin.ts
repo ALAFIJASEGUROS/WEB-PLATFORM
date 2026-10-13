@@ -100,6 +100,19 @@ export interface DailySales {
   revenue: number;
 }
 
+export interface AdminLeadRow {
+  id: string;
+  kind: "llamada" | "flota";
+  createdAt: string;
+  name: string;
+  phone: string;
+  email?: string;
+  slot: string;
+  status: "nueva" | "contactada" | "vendida" | "perdida";
+  summary: string;
+  notes?: string;
+}
+
 /** Todo lo que muestra el panel, en un objeto serializable. */
 export interface AdminSnapshot {
   generatedAt: string;
@@ -126,6 +139,9 @@ export interface AdminSnapshot {
     status: "radicada" | "en_tramite" | "respondida";
     response?: string;
   }[];
+  leads: AdminLeadRow[];
+  savedQuotes: { saved: number; reminded: number; converted: number };
+  referrals: { purchases: number; rewards: number; voided: number; referrers: number };
   outbox: { id: string; to: string; channel: string; subject: string; body: string; createdAt: string }[];
   audit: AuditEntry[];
 }

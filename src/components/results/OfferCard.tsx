@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, ChevronDown, Lock, Minus, Sparkles, Tag } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Lock, Minus, Sparkles, Star, Tag } from "lucide-react";
+import { formatScore, reputationFor } from "@/insurers/reputation";
 import { useUiVariant } from "@/lib/experiments";
 import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS } from "@/domain/types";
@@ -36,6 +37,7 @@ export function OfferCard({
   // Experimento A/B: texto del botón de compra ("Lo quiero" o con el precio).
   const priceInButton = useUiVariant("boton-oferta-1") === "comprar-precio";
   const detailId = `detalle-${offer.id.replace(":", "-")}`;
+  const rep = reputationFor(offer.insurerId);
 
   return (
     <Card className={`p-5 ${highlight ? "ring-2 ring-brand" : comparing ? "ring-2 ring-brand/50" : ""}`}>
@@ -60,7 +62,16 @@ export function OfferCard({
             <h3 id={`${detailId}-t`} className="font-bold text-heading">
               {offer.planName}
             </h3>
-            <p className="text-sm text-muted">{offer.insurerName}</p>
+            <p className="text-sm text-muted">
+              {offer.insurerName}
+              {rep && (
+                <Link href={`/aseguradoras#${offer.insurerId}`} className="ml-2 inline-flex items-center gap-0.5 font-semibold text-heading hover:underline">
+                  <Star className="size-3.5 fill-current text-sun" aria-hidden />
+                  {formatScore(rep.score)}
+                  <span className="sr-only"> de 5 en servicio</span>
+                </Link>
+              )}
+            </p>
           </div>
           <ScoreRing score={offer.score} />
         </div>

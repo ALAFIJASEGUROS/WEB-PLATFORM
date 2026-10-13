@@ -21,6 +21,7 @@ import { OfferCard } from "./OfferCard";
 import { BottomSheet } from "@/components/BottomSheet";
 import { ShareQuote } from "./ShareQuote";
 import { RefinePanel } from "./RefinePanel";
+import { ContactOptions } from "./ContactOptions";
 import { decodeShare } from "@/lib/share";
 
 type Sort = "afinidad" | "precio" | "cobertura";
@@ -346,6 +347,7 @@ export function ResultsView() {
         </details>
       )}
 
+      <ContactOptions request={request} response={data} />
       </div>
 
       {compare.length >= 2 && (

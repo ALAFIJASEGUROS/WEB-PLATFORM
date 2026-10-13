@@ -3,6 +3,7 @@ import {
   applyDiscountsToAll,
   DEFAULT_DISCOUNT_RULES,
   DEFAULT_DISCOUNT_SETTINGS,
+  type DiscountContext,
   type DiscountRule,
   type DiscountSettings,
 } from "@/domain/discounts";
@@ -22,9 +23,9 @@ export function discountConfig() {
 }
 
 /** Aplica las reglas vigentes. Se llama después de la caché, así un cambio en /admin rige de inmediato. */
-export function withDiscounts(offers: Offer[]) {
+export function withDiscounts(offers: Offer[], ctx: DiscountContext = {}) {
   const { rules, settings } = discountConfig();
-  return applyDiscountsToAll(offers, rules, settings, todayInColombia());
+  return applyDiscountsToAll(offers, rules, settings, todayInColombia(), ctx);
 }
 
 export function upsertDiscountRule(rule: DiscountRule) {

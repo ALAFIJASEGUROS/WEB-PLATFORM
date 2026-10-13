@@ -6,6 +6,7 @@ import { audit, requireAdmin } from "@/server/admin";
 import { db, newId } from "@/server/db";
 import { dispatchDueReminders } from "@/server/reminders";
 import { updatePqr } from "@/server/pqr";
+import { updateLead } from "@/server/leads";
 import { reconcilePayments } from "@/server/reconciliation";
 import { adminRefund, adminRetryIssuance, CheckoutError } from "@/server/orders";
 import type { FormState } from "../cuenta/actions";
@@ -119,6 +120,7 @@ export async function saveDiscountRuleAction(_: FormState, form: FormData): Prom
     planCodes: r.planCodes?.split(",").map((s) => s.trim()).filter(Boolean),
     validFrom: r.validFrom || undefined,
     validUntil: r.validUntil || undefined,
+    requires: form.get("requires") === "on" ? "invitacion" : undefined,
   };
   if (rule.planCodes?.length === 0) rule.planCodes = undefined;
   const existed = discountConfig().rules.some((x) => x.id === rule.id);
@@ -200,4 +202,18 @@ export async function refundOrderAction(orderId: string, _: FormState, form: For
   }
   revalidatePath("/admin", "layout");
   return { ok: true };
+}
+
+const leadUpdateSchema = z.object({
+  status: z.enum(["nueva", "contactada", "vendida", "perdida"]),
+  note: z.string().trim().max(500).optional(),
+});
+
+export async function updateLeadAction(id: string, _: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const parsed = leadUpdateSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { error: "Elige un estado válido." };
+  if (!updateLead(id, admin.email, parsed.data.status, parsed.data.note || undefined)) return { error: "No encontramos la oportunidad." };
+  revalidatePath("/admin");
+  return { ok: true, message: "Oportunidad actualizada." };
 }

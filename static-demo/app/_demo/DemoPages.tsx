@@ -14,6 +14,8 @@ import {
   FunnelView,
   ImpactTable,
   KpiCards,
+  LeadList,
+  ReferralLine,
   OrdersTable,
   OutboxList,
   PqrList,
@@ -22,7 +24,7 @@ import {
 } from "@/components/admin/AdminViews";
 import { SalesChart } from "@/components/admin/SalesChart";
 import { CsvDownload } from "@/components/admin/CsvDownload";
-import { ORDER_COLUMNS, orderCsvRows, PQR_COLUMNS } from "@/components/admin/exports";
+import { LEAD_COLUMNS, leadCsvRows, ORDER_COLUMNS, orderCsvRows, PQR_COLUMNS } from "@/components/admin/exports";
 import { demoAdminSnapshot } from "@/lib/demo-admin";
 import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, SERVICE_LABELS } from "@/domain/labels";
@@ -230,6 +232,14 @@ export function AdminPage() {
         <p className="text-xs text-muted">Se muestran las 25 más recientes de {snap.orders.length}; el CSV las incluye todas.</p>
       </section>
 
+      <section className="space-y-3" aria-labelledby="oportunidades">
+        <SectionTitle id="oportunidades" action={<CsvDownload filename="segualafija-oportunidades-demo.csv" rows={leadCsvRows(snap.leads)} columns={LEAD_COLUMNS} label="Exportar oportunidades (CSV)" />}>
+          Oportunidades
+        </SectionTitle>
+        <ReferralLine referrals={snap.referrals} />
+        <LeadList leads={snap.leads} savedQuotes={snap.savedQuotes} />
+      </section>
+
       <section className="space-y-3" aria-labelledby="descuentos">
         <SectionTitle id="descuentos">Descuentos y tarifas especiales</SectionTitle>
         <DiscountRulesList discounts={snap.discounts} />
@@ -241,7 +251,7 @@ export function AdminPage() {
         {snap.experiments.map((exp) => <ExperimentCard key={exp.id} exp={exp} />)}
       </section>
 
-      <section className="grid gap-6 md:grid-cols-2">
+      <section className="grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-heading">Campañas</h2>
           <CampaignList campaigns={snap.campaigns} />

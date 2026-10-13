@@ -1,4 +1,4 @@
-# Estado del proyecto · v0.14.0 (2026-10-13)
+# Estado del proyecto · v0.15.0 (2026-10-13)
 
 Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está en el
 [backlog](04-backlog.md) y el historial de cambios en el [CHANGELOG](../CHANGELOG.md).
@@ -22,7 +22,8 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Comunicaciones | Centro de preferencias por tipo de mensaje y canal. Recordatorios de póliza, SOAT, tecnomecánica y cuotas, y avisos de mora (Ley 2300: horario, festivos, un contacto al día). Centro de ofertas con consentimiento | Pruebas de recordatorios |
 | Atención | Guía de siniestros por aseguradora. PQR con radicado y plazo de 15 días hábiles. Sección del Defensor del Consumidor Financiero | Pruebas de PQR |
 | Administración | Descuentos por aseguradora (prender, apagar, magnitud, tope, vigencia y tope global) y su impacto en la conversión, experimentos A/B de pesos y de interfaz con valor p, roles `admin` y `analista` por correo, órdenes con detalle, reintento de emisión y reembolsos, exportación a CSV, gráfico de recaudo diario, conciliación de pagos, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
-| Calidad | CI con lint, typecheck, 92 pruebas unitarias, build, 39 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
+| Calidad | CI con lint, typecheck, 123 pruebas unitarias, build, 61 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
+| Crecimiento | Páginas por marca y línea, calculadoras, "Que me llamen" y cotizaciones guardadas con bandeja de oportunidades, calificación de aseguradoras (datos simulados), referidos y flotas ([detalle](crecimiento.md)) | E2E de crecimiento |
 | Diseño | Mobile-first, app instalable (PWA) con página sin conexión, modo oscuro con selector, tokens de color con contraste AA, versión visible en el footer | axe |
 
 ## Lo pendiente

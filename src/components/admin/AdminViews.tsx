@@ -5,6 +5,7 @@ import { ORDER_STATUS_LABELS } from "@/domain/admin";
 import { describeRule } from "@/domain/discounts";
 import { FUNNEL_LABELS } from "@/domain/events";
 import { formatCOP } from "@/domain/labels";
+import { LEAD_STATUS_LABELS } from "@/domain/leads";
 import { Badge, Card } from "@/components/ui";
 
 // Vistas de solo lectura del panel. Las usan /admin (con datos reales y
@@ -301,9 +302,10 @@ export function OutboxList({ outbox }: Pick<AdminSnapshot, "outbox">) {
       {outbox.length === 0 && <p className="p-4 text-sm text-muted">Sin mensajes.</p>}
       {outbox.map((m) => (
         <div key={m.id} className="p-4 text-sm">
-          <p className="text-xs text-muted">{when(m.createdAt)} · {m.channel} → {m.to}</p>
-          <p className="font-semibold text-heading">{m.subject}</p>
-          <p className="whitespace-pre-line text-muted">{m.body}</p>
+          <p className="break-words text-xs text-muted">{when(m.createdAt)} · {m.channel} → {m.to}</p>
+          <p className="break-words font-semibold text-heading">{m.subject}</p>
+          {/* Los enlaces largos (cotización guardada) no deben ensanchar la columna. */}
+          <p className="whitespace-pre-line break-all text-muted">{m.body}</p>
         </div>
       ))}
     </Card>
@@ -332,6 +334,48 @@ export function PqrList({ pqrs, today, form }: Pick<AdminSnapshot, "pqrs"> & { t
             </Card>
           );
         })}
+      </div>
+    </>
+  );
+}
+
+const LEAD_TONE = { nueva: "sun", contactada: "brand", vendida: "mint", perdida: "coral" } as const;
+
+export function ReferralLine({ referrals }: Pick<AdminSnapshot, "referrals">) {
+  return (
+    <p className="text-sm text-muted">
+      Referidos: <strong className="text-heading">{referrals.purchases}</strong> compras de{" "}
+      <strong className="text-heading">{referrals.referrers}</strong> personas que invitaron · bonos{" "}
+      <strong className="text-heading">{formatCOP(referrals.rewards)}</strong>
+      {referrals.voided > 0 && <> · {referrals.voided} anulados por retracto o reembolso</>}
+    </p>
+  );
+}
+
+export function LeadList({ leads, savedQuotes, form }: Pick<AdminSnapshot, "leads" | "savedQuotes"> & { form?: (l: AdminSnapshot["leads"][number]) => ReactNode }) {
+  return (
+    <>
+      <p className="text-sm text-muted">
+        Cotizaciones guardadas por correo: <strong className="text-heading">{savedQuotes.saved}</strong> · con recordatorio{" "}
+        <strong className="text-heading">{savedQuotes.reminded}</strong> · terminaron en compra <strong className="text-heading">{savedQuotes.converted}</strong>
+      </p>
+      {leads.length === 0 && <Card className="p-4 text-sm text-muted">Sin oportunidades por ahora.</Card>}
+      <div className="grid gap-3 md:grid-cols-2">
+        {leads.map((l) => (
+          <Card key={l.id} className="space-y-2 p-4 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <strong className="text-heading">{l.name}</strong>
+              <Badge tone={l.kind === "flota" ? "brand" : "sun"}>{l.kind === "flota" ? "Flota" : "Llamada"}</Badge>
+              <Badge tone={LEAD_TONE[l.status]}>{LEAD_STATUS_LABELS[l.status]}</Badge>
+              <span className="text-xs text-muted">{when(l.createdAt)}</span>
+            </div>
+            <p><a href={`tel:+57${l.phone}`} className="font-semibold text-brand hover:underline">{l.phone}</a>{l.email && <span className="text-muted"> · {l.email}</span>}</p>
+            <p className="text-muted">Llamar: {l.slot}</p>
+            {l.summary && <p>{l.summary}</p>}
+            {l.notes && <p className="rounded-xl bg-canvas p-2 text-ink">Nota: {l.notes}</p>}
+            {form?.(l)}
+          </Card>
+        ))}
       </div>
     </>
   );
