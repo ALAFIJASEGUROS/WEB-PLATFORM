@@ -152,7 +152,8 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Cotización por placa, motor de recomendación explicable, adaptadores simulados de SURA y Seguros Bolívar, resultados y comparador.
 
-[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.13.0...HEAD
+[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.11.0...v0.12.0
