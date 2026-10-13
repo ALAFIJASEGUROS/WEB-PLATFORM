@@ -21,6 +21,7 @@ tarifas especiales**. El motor está en `src/domain/discounts.ts` y la configura
 | Aplica a | Carros, motos o ambos; y, si se quiere, solo ciertos planes |
 | Vigencia | Fechas desde y hasta (inclusive) |
 | Activa | Prender o apagar la regla sin borrarla |
+| Solo con código de invitación | La regla aplica únicamente si la persona llegó con un enlace de invitación válido (programa de referidos) |
 
 ## Cómo se combinan
 1. Se toman las reglas activas, vigentes y que aplican a la oferta.
@@ -48,9 +49,18 @@ La fila "Sin descuento" sirve de referencia. Con analítica en memoria, los cont
 ## Reglas iniciales (demo)
 - Tarifa digital SURA: 5%, activa.
 - Descuento motos Bolívar: 8% con tope de $60.000, solo motos, activa.
+- Descuento por invitación: $25.000 a cargo de la plataforma, activa, solo con código de invitación.
 - Bono de bienvenida SeguAlaFija: $30.000 a cargo de la plataforma, apagada.
 
-Tope total inicial: 15%. La demo estática usa estas reglas fijas porque no tiene panel.
+Tope total inicial: 15%. La demo estática usa estas reglas fijas porque no tiene panel; allí cualquier código de
+invitación con formato válido activa el descuento, porque no hay usuarios con los que validarlo.
+
+## Programa de referidos
+Quien tiene una póliza ve en su cuenta su enlace de invitación (`/?ref=CÓDIGO`). La persona invitada ve un aviso,
+el código se guarda en su navegador por 30 días y, al cotizar y al comprar, el servidor lo valida: debe existir y
+no puede ser de quien compra. Cuando se aprueba el pago, quien invitó gana un bono de $25.000 para su próxima
+renovación; si la compra se retracta o se reembolsa, el bono se anula. El panel muestra compras, bonos y anulados.
+Como el descuento y el bono los asume la plataforma, deben validarse con la figura de intermediación (HU-14.1).
 
 ## Pendiente
 - Validar con un abogado los descuentos que asume la plataforma con su comisión, según la figura de

@@ -117,7 +117,7 @@ export default async function Page() {
 
       <ExperimentsPanel canEdit={canEdit} experiments={snap.experiments} />
 
-      <section className="grid gap-6 md:grid-cols-2">
+      <section className="grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-heading">Campañas</h2>
           <CampaignList

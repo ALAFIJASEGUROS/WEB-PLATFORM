@@ -251,7 +251,7 @@ export function AdminPage() {
         {snap.experiments.map((exp) => <ExperimentCard key={exp.id} exp={exp} />)}
       </section>
 
-      <section className="grid gap-6 md:grid-cols-2">
+      <section className="grid gap-6 md:grid-cols-2 [&>*]:min-w-0">
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-heading">Campañas</h2>
           <CampaignList campaigns={snap.campaigns} />

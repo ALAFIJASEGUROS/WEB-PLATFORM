@@ -232,6 +232,17 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-21.6 | Como usuario quiero entender los términos de seguros donde aparecen | ✅ | M | MVP | 2 |
 | HU-21.7 | Como usuario quiero ajustar mis prioridades en los resultados sin volver al cuestionario | ✅ | M | MVP | 3 |
 
+## E22 · Crecimiento (solo código)
+| ID | Historia | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- |
+| HU-22.1 | Como visitante que busca el seguro de mi carro o moto quiero una página con precios de mi modelo | ✅ | M | MVP | 3 |
+| HU-22.2 | Como visitante quiero calculadoras de precio, deducible y tipo de cobertura | ✅ | S | MVP | 3 |
+| HU-22.3 | Como usuario indeciso quiero que me llame un asesor en un horario que elija | ✅ | M | MVP | 3 |
+| HU-22.4 | Como usuario quiero guardar mi cotización y que me la recuerden una vez | ✅ (correo real con Resend) | M | MVP | 2 |
+| HU-22.5 | Como usuario quiero saber qué tan bien responde cada aseguradora | ✅ (datos simulados) | S | MVP | 2 |
+| HU-22.6 | Como cliente quiero invitar a otros y ganar un bono; como invitado, un descuento | ✅ | S | V1 | 5 |
+| HU-22.7 | Como empresa quiero cotizar varios vehículos y pedir una propuesta | ✅ | S | V1 | 3 |
+
 ---
 
 ## Sprint 3 (completado)
@@ -276,6 +287,11 @@ HU-20.1 a HU-20.4: cilindraje de la moto, peso del hurto en motos, valor asegura
 HU-21.1 a HU-21.7: admin de demostración en GitHub Pages, gestión de órdenes (detalle, reintento de emisión y
 reembolsos), exportación a CSV, gráfico de recaudo y conversión por variante, filtros en panel inferior y comparador
 apilado en el celular, glosario con ayudas en contexto, y "Afinar" en resultados.
+
+## Sprint 13 (completado)
+HU-22.1 a HU-22.7: páginas por marca y línea, calculadoras, "Que me llamen" con bandeja de oportunidades,
+cotizaciones guardadas con recordatorio, calificación de aseguradoras, referidos y flotas. Ver
+[crecimiento.md](crecimiento.md).
 
 ## Próximo sprint sugerido
 Lo pendiente de solo código está agotado. Lo siguiente depende de terceros o de decisiones del negocio:

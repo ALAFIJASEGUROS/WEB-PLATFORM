@@ -302,9 +302,10 @@ export function OutboxList({ outbox }: Pick<AdminSnapshot, "outbox">) {
       {outbox.length === 0 && <p className="p-4 text-sm text-muted">Sin mensajes.</p>}
       {outbox.map((m) => (
         <div key={m.id} className="p-4 text-sm">
-          <p className="text-xs text-muted">{when(m.createdAt)} · {m.channel} → {m.to}</p>
-          <p className="font-semibold text-heading">{m.subject}</p>
-          <p className="whitespace-pre-line text-muted">{m.body}</p>
+          <p className="break-words text-xs text-muted">{when(m.createdAt)} · {m.channel} → {m.to}</p>
+          <p className="break-words font-semibold text-heading">{m.subject}</p>
+          {/* Los enlaces largos (cotización guardada) no deben ensanchar la columna. */}
+          <p className="whitespace-pre-line break-all text-muted">{m.body}</p>
         </div>
       ))}
     </Card>
