@@ -609,3 +609,27 @@ describe("oportunidades y cotizaciones guardadas", () => {
     expect((await dispatchDueReminders(new Date("2026-10-06T15:00:00Z"))).sent).toBe(0);
   });
 });
+
+describe("referidos", () => {
+  it("con un código ajeno descuenta, registra el bono al pagar y lo anula al retractarse", async () => {
+    const { referralCodeFor, referralSummary } = await import("./referrals");
+    const referrer = getOrCreateUser("pedro@x.co");
+    const code = referralCodeFor(referrer);
+    const plain = await createOrder(input);
+    const withRef = await createOrder({ ...input, referralCode: code.toLowerCase() });
+    expect(withRef.referral?.referrerUserId).toBe(referrer.id);
+    expect(withRef.amountInCents).toBe(plain.amountInCents - 25_000 * 100);
+    await applyPaymentUpdate({ eventId: "ev-ref", reference: withRef.reference, transactionId: "tx-ref", status: "APPROVED", amountInCents: withRef.amountInCents });
+    expect(referralSummary(referrer.id)).toMatchObject({ purchases: 1, balance: 25_000 });
+    expect(db().outbox.some((m) => m.to === "pedro@x.co" && m.subject.startsWith("Ganaste"))).toBe(true);
+    retractPolicy(db().orders.get(withRef.id)!.policyId!, { token: db().policies.get(db().orders.get(withRef.id)!.policyId!)!.accessToken });
+    expect(referralSummary(referrer.id).purchases).toBe(0);
+  });
+
+  it("no acepta el propio código ni códigos inexistentes", async () => {
+    const { referralCodeFor } = await import("./referrals");
+    const own = referralCodeFor(getOrCreateUser("ana@example.com"));
+    expect((await createOrder({ ...input, referralCode: own })).referral).toBeUndefined();
+    expect((await createOrder({ ...input, referralCode: "ZZZZZZ" })).referral).toBeUndefined();
+  });
+});

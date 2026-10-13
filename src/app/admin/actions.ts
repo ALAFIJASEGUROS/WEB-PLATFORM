@@ -120,6 +120,7 @@ export async function saveDiscountRuleAction(_: FormState, form: FormData): Prom
     planCodes: r.planCodes?.split(",").map((s) => s.trim()).filter(Boolean),
     validFrom: r.validFrom || undefined,
     validUntil: r.validUntil || undefined,
+    requires: form.get("requires") === "on" ? "invitacion" : undefined,
   };
   if (rule.planCodes?.length === 0) rule.planCodes = undefined;
   const existed = discountConfig().rules.some((x) => x.id === rule.id);

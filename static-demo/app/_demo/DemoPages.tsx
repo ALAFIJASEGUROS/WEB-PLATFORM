@@ -15,6 +15,7 @@ import {
   ImpactTable,
   KpiCards,
   LeadList,
+  ReferralLine,
   OrdersTable,
   OutboxList,
   PqrList,
@@ -235,6 +236,7 @@ export function AdminPage() {
         <SectionTitle id="oportunidades" action={<CsvDownload filename="segualafija-oportunidades-demo.csv" rows={leadCsvRows(snap.leads)} columns={LEAD_COLUMNS} label="Exportar oportunidades (CSV)" />}>
           Oportunidades
         </SectionTitle>
+        <ReferralLine referrals={snap.referrals} />
         <LeadList leads={snap.leads} savedQuotes={snap.savedQuotes} />
       </section>
 

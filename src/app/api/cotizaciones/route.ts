@@ -3,6 +3,7 @@ import { quoteWithCache } from "@/insurers/cache";
 import { buildQuoteResponse } from "@/recommendation/scoring";
 import { withDiscounts } from "@/server/discounts";
 import { assignmentForSession } from "@/server/experiments";
+import { findUserByReferralCode } from "@/server/referrals";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -16,5 +17,7 @@ export async function POST(request: Request) {
   const { offers, errors } = await quoteWithCache(parsed.data);
   // La sesión anónima de analítica decide la variante del experimento A/B de pesos.
   const sid = request.headers.get("x-saf-sid")?.slice(0, 64) || undefined;
-  return Response.json(buildQuoteResponse(withDiscounts(offers), errors, parsed.data.answers, assignmentForSession(sid), parsed.data.vehicle));
+  // Código de invitación: habilita las reglas "solo con código de invitación".
+  const referral = !!findUserByReferralCode(request.headers.get("x-saf-ref"));
+  return Response.json(buildQuoteResponse(withDiscounts(offers, { referral }), errors, parsed.data.answers, assignmentForSession(sid), parsed.data.vehicle));
 }

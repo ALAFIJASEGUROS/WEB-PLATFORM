@@ -141,6 +141,7 @@ export interface AdminSnapshot {
   }[];
   leads: AdminLeadRow[];
   savedQuotes: { saved: number; reminded: number; converted: number };
+  referrals: { purchases: number; rewards: number; voided: number; referrers: number };
   outbox: { id: string; to: string; channel: string; subject: string; body: string; createdAt: string }[];
   audit: AuditEntry[];
 }

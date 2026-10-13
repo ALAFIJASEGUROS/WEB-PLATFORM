@@ -340,6 +340,17 @@ export function PqrList({ pqrs, today, form }: Pick<AdminSnapshot, "pqrs"> & { t
 
 const LEAD_TONE = { nueva: "sun", contactada: "brand", vendida: "mint", perdida: "coral" } as const;
 
+export function ReferralLine({ referrals }: Pick<AdminSnapshot, "referrals">) {
+  return (
+    <p className="text-sm text-muted">
+      Referidos: <strong className="text-heading">{referrals.purchases}</strong> compras de{" "}
+      <strong className="text-heading">{referrals.referrers}</strong> personas que invitaron · bonos{" "}
+      <strong className="text-heading">{formatCOP(referrals.rewards)}</strong>
+      {referrals.voided > 0 && <> · {referrals.voided} anulados por retracto o reembolso</>}
+    </p>
+  );
+}
+
 export function LeadList({ leads, savedQuotes, form }: Pick<AdminSnapshot, "leads" | "savedQuotes"> & { form?: (l: AdminSnapshot["leads"][number]) => ReactNode }) {
   return (
     <>

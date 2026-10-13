@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { ReferralCapture } from "@/components/ReferralCapture";
 import "./globals.css";
 import { experimentBootScript, experimentCss, UI_EXPERIMENTS } from "@/recommendation/experiments";
 
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Saltar al contenido
         </a>
         <Header />
+        <ReferralCapture />
         <main id="contenido" className="flex-1 pb-20 md:pb-0">
           {children}
         </main>

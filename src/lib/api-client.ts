@@ -39,15 +39,18 @@ export async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
       import("@/domain/discounts"),
     ]);
     const { offers, errors } = await quoteAll(req);
-    const discounted = d.applyDiscountsToAll(offers, d.DEFAULT_DISCOUNT_RULES, d.DEFAULT_DISCOUNT_SETTINGS);
+    // En la demo no hay usuarios: cualquier código con formato válido cuenta como invitación.
+    const { currentReferral } = await import("./referral");
+    const discounted = d.applyDiscountsToAll(offers, d.DEFAULT_DISCOUNT_RULES, d.DEFAULT_DISCOUNT_SETTINGS, undefined, { referral: !!currentReferral() });
     return buildQuoteResponse(discounted, errors, req.answers, null, req.vehicle);
   }
-  const { analyticsSessionId } = await import("./analytics");
+  const [{ analyticsSessionId }, { currentReferral }] = await Promise.all([import("./analytics"), import("./referral")]);
   const sid = analyticsSessionId();
+  const ref = currentReferral();
   return json(
     await fetch("/api/cotizaciones", {
       method: "POST",
-      headers: { "content-type": "application/json", ...(sid && { "x-saf-sid": sid }) },
+      headers: { "content-type": "application/json", ...(sid && { "x-saf-sid": sid }), ...(ref && { "x-saf-ref": ref }) },
       body: JSON.stringify(req),
     }),
   );

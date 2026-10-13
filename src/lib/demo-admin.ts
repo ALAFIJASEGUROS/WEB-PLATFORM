@@ -193,6 +193,7 @@ export function demoAdminSnapshot(now = new Date(), seed = 2026): AdminSnapshot 
       { id: "l3", kind: "llamada", createdAt: new Date(now.getTime() - 50 * 3_600_000).toISOString(), name: "Santiago Hernández", phone: "3201239876", slot: TIME_SLOTS.sabado, status: "vendida", summary: "Yamaha NMAX 155 2024 · Moto Plus (Seguros Bolívar) $890.000" },
     ],
     savedQuotes: { saved: 23, reminded: 15, converted: 4 },
+    referrals: { purchases: 7, rewards: 175_000, voided: 1, referrers: 5 },
     outbox: orders.filter((o) => o.status === "emitida").slice(0, 6).map((o, i) => ({
       id: `m${i}`,
       to: o.email,

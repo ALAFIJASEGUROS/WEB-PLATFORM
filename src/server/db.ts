@@ -5,6 +5,7 @@ import type { Offer, QuoteRequest, Vehicle, VehicleType } from "@/domain/types";
 import type { StatusChange } from "./order-state";
 import { DEFAULT_PREFERENCES, type MessageType, type Preferences } from "@/domain/messaging";
 import type { Lead } from "@/domain/leads";
+import type { ReferralReward } from "@/domain/referrals";
 
 // Persistencia EN MEMORIA para el MVP/demo. Las funciones de este módulo son
 // el único punto de acceso a datos, de modo que reemplazarlo por PostgreSQL
@@ -48,6 +49,8 @@ export interface Order {
   history?: StatusChange[];
   /** Reembolso registrado desde /admin. */
   refund?: { amount: number; at: string; by: string; reason: string };
+  /** Código de invitación con el que se compró (ya validado: existe y no es propio). */
+  referral?: { code: string; referrerUserId: string };
 }
 
 /**
@@ -121,6 +124,8 @@ export interface User {
   preferences: Preferences;
   /** Historial de otorgamientos y revocaciones. */
   consentLog: ConsentRecord[];
+  /** Código para invitar a otras personas (se crea al pedirlo). */
+  referralCode?: string;
 }
 
 export interface UserVehicle {
@@ -228,6 +233,7 @@ interface Db {
   issuanceJobs: Map<string, IssuanceJob>;
   leads: Map<string, Lead>;
   savedQuotes: Map<string, SavedQuote>;
+  referralRewards: Map<string, ReferralReward>;
 }
 
 function seed(db: Db) {
@@ -280,6 +286,7 @@ export function db(): Db {
       issuanceJobs: new Map(),
       leads: new Map(),
       savedQuotes: new Map(),
+      referralRewards: new Map(),
     };
     seed(g.__safDb);
   }

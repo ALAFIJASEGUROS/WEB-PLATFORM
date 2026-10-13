@@ -6,6 +6,7 @@ import { changedPrice, startCheckout } from "@/lib/api-client";
 import { kycFieldsFor, validateKyc } from "@/insurers/registry";
 import { AcceptanceDialog } from "./AcceptanceDialog";
 import { analyticsSessionId, discountProps, track } from "@/lib/analytics";
+import { currentReferral } from "@/lib/referral";
 import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { policyholderSchema, type Policyholder } from "@/domain/schemas";
@@ -111,6 +112,7 @@ export function CheckoutForm({
         policyholder: parsed.data,
         consents: { terms, dataProcessing: data, marketing },
         kyc: kycCheck.clean,
+        referralCode: currentReferral() ?? undefined,
       });
       if (result.acceptance) {
         setAcceptance(result);

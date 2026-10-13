@@ -70,6 +70,10 @@ function RuleForm({ rule, idPrefix }: { rule?: DiscountRule; idPrefix: string })
           <input type="checkbox" name="enabled" defaultChecked={rule?.enabled ?? true} className="size-5 accent-brand" />
           Activa
         </label>
+        <label className="flex min-h-11 items-center gap-2">
+          <input type="checkbox" name="requires" defaultChecked={rule?.requires === "invitacion"} className="size-5 accent-brand" />
+          Solo con código de invitación
+        </label>
       </fieldset>
     </ActionForm>
   );

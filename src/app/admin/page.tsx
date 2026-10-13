@@ -14,6 +14,7 @@ import {
   FunnelView,
   KpiCards,
   LeadList,
+  ReferralLine,
   OrdersTable,
   OutboxList,
   PqrList,
@@ -94,6 +95,7 @@ export default async function Page() {
 
       <section className="space-y-3" aria-labelledby="oportunidades">
         <SectionTitle id="oportunidades" action={exportLink("oportunidades", "Exportar oportunidades (CSV)")}>Oportunidades</SectionTitle>
+        <ReferralLine referrals={snap.referrals} />
         <LeadList
           leads={snap.leads}
           savedQuotes={snap.savedQuotes}

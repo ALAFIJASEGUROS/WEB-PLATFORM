@@ -32,6 +32,14 @@ export interface DiscountRule {
   /** Vigencia en fechas ISO (inclusive). */
   validFrom?: string;
   validUntil?: string;
+  /** Condición extra: "invitacion" solo aplica si la persona llegó con un código de invitación válido. */
+  requires?: "invitacion";
+}
+
+/** Datos de la cotización que habilitan reglas condicionadas. */
+export interface DiscountContext {
+  /** La persona llegó con un código de invitación válido. */
+  referral?: boolean;
 }
 
 export interface DiscountSettings {
@@ -76,6 +84,16 @@ export const DEFAULT_DISCOUNT_RULES: DiscountRule[] = [
     vehicleTypes: ["moto"],
   },
   {
+    id: "plataforma-invitacion",
+    insurerId: "*",
+    label: "Descuento por invitación",
+    source: "plataforma",
+    kind: "valor",
+    magnitude: 25_000,
+    enabled: true,
+    requires: "invitacion",
+  },
+  {
     id: "plataforma-bienvenida",
     insurerId: "*",
     label: "Bono de bienvenida SeguAlaFija",
@@ -86,8 +104,9 @@ export const DEFAULT_DISCOUNT_RULES: DiscountRule[] = [
   },
 ];
 
-function applies(rule: DiscountRule, offer: Offer, today: string) {
+function applies(rule: DiscountRule, offer: Offer, today: string, ctx: DiscountContext) {
   if (!rule.enabled || rule.magnitude <= 0) return false;
+  if (rule.requires === "invitacion" && !ctx.referral) return false;
   if (rule.insurerId !== "*" && rule.insurerId !== offer.insurerId) return false;
   if (rule.vehicleTypes?.length && !rule.vehicleTypes.includes(offer.vehicleType)) return false;
   if (rule.planCodes?.length && !rule.planCodes.includes(offer.id.split(":")[1])) return false;
@@ -114,12 +133,13 @@ export function applyDiscounts(
   rules: DiscountRule[],
   settings: DiscountSettings,
   today = new Date().toISOString().slice(0, 10),
+  ctx: DiscountContext = {},
 ): Offer {
   const base = offer.listPremium ?? offer.annualPremium;
   if (!settings.enabled) return offer;
   const best = new Map<DiscountSource, AppliedDiscount>();
   for (const rule of rules) {
-    if (!applies(rule, offer, today)) continue;
+    if (!applies(rule, offer, today, ctx)) continue;
     const amount = ruleAmount(rule, base);
     if (amount > (best.get(rule.source)?.amount ?? 0)) {
       best.set(rule.source, { ruleId: rule.id, label: rule.label, source: rule.source, amount });
@@ -143,8 +163,8 @@ export function applyDiscounts(
   return { ...offer, ...priceBreakdown(annual), listPremium: base, discounts: applied };
 }
 
-export function applyDiscountsToAll(offers: Offer[], rules: DiscountRule[], settings: DiscountSettings, today?: string) {
-  return offers.map((o) => applyDiscounts(o, rules, settings, today));
+export function applyDiscountsToAll(offers: Offer[], rules: DiscountRule[], settings: DiscountSettings, today?: string, ctx: DiscountContext = {}) {
+  return offers.map((o) => applyDiscounts(o, rules, settings, today, ctx));
 }
 
 export const discountTotal = (o: Pick<Offer, "discounts">) => (o.discounts ?? []).reduce((s, d) => s + d.amount, 0);
@@ -161,6 +181,7 @@ export function describeRule(r: DiscountRule) {
     r.vehicleTypes?.length && r.vehicleTypes.join("/"),
     r.planCodes?.length && `planes ${r.planCodes.join(", ")}`,
     (r.validFrom || r.validUntil) && `vigencia ${r.validFrom ?? "…"} a ${r.validUntil ?? "…"}`,
+    r.requires === "invitacion" && "solo con código de invitación",
     `asume ${r.source}`,
   ];
   return parts.filter(Boolean).join(" · ");
