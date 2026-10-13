@@ -10,6 +10,7 @@ import { useCompare, useHydrated, useQuoteResponse } from "@/lib/quote-store";
 import { ButtonLink, InsurerLogo } from "@/components/ui";
 import { discountProps, track } from "@/lib/analytics";
 import { useUiVariant } from "@/lib/experiments";
+import { formatScore, reputationFor } from "@/insurers/reputation";
 
 function Yes({ ok }: { ok: boolean }) {
   return ok ? (
@@ -55,6 +56,7 @@ export function CompareView() {
   const topScore = bestBy((o) => o.score, 1);
   const lowDed = bestBy((o) => o.deductiblePct, -1);
   const topRc = bestBy((o) => o.rcLimit, 1);
+  const topService = bestBy((o) => reputationFor(o.insurerId)?.score ?? 0, 1);
 
   // `value` sirve para detectar si la fila cambia entre las opciones ("Solo diferencias").
   const allRows: { label: string; value: (o: ScoredOffer) => string | number | boolean; render: (o: ScoredOffer) => React.ReactNode }[] = [
@@ -64,6 +66,14 @@ export function CompareView() {
       label: "Descuento",
       value: (o) => (o.discounts ?? []).map((d) => d.ruleId).join(),
       render: (o) => (o.discounts?.length ? o.discounts.map((d) => `${d.label} (−${formatCOP(d.amount)})`).join(", ") : "—"),
+    },
+    {
+      label: "Servicio de la aseguradora",
+      value: (o) => reputationFor(o.insurerId)?.score ?? 0,
+      render: (o) => {
+        const r = reputationFor(o.insurerId);
+        return r ? best(topService, o, <span>{formatScore(r.score)} / 5</span>) : "—";
+      },
     },
     { label: "Afinidad contigo", value: (o) => o.score, render: (o) => best(topScore, o, <span className="font-bold text-brand">{o.score}%</span>) },
     { label: "Deducible", value: (o) => o.deductiblePct, render: (o) => best(lowDed, o, o.deductiblePct ? `${o.deductiblePct}%` : "Sin deducible") },

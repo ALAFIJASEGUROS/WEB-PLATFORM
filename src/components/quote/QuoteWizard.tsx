@@ -96,11 +96,20 @@ function Wizard({ type }: { type: VehicleType }) {
     const p = normalizePlate(params.get("placa") ?? "");
     return plateType(p) === type ? { plate: p, origin: params.get("origen") ?? "enlace" } : null;
   });
-  useEffect(() => track("cotizacion_iniciada", { tipo: type, ...(fromHome && { origen: fromHome.origin }) }), [type, fromHome]);
+  // Marca y línea elegidas en otra página (?marca=…&modelo=…): se abre la búsqueda sin placa con esos datos.
+  const [fromModel] = useState(() => {
+    const brand = params.get("marca") ?? "";
+    const model = params.get("modelo") ?? "";
+    return !fromHome && findModel(type, brand, model) ? { brand, model, origin: params.get("origen") ?? "enlace" } : null;
+  });
+  useEffect(
+    () => track("cotizacion_iniciada", { tipo: type, ...((fromHome ?? fromModel) && { origen: (fromHome ?? fromModel)!.origin }) }),
+    [type, fromHome, fromModel],
+  );
   // Reanudar una cotización previa del mismo tipo (salvo que llegue una placa nueva).
   const [prev] = useState(() => {
     const p = quoteStore.getRequest();
-    return p && p.vehicle.type === type && !fromHome ? p : null;
+    return p && p.vehicle.type === type && !fromHome && !fromModel ? p : null;
   });
   const noun = type === "auto" ? "carro" : "moto";
   const [step, setStep] = useState(0);
@@ -109,12 +118,12 @@ function Wizard({ type }: { type: VehicleType }) {
 
   // Paso 1
   const [plate, setPlate] = useState(fromHome?.plate ?? prev?.vehicle.plate ?? "");
-  const [manual, setManual] = useState(false);
+  const [manual, setManual] = useState(!!fromModel);
   const [vehicle, setVehicle] = useState<Vehicle | null>(prev?.vehicle ?? null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
+  const [brand, setBrand] = useState(fromModel?.brand ?? "");
+  const [model, setModel] = useState(fromModel?.model ?? "");
   const [year, setYear] = useState("");
 
   // Paso 2
