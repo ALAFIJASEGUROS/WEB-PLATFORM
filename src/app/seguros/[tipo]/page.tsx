@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { formatCOP } from "@/domain/labels";
 import { estimatePrice } from "@/insurers/estimate";
 import { CURRENT_YEAR } from "@/vehicles/lookup";
-import { modelPages, modelPath, SLUG_TYPE } from "@/vehicles/pages";
+import { modelPages, modelPath, SLUG_TYPE, vehicleName } from "@/vehicles/pages";
 
 export const dynamicParams = false;
 export const generateStaticParams = () => [{ tipo: "carro" }, { tipo: "moto" }];
@@ -39,7 +39,7 @@ export default async function Page({ params }: PageProps<"/seguros/[tipo]">) {
                   return (
                     <li key={p.model}>
                       <Link href={modelPath(p)} className="flex items-center justify-between gap-3 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)] hover:ring-2 hover:ring-brand">
-                        <span className="font-semibold text-heading">{p.brand} {p.model}</span>
+                        <span className="font-semibold text-heading">{vehicleName(p.brand, p.model)}</span>
                         {e && <span className="text-sm text-muted">desde {formatCOP(e.min)}</span>}
                       </Link>
                     </li>

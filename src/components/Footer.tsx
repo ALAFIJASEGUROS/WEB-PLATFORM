@@ -28,6 +28,7 @@ export function Footer() {
           <Link className="block text-muted hover:text-heading" href="/siniestros">¿Tuviste un siniestro?</Link>
           <Link className="block text-muted hover:text-heading" href="/seguros/carro">Seguro de carro por marca</Link>
           <Link className="block text-muted hover:text-heading" href="/seguros/moto">Seguro de moto por marca</Link>
+          <Link className="block text-muted hover:text-heading" href="/flotas">Seguros para flotas</Link>
           <Link className="block text-muted hover:text-heading" href="/calculadoras">Calculadoras</Link>
           <Link className="block text-muted hover:text-heading" href="/glosario">Glosario</Link>
           <Link className="block text-muted hover:text-heading" href="/aseguradoras">Calificación de aseguradoras</Link>

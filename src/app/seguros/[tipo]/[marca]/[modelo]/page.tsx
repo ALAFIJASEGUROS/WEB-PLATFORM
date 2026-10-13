@@ -7,7 +7,7 @@ import { ButtonLink, SimulatedDataNotice } from "@/components/ui";
 import { formatCOP } from "@/domain/labels";
 import { estimatePrice } from "@/insurers/estimate";
 import { CURRENT_YEAR, findModel } from "@/vehicles/lookup";
-import { findModelPage, modelPages, modelPath, type ModelPage } from "@/vehicles/pages";
+import { findModelPage, modelPages, modelPath, vehicleName, type ModelPage } from "@/vehicles/pages";
 
 export const dynamicParams = false;
 export const generateStaticParams = () => modelPages().map(({ tipo, marca, modelo }) => ({ tipo, marca, modelo }));
@@ -29,8 +29,8 @@ export async function generateMetadata({ params }: PageProps<"/seguros/[tipo]/[m
   if (!p) return {};
   const e = estimate(p);
   return {
-    title: `Seguro para ${p.brand} ${p.model}: precios y coberturas`,
-    description: `Seguro para ${p.tipo} ${p.brand} ${p.model} en Colombia desde ${e ? formatCOP(e.min) : ""} al año. Compara aseguradoras, coberturas y deducibles, y compra en línea.`,
+    title: `Seguro para ${vehicleName(p.brand, p.model)}: precios y coberturas`,
+    description: `Seguro para ${p.tipo} ${vehicleName(p.brand, p.model)} en Colombia desde ${e ? formatCOP(e.min) : ""} al año. Compara aseguradoras, coberturas y deducibles, y compra en línea.`,
     alternates: { canonical: modelPath(p) },
   };
 }
@@ -39,7 +39,7 @@ export default async function Page({ params }: PageProps<"/seguros/[tipo]/[marca
   const p = await load(params);
   if (!p) notFound();
   const e = estimate(p)!;
-  const name = `${p.brand} ${p.model}`;
+  const name = vehicleName(p.brand, p.model);
   const noun = p.type === "auto" ? "carro" : "moto";
   const quoteHref = `/cotizar/${p.type}?marca=${encodeURIComponent(p.brand)}&modelo=${encodeURIComponent(p.model)}&origen=seo`;
   const newValue = findModel(p.type, p.brand, p.model)!.newValue;
@@ -113,7 +113,7 @@ export default async function Page({ params }: PageProps<"/seguros/[tipo]/[marca
             {siblings.map((s) => (
               <li key={s.model}>
                 <Link href={modelPath(s)} className="inline-flex min-h-11 items-center rounded-full border-2 border-line px-4 text-sm font-semibold text-heading hover:border-brand">
-                  {s.brand} {s.model}
+                  {vehicleName(s.brand, s.model)}
                 </Link>
               </li>
             ))}

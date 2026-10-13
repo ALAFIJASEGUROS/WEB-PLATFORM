@@ -32,3 +32,7 @@ export function findModelPage(tipo: string, marca: string, modelo: string) {
 }
 
 export const modelPath = (p: Pick<ModelPage, "tipo" | "marca" | "modelo">) => `/seguros/${p.tipo}/${p.marca}/${p.modelo}`;
+
+/** "Mazda 2" en lugar de "Mazda Mazda 2" cuando la línea ya incluye la marca. */
+export const vehicleName = (brand: string, model: string) =>
+  model.toLowerCase().startsWith(brand.toLowerCase()) ? model : `${brand} ${model}`;
