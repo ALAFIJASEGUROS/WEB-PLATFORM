@@ -9,7 +9,8 @@ import { DEFAULT_PREFERENCES, type MessageType, type Preferences } from "@/domai
 // el único punto de acceso a datos, de modo que reemplazarlo por PostgreSQL
 // (Supabase) no cambia el resto de la app. Los datos se pierden al reiniciar.
 
-export type OrderStatus = "pendiente" | "aprobada" | "rechazada" | "emitida" | "retractada" | "error";
+import type { OrderStatus } from "@/domain/admin";
+export type { OrderStatus };
 
 export interface Order {
   id: string;
@@ -44,6 +45,8 @@ export interface Order {
   consentEvidence: ConsentRecord[];
   /** Historial de cambios de estado (ver order-state.ts). */
   history?: StatusChange[];
+  /** Reembolso registrado desde /admin. */
+  refund?: { amount: number; at: string; by: string; reason: string };
 }
 
 /**

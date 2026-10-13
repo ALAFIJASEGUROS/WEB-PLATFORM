@@ -7,6 +7,7 @@ import { db, newId } from "@/server/db";
 import { dispatchDueReminders } from "@/server/reminders";
 import { updatePqr } from "@/server/pqr";
 import { reconcilePayments } from "@/server/reconciliation";
+import { adminRefund, adminRetryIssuance, CheckoutError } from "@/server/orders";
 import type { FormState } from "../cuenta/actions";
 import { describeRule, type DiscountRule } from "@/domain/discounts";
 import { setExperimentActive } from "@/server/experiments";
@@ -167,4 +168,36 @@ export async function toggleExperimentAction(id: string, active: boolean) {
   setExperimentActive(id, active);
   audit(admin.email, active ? "Inició experimento" : "Detuvo experimento", id);
   revalidatePath("/admin");
+}
+
+// ── Órdenes ────────────────────────────────────────────────────────────────
+
+export async function retryIssuanceAction(orderId: string): Promise<FormState> {
+  const admin = await requireAdmin();
+  try {
+    const order = await adminRetryIssuance(orderId, admin.email);
+    audit(admin.email, "Reintentó emisión", `${order.reference} → ${order.status}`);
+  } catch (e) {
+    if (e instanceof CheckoutError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+const refundSchema = z.object({ reason: z.string().trim().min(5).max(300) });
+
+export async function refundOrderAction(orderId: string, _: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const parsed = refundSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { error: "Escribe el motivo del reembolso (mínimo 5 caracteres)." };
+  try {
+    const order = adminRefund(orderId, admin.email, parsed.data.reason);
+    audit(admin.email, "Registró reembolso", `${order.reference} · ${parsed.data.reason}`);
+  } catch (e) {
+    if (e instanceof CheckoutError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/admin", "layout");
+  return { ok: true };
 }

@@ -453,3 +453,53 @@ export function confirmAcceptance(
 export function isAccepted(order: Order) {
   return !!order.acceptance?.acceptedAt;
 }
+
+// ── Gestión manual desde /admin ────────────────────────────────────────────
+
+/**
+ * Reintenta la emisión de una orden pagada que quedó sin póliza. Si la orden
+ * está en error por la emisión (no por el monto), vuelve a "aprobada".
+ */
+export async function adminRetryIssuance(orderId: string, actor: string) {
+  const d = db();
+  const order = d.orders.get(orderId);
+  if (!order) throw new CheckoutError("Orden no encontrada.");
+  const job = d.issuanceJobs.get(orderId);
+  if (order.policyId) throw new CheckoutError("La orden ya tiene póliza.");
+  if (order.status === "error") {
+    if (job?.status !== "fallida") throw new CheckoutError("El error no fue de emisión: revisa el monto y reembolsa si aplica.");
+    transition(order, "aprobada", `Reintento manual de ${actor}`);
+  } else if (order.status !== "aprobada") {
+    throw new CheckoutError("Solo se reintentan órdenes pagadas sin póliza.");
+  }
+  d.issuanceJobs.set(order.id, { orderId: order.id, attempts: 0, nextAttemptAt: Date.now(), status: "pendiente" });
+  await processIssuance(order.id);
+  return order;
+}
+
+/**
+ * Registra el reembolso de una orden pagada que no se pudo emitir (pasa a
+ * "reembolsada") o de una póliza retractada (queda la constancia).
+ */
+export function adminRefund(orderId: string, actor: string, reason: string) {
+  const order = db().orders.get(orderId);
+  if (!order) throw new CheckoutError("Orden no encontrada.");
+  if (order.refund) throw new CheckoutError("Esta orden ya tiene un reembolso registrado.");
+  if (order.status === "aprobada" || order.status === "error") {
+    if (order.policyId) throw new CheckoutError("La orden tiene póliza: usa el retracto o la revocación.");
+    transition(order, "reembolsada", reason);
+  } else if (order.status !== "retractada") {
+    throw new CheckoutError("Solo se reembolsan órdenes pagadas sin póliza o retractadas.");
+  }
+  const amount = order.amountInCents / 100;
+  order.refund = { amount, at: new Date().toISOString(), by: actor, reason };
+  db().issuanceJobs.delete(order.id);
+  sendMessage({
+    to: order.policyholder.email,
+    channel: "email",
+    kind: "transaccional",
+    subject: `Te devolvimos ${formatCOP(amount)} (${order.reference})`,
+    body: `Hola ${order.policyholder.firstName}, registramos la devolución de ${formatCOP(amount)} por el mismo medio de pago. Puede tardar algunos días hábiles en verse reflejada, según tu banco.`,
+  });
+  return order;
+}

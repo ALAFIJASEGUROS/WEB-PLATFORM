@@ -6,26 +6,8 @@ import { providerById } from "./payments";
 /** Tiempo tras el cual un pago pendiente se considera atascado. */
 const STALE_MS = 30 * 60 * 1000;
 
-export type IssueKind =
-  | "pago_pendiente"
-  | "sin_aceptacion"
-  | "aprobada_sin_poliza"
-  | "error_emision"
-  | "emision_en_reintento"
-  | "cuota_pendiente";
-
-export interface ReconciliationIssue {
-  reference: string;
-  kind: IssueKind;
-  detail: string;
-}
-
-export interface ReconciliationReport {
-  at: string;
-  checked: number;
-  updated: number;
-  issues: ReconciliationIssue[];
-}
+import type { IssueKind, ReconciliationIssue, ReconciliationReport } from "@/domain/admin";
+export type { IssueKind, ReconciliationIssue, ReconciliationReport };
 
 const g = globalThis as unknown as { __safReconciliation?: ReconciliationReport };
 export const lastReconciliation = () => g.__safReconciliation ?? null;

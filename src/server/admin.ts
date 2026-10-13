@@ -42,13 +42,8 @@ export async function requireAdmin(role: AdminRole = "admin") {
 
 // ── Bitácora de auditoría ──────────────────────────────────────────────────
 
-export interface AuditEntry {
-  id: string;
-  at: string;
-  actor: string;
-  action: string;
-  detail: string;
-}
+import type { AuditEntry } from "@/domain/admin";
+export type { AuditEntry };
 
 const g = globalThis as unknown as { __safAudit?: AuditEntry[] };
 export const auditLog = () => (g.__safAudit ??= []);
