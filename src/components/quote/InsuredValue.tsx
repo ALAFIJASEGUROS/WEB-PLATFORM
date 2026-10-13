@@ -2,6 +2,7 @@
 
 import { formatCOP } from "@/domain/labels";
 import { VALUE_ADJUST_RANGE } from "@/vehicles/lookup";
+import { Term } from "@/components/Term";
 
 /** Ajuste del valor asegurado con un control deslizante, explicando su efecto. */
 export function InsuredValue({
@@ -19,7 +20,10 @@ export function InsuredValue({
   return (
     <div className="space-y-2 rounded-2xl border border-line p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor="insured-value" className="text-sm font-semibold text-heading">Valor asegurado</label>
+        <span className="text-sm font-semibold text-heading">
+          <label htmlFor="insured-value">Valor asegurado</label>{" "}
+          <span className="text-xs font-normal text-muted">(<Term id="valorAsegurado">¿qué es?</Term>)</span>
+        </span>
         <p className="text-lg font-extrabold text-heading">{formatCOP(value)}</p>
       </div>
       <input

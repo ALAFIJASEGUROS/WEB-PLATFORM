@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { ArrowLeft, Check, Minus } from "lucide-react";
 import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS, SERVICE_KEYS } from "@/domain/types";
@@ -22,6 +23,7 @@ export function CompareView() {
   const hydrated = useHydrated();
   const priceInButton = useUiVariant("boton-oferta-1") === "comprar-precio";
   const ids = useCompare();
+  const [onlyDiff, setOnlyDiff] = useState(false);
   const response = useQuoteResponse();
   const all = response?.offers ?? [];
   const offers = ids
@@ -54,30 +56,99 @@ export function CompareView() {
   const lowDed = bestBy((o) => o.deductiblePct, -1);
   const topRc = bestBy((o) => o.rcLimit, 1);
 
-  const rows: { label: string; render: (o: ScoredOffer) => React.ReactNode }[] = [
-    { label: "Precio anual", render: (o) => best(cheapest, o, <strong>{formatCOP(o.annualPremium)}</strong>) },
-    { label: "Precio mensual", render: (o) => formatCOP(o.monthlyPremium) },
-    { label: "Descuento", render: (o) => (o.discounts?.length ? o.discounts.map((d) => `${d.label} (−${formatCOP(d.amount)})`).join(", ") : "—") },
-    { label: "Afinidad contigo", render: (o) => best(topScore, o, <span className="font-bold text-brand">{o.score}%</span>) },
-    { label: "Deducible", render: (o) => best(lowDed, o, o.deductiblePct ? `${o.deductiblePct}%` : "Sin deducible") },
-    { label: "Límite RC", render: (o) => best(topRc, o, formatMillions(o.rcLimit)) },
+  // `value` sirve para detectar si la fila cambia entre las opciones ("Solo diferencias").
+  const allRows: { label: string; value: (o: ScoredOffer) => string | number | boolean; render: (o: ScoredOffer) => React.ReactNode }[] = [
+    { label: "Precio anual", value: (o) => o.annualPremium, render: (o) => best(cheapest, o, <strong>{formatCOP(o.annualPremium)}</strong>) },
+    { label: "Precio mensual", value: (o) => o.monthlyPremium, render: (o) => formatCOP(o.monthlyPremium) },
+    {
+      label: "Descuento",
+      value: (o) => (o.discounts ?? []).map((d) => d.ruleId).join(),
+      render: (o) => (o.discounts?.length ? o.discounts.map((d) => `${d.label} (−${formatCOP(d.amount)})`).join(", ") : "—"),
+    },
+    { label: "Afinidad contigo", value: (o) => o.score, render: (o) => best(topScore, o, <span className="font-bold text-brand">{o.score}%</span>) },
+    { label: "Deducible", value: (o) => o.deductiblePct, render: (o) => best(lowDed, o, o.deductiblePct ? `${o.deductiblePct}%` : "Sin deducible") },
+    { label: "Límite RC", value: (o) => o.rcLimit, render: (o) => best(topRc, o, formatMillions(o.rcLimit)) },
     ...COVERAGE_KEYS.filter((k) => k !== "rc").map((k) => ({
       label: COVERAGE_LABELS[k],
+      value: (o: ScoredOffer) => o.coverages[k],
       render: (o: ScoredOffer) => <Yes ok={o.coverages[k]} />,
     })),
     ...SERVICE_KEYS.map((s) => ({
       label: SERVICE_LABELS[s],
+      value: (o: ScoredOffer) => o.services.includes(s),
       render: (o: ScoredOffer) => <Yes ok={o.services.includes(s)} />,
     })),
   ];
+  const differs = (r: (typeof allRows)[number]) => new Set(offers.map(r.value)).size > 1;
+  const rows = onlyDiff ? allRows.filter(differs) : allRows;
+  const hidden = allRows.length - rows.length;
+  const buy = (o: ScoredOffer, className: string) => (
+    <ButtonLink
+      href={`/checkout?oferta=${encodeURIComponent(o.id)}`}
+      className={className}
+      onClick={() => track("oferta_elegida", { aseguradora: o.insurerId, plan: o.planName, recomendado: o.labels.includes("recomendado"), desde: "comparador", ...discountProps(o) })}
+    >
+      {priceInButton ? `Comprar · ${formatCOP(o.annualPremium)}` : "Lo quiero"}
+    </ButtonLink>
+  );
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
       <Link href="/resultados" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading">
         <ArrowLeft className="size-4" aria-hidden /> Volver a opciones
       </Link>
-      <h1 className="mb-4 text-2xl font-extrabold tracking-tight text-heading">Comparación</h1>
-      <div className="overflow-x-auto rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)]">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-extrabold tracking-tight text-heading">Comparación</h1>
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-heading">
+          <input type="checkbox" checked={onlyDiff} onChange={(e) => setOnlyDiff(e.target.checked)} className="size-5 accent-[var(--color-brand)]" />
+          Solo diferencias
+        </label>
+      </div>
+      {onlyDiff && hidden > 0 && (
+        <p className="mb-3 text-sm text-muted">Ocultamos {hidden} {hidden === 1 ? "fila igual" : "filas iguales"} en todas las opciones.</p>
+      )}
+
+      {/* Celular: una tarjeta por atributo con el valor de cada opción. */}
+      <div className="space-y-3 md:hidden">
+        <ol className="grid gap-2" aria-label="Opciones comparadas">
+          {offers.map((o, i) => (
+            <li key={o.id} className="flex items-center gap-3 rounded-2xl bg-surface p-3 shadow-[var(--shadow-card)]">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand">{i + 1}</span>
+              <InsurerLogo id={o.insurerId} name={o.insurerName} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-bold text-heading">{o.planName}</span>
+                <span className="block text-xs text-muted">{o.insurerName}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+        {rows.map((r) => (
+          <section key={r.label} className="rounded-2xl bg-surface p-3 shadow-[var(--shadow-card)]" aria-label={r.label}>
+            <h2 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">{r.label}</h2>
+            <dl className="space-y-1">
+              {offers.map((o, i) => (
+                <div key={o.id} className="flex items-center justify-between gap-3 text-sm">
+                  <dt className="flex min-w-0 items-center gap-2 text-ink">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[11px] font-bold text-brand">{i + 1}</span>
+                    <span className="truncate">{o.planName}</span>
+                  </dt>
+                  <dd className="shrink-0 text-right text-ink">{r.render(o)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+        <div className="grid gap-2">
+          {offers.map((o, i) => (
+            <div key={o.id} className="flex items-center gap-3">
+              <span className="w-24 shrink-0 truncate text-sm font-semibold text-heading">{i + 1}. {o.planName}</span>
+              {buy(o, "flex-1 px-3")}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] md:block">
         <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: 104 + offers.length * 120 }}>
           <caption className="sr-only">Comparación de seguros seleccionados</caption>
           <thead>
@@ -110,15 +181,7 @@ export function CompareView() {
             <tr className="border-t border-line">
               <td className="sticky left-0 bg-surface" />
               {offers.map((o) => (
-                <td key={o.id} className="p-2 sm:p-3">
-                  <ButtonLink
-                    href={`/checkout?oferta=${encodeURIComponent(o.id)}`}
-                    className="w-full px-3"
-                    onClick={() => track("oferta_elegida", { aseguradora: o.insurerId, plan: o.planName, recomendado: o.labels.includes("recomendado"), desde: "comparador", ...discountProps(o) })}
-                  >
-                    {priceInButton ? `Comprar · ${formatCOP(o.annualPremium)}` : "Lo quiero"}
-                  </ButtonLink>
-                </td>
+                <td key={o.id} className="p-2 sm:p-3">{buy(o, "w-full px-3")}</td>
               ))}
             </tr>
           </tbody>

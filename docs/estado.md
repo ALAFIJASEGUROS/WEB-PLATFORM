@@ -1,10 +1,10 @@
-# Estado del proyecto · v0.13.0 (2026-10-07)
+# Estado del proyecto · v0.14.0 (2026-10-13)
 
 Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está en el
 [backlog](04-backlog.md) y el historial de cambios en el [CHANGELOG](../CHANGELOG.md).
 
 ## Cómo verlo
-- **Demo estática:** https://alafijaseguros.github.io/WEB-PLATFORM/. Se publica desde `main`. Sin servidor: la compra, la póliza y "Mis seguros" se simulan en el navegador.
+- **Demo estática:** https://alafijaseguros.github.io/WEB-PLATFORM/. Se publica desde `main`. Sin servidor: la compra, la póliza y "Mis seguros" se simulan en el navegador; `/admin` muestra un panel de solo lectura con datos simulados.
 - **Versión completa:** `npm run dev` (ver README). Incluye cuenta, admin, PQR, recordatorios y pagos.
 - **Versión desplegada:** visible en el footer (`vX.Y.Z · commit · destino`).
 
@@ -15,14 +15,14 @@ Resumen ejecutivo de lo construido y lo pendiente. El detalle por historia está
 | Cotización | Inicio con la placa desde la portada. Cilindraje de la moto y valor asegurado ajustable (±20%). Placa colombiana o marca, línea y año. Cuestionario de 5 pasos (uso, parqueo, kilometraje, conductores, financiación, prioridad o pesos, deducible, servicios, siniestros) | E2E de compra |
 | Aseguradoras | Adaptadores simulados de SURA y Seguros Bolívar detrás de `InsurerAdapter`. Agregador con timeouts y resultados parciales. Caché de 15 min | Pruebas unitarias del agregador y la caché |
 | Recomendación | Elegibilidad (uso y financiación) antes del puntaje, puntaje de afinidad (precio relativo, cobertura, servicios) con pesos editables, empate técnico, explicaciones y versión del algoritmo. Página "Cómo funciona" | Pruebas de puntaje y E2E |
-| Resultados | Descuentos y tarifas especiales con precio de lista tachado, recomendación destacada, filtros, comparador de 3 con "Mejor" por fila, ficha con exclusiones, IVA y condicionado. Compartir por enlace o WhatsApp | E2E y axe |
+| Resultados | Descuentos y tarifas especiales con precio de lista tachado, recomendación destacada, "Afinar" para reordenar sin volver al cuestionario, filtros (panel inferior en el celular), glosario con ayudas en contexto, comparador de 3 (apilado en el celular, "Solo diferencias") con "Mejor" por fila, ficha con exclusiones, IVA y condicionado. Compartir por enlace o WhatsApp | E2E y axe |
 | Compra | Checkout sin registro, revalidación del precio, preguntas SARLAFT por aseguradora, aceptación con código por correo, consentimientos separados con evidencia, Wompi (Web Checkout + webhook firmado) detrás de un registro de pasarelas, o pasarela simulada, pago anual o 12 cuotas | Pruebas de órdenes y E2E |
 | Póliza | Estados de orden monótonos, emisión asíncrona con reintentos e idempotencia, certificado imprimible, retracto en 5 días hábiles | Pruebas de emisión y retracto |
 | Cuenta | Acceso con código por correo, reclamación de compras como invitado, billetera de pólizas y vehículos (con lectura de pólizas en PDF), pago de cuotas, sugerencia de renovación con ahorro | Pruebas y E2E |
 | Comunicaciones | Centro de preferencias por tipo de mensaje y canal. Recordatorios de póliza, SOAT, tecnomecánica y cuotas, y avisos de mora (Ley 2300: horario, festivos, un contacto al día). Centro de ofertas con consentimiento | Pruebas de recordatorios |
 | Atención | Guía de siniestros por aseguradora. PQR con radicado y plazo de 15 días hábiles. Sección del Defensor del Consumidor Financiero | Pruebas de PQR |
-| Administración | Descuentos por aseguradora (prender, apagar, magnitud, tope, vigencia y tope global) y su impacto en la conversión, experimentos A/B de pesos y de interfaz con valor p, roles `admin` y `analista` por correo, órdenes, recaudo, conciliación de pagos, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
-| Calidad | CI con lint, typecheck, 84 pruebas unitarias, build, 33 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
+| Administración | Descuentos por aseguradora (prender, apagar, magnitud, tope, vigencia y tope global) y su impacto en la conversión, experimentos A/B de pesos y de interfaz con valor p, roles `admin` y `analista` por correo, órdenes con detalle, reintento de emisión y reembolsos, exportación a CSV, gráfico de recaudo diario, conciliación de pagos, embudo de conversión, campañas, PQR, bitácora y bandeja de mensajes | Pruebas de roles |
+| Calidad | CI con lint, typecheck, 92 pruebas unitarias, build, 39 E2E con auditoría de accesibilidad (WCAG 2.2 AA, claro y oscuro) | GitHub Actions |
 | Diseño | Mobile-first, app instalable (PWA) con página sin conexión, modo oscuro con selector, tokens de color con contraste AA, versión visible en el footer | axe |
 
 ## Lo pendiente

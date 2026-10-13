@@ -10,6 +10,7 @@ import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/do
 import { discountTotal } from "@/domain/discounts";
 import { Badge, Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
 import { discountProps, track } from "@/lib/analytics";
+import { Term } from "@/components/Term";
 
 const LABELS = {
   recomendado: { text: "Recomendado para ti", tone: "brand" },
@@ -82,7 +83,7 @@ export function OfferCard({
             </p>
           </div>
           <div className="text-right text-xs text-muted md:border-t md:border-line md:pt-3 md:text-left">
-            <p>Deducible</p>
+            <p><Term id="deducible" align="right">Deducible</Term></p>
             <p className="text-sm font-bold text-heading">
               {offer.deductiblePct === 0 ? "Sin deducible" : `${offer.deductiblePct}% · mín ${offer.deductibleMinSmmlv} SMMLV`}
             </p>

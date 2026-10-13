@@ -221,6 +221,17 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-20.3 | Como usuario quiero ajustar el valor asegurado y entender su efecto | ✅ | S | MVP | 3 |
 | HU-20.4 | Como equipo quiero un kit para probar con usuarios de carro, moto y domicilios | ✅ (falta hacer las sesiones) | M | MVP | 2 |
 
+## E21 · Operación y experiencia (solo código)
+| ID | Historia | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- |
+| HU-21.1 | Como equipo quiero ver el admin en la demo de GitHub Pages, de solo lectura y con datos simulados | ✅ | S | MVP | 3 |
+| HU-21.2 | Como operador quiero ver el detalle de una orden, reintentar su emisión y registrar reembolsos | ✅ | M | MVP | 5 |
+| HU-21.3 | Como analista quiero exportar órdenes, PQR y eventos a CSV | ✅ | S | MVP | 2 |
+| HU-21.4 | Como equipo quiero ver el recaudo diario y la conversión por variante en gráficos | ✅ | S | MVP | 3 |
+| HU-21.5 | Como usuario de celular quiero filtrar en un panel inferior y comparar opciones apiladas | ✅ | M | MVP | 3 |
+| HU-21.6 | Como usuario quiero entender los términos de seguros donde aparecen | ✅ | M | MVP | 2 |
+| HU-21.7 | Como usuario quiero ajustar mis prioridades en los resultados sin volver al cuestionario | ✅ | M | MVP | 3 |
+
 ---
 
 ## Sprint 3 (completado)
@@ -260,6 +271,11 @@ el botón de compra, y experimentos A/B de interfaz.
 
 ## Sprint 11 (completado)
 HU-20.1 a HU-20.4: cilindraje de la moto, peso del hurto en motos, valor asegurado ajustable y kit de pruebas con usuarios.
+
+## Sprint 12 (completado)
+HU-21.1 a HU-21.7: admin de demostración en GitHub Pages, gestión de órdenes (detalle, reintento de emisión y
+reembolsos), exportación a CSV, gráfico de recaudo y conversión por variante, filtros en panel inferior y comparador
+apilado en el celular, glosario con ayudas en contexto, y "Afinar" en resultados.
 
 ## Próximo sprint sugerido
 Lo pendiente de solo código está agotado. Lo siguiente depende de terceros o de decisiones del negocio:

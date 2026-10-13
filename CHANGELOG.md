@@ -7,6 +7,19 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 
+## [0.14.0] - 2026-10-13 · Sprint 12 (carro y moto)
+### Agregado
+- Admin de demostración en GitHub Pages (`/admin`): solo lectura, con datos simulados y deterministas, y las mismas vistas del admin real.
+- Detalle de cada orden en el admin: datos de la compra y del tomador, historial de estados, emisión, consentimientos y aceptación. Acciones para reintentar una emisión fallida y registrar un reembolso (nuevo estado `reembolsada`, con correo al cliente y registro en la bitácora).
+- Exportación a CSV de órdenes, PQR y eventos, lista para Excel en español (separador `;`, BOM y protección contra fórmulas). Requiere rol `admin` o `analista` y queda en la bitácora.
+- Gráfico de recaudo diario de pólizas emitidas (últimos 30 días) con tooltip y vista de tabla, y barras de conversión por variante en los experimentos.
+- Resultados en el celular: filtros y orden en un panel inferior, con filtros nuevos de deducible y precio máximo y botón para limpiarlos.
+- Comparador apilado en el celular (una tarjeta por atributo) y opción "Solo diferencias".
+- Glosario (`/glosario`) y ayudas emergentes en contexto para deducible y valor asegurado.
+- "Afinar" en resultados: ajustar los pesos y el deducible aceptado y reordenar las mismas opciones sin volver al cuestionario ni volver a cotizar (evento `pesos_afinados`).
+### Corregido
+- El total del gráfico de recaudo y el KPI cuentan las mismas órdenes (pólizas emitidas).
+
 ## [0.13.0] - 2026-10-07 · Sprint 11 (carro y moto)
 ### Agregado
 - Cilindraje de la moto: viene de la placa o del catálogo, se muestra en el cuestionario y en el resumen, ajusta la tarifa (más de 125 cc y más de 250 cc) y descarta los planes que no aseguran ese cilindraje (por ejemplo, Moto Básico hasta 250 cc), explicando por qué.

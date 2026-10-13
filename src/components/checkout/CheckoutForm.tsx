@@ -10,6 +10,7 @@ import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { policyholderSchema, type Policyholder } from "@/domain/schemas";
 import { formatCOP } from "@/domain/labels";
+import { Term } from "@/components/Term";
 import { useHydrated, useQuoteRequest, useQuoteResponse } from "@/lib/quote-store";
 import { Button, ButtonLink, Card, Field, InsurerLogo, SimulatedDataNotice, inputClass } from "@/components/ui";
 
@@ -296,7 +297,7 @@ export function CheckoutForm({
                   <div className="flex justify-between"><dt className="text-muted">IVA (19%)</dt><dd className="font-semibold">{formatCOP(offer.iva)}</dd></div>
                 </>
               )}
-              <div className="flex justify-between"><dt className="text-muted">Deducible</dt><dd className="font-semibold">{offer.deductiblePct ? `${offer.deductiblePct}%` : "Sin deducible"}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted"><Term id="deducible">Deducible</Term></dt><dd className="font-semibold">{offer.deductiblePct ? `${offer.deductiblePct}%` : "Sin deducible"}</dd></div>
             </dl>
             <div className="border-t border-line pt-4">
               <p className="text-sm text-muted">Pagas hoy</p>
