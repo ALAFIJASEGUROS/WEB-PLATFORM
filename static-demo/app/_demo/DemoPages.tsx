@@ -1,11 +1,29 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Info, ShieldCheck, XCircle } from "lucide-react";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
-import { Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
+import { Badge, Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
+import {
+  AuditList,
+  CampaignList,
+  DiscountRulesList,
+  ExperimentCard,
+  FunnelView,
+  ImpactTable,
+  KpiCards,
+  OrdersTable,
+  OutboxList,
+  PqrList,
+  ReconView,
+  SectionTitle,
+} from "@/components/admin/AdminViews";
+import { SalesChart } from "@/components/admin/SalesChart";
+import { CsvDownload } from "@/components/admin/CsvDownload";
+import { ORDER_COLUMNS, orderCsvRows, PQR_COLUMNS } from "@/components/admin/exports";
+import { demoAdminSnapshot } from "@/lib/demo-admin";
 import { COVERAGE_KEYS } from "@/domain/types";
 import { COVERAGE_LABELS, formatCOP, SERVICE_LABELS } from "@/domain/labels";
 import { useHydrated } from "@/lib/quote-store";
@@ -175,9 +193,74 @@ export function AccountPage() {
 }
 
 export function AdminPage() {
+  const hydrated = useHydrated();
+  // Los datos dependen de la fecha: se generan en el navegador para que el HTML estático no quede desactualizado.
+  const snap = useMemo(() => (hydrated ? demoAdminSnapshot() : null), [hydrated]);
+  if (!snap) return <div className="min-h-[60vh]" aria-busy />;
+  const today = snap.generatedAt.slice(0, 10);
   return (
-    <div className="mx-auto max-w-lg px-4 py-16">
-      <StaticNotice>El panel de administración necesita servidor y no está disponible en la versión estática.</StaticNotice>
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-extrabold text-heading">Administración</h1>
+        <Badge tone="sun">Demo · solo lectura</Badge>
+      </div>
+      <StaticNotice>
+        Panel de demostración con <strong>datos simulados</strong> de los últimos 30 días. En la versión con servidor ves los
+        datos reales y puedes prender descuentos, iniciar experimentos, reintentar emisiones, registrar reembolsos y responder PQR.
+      </StaticNotice>
+
+      <KpiCards kpis={snap.kpis} byInsurer={snap.byInsurer} />
+      <Card className="p-5"><SalesChart days={snap.salesByDay} /></Card>
+
+      <section className="space-y-3" aria-labelledby="embudo">
+        <SectionTitle id="embudo">Embudo de conversión</SectionTitle>
+        <FunnelView funnel={snap.funnel} chosenByInsurer={snap.chosenByInsurer} />
+      </section>
+
+      <section className="space-y-3" aria-labelledby="conciliacion">
+        <SectionTitle id="conciliacion">Conciliación de pagos</SectionTitle>
+        <ReconView report={snap.reconciliation} />
+      </section>
+
+      <section className="space-y-3" aria-labelledby="ordenes">
+        <SectionTitle id="ordenes" action={<CsvDownload filename="segualafija-ordenes-demo.csv" rows={orderCsvRows(snap.orders)} columns={ORDER_COLUMNS} label="Exportar órdenes (CSV)" />}>
+          Órdenes
+        </SectionTitle>
+        <OrdersTable orders={snap.orders.slice(0, 25)} />
+        <p className="text-xs text-muted">Se muestran las 25 más recientes de {snap.orders.length}; el CSV las incluye todas.</p>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="descuentos">
+        <SectionTitle id="descuentos">Descuentos y tarifas especiales</SectionTitle>
+        <DiscountRulesList discounts={snap.discounts} />
+        <ImpactTable rows={snap.discounts.impact} />
+      </section>
+
+      <section className="space-y-3" aria-labelledby="experimentos">
+        <SectionTitle id="experimentos">Experimentos A/B</SectionTitle>
+        {snap.experiments.map((exp) => <ExperimentCard key={exp.id} exp={exp} />)}
+      </section>
+
+      <section className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-heading">Campañas</h2>
+          <CampaignList campaigns={snap.campaigns} />
+        </div>
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-heading">Bandeja de salida (simulada)</h2>
+          <OutboxList outbox={snap.outbox} />
+        </div>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="pqrs">
+        <SectionTitle id="pqrs" action={<CsvDownload filename="segualafija-pqr-demo.csv" rows={snap.pqrs} columns={PQR_COLUMNS} label="Exportar PQR (CSV)" />}>PQR</SectionTitle>
+        <PqrList pqrs={snap.pqrs} today={today} />
+      </section>
+
+      <section className="space-y-3" aria-labelledby="auditoria">
+        <SectionTitle id="auditoria">Bitácora de auditoría</SectionTitle>
+        <AuditList audit={snap.audit} />
+      </section>
     </div>
   );
 }

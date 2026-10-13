@@ -9,10 +9,13 @@ import type { OrderStatus } from "./db";
 export const ORDER_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   pendiente: ["aprobada", "rechazada", "error"],
   rechazada: ["pendiente", "aprobada", "error"],
-  aprobada: ["emitida", "error"],
+  // Desde /admin: si la aseguradora no emite, se devuelve el dinero.
+  aprobada: ["emitida", "error", "reembolsada"],
   emitida: ["retractada"],
   retractada: [],
-  error: [],
+  // Desde /admin: reintentar la emisión (vuelve a aprobada) o reembolsar.
+  error: ["aprobada", "reembolsada"],
+  reembolsada: [],
 };
 
 export interface StatusChange {

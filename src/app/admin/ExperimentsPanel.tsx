@@ -1,86 +1,31 @@
-import { experimentResults, MIN_SAMPLE } from "@/server/analytics";
-import { experiments } from "@/server/experiments";
+import type { AdminSnapshot } from "@/domain/admin";
 import { ALGORITHM_VERSION } from "@/recommendation/scoring";
-import { UI_EXPERIMENTS } from "@/recommendation/experiments";
-import { Badge, Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { ExperimentCard, SectionTitle } from "@/components/admin/AdminViews";
 import { toggleExperimentAction } from "./actions";
 
-const pct = (n: number | null) => (n === null ? "—" : `${(n * 100).toFixed(1)}%`);
-
-export function ExperimentsPanel({ canEdit }: { canEdit: boolean }) {
+export function ExperimentsPanel({ canEdit, experiments }: { canEdit: boolean; experiments: AdminSnapshot["experiments"] }) {
   return (
     <section className="space-y-3" aria-labelledby="experimentos">
-      <h2 id="experimentos" className="text-lg font-bold text-heading">Experimentos A/B</h2>
+      <SectionTitle id="experimentos">Experimentos A/B</SectionTitle>
       <p className="text-sm text-muted">
         Cada sesión cae siempre en la misma variante. Los de pesos solo cambian el orden de las ofertas (no la elegibilidad,
         el precio ni a quien ajustó sus pesos) y se inician o detienen aquí. Los de interfaz prueban textos y diseño de los
         llamados a la acción y se activan en el código. Algoritmo {ALGORITHM_VERSION}.
       </p>
-      {[
-        ...experiments().map((exp) => ({ exp, kind: "pesos" as const })),
-        ...UI_EXPERIMENTS.map((exp) => ({ exp, kind: "interfaz" as const })),
-      ].map(({ exp, kind }) => {
-        const rows = experimentResults(exp);
-        const small = rows.some((r) => r.exposed < MIN_SAMPLE);
-        return (
-          <Card key={exp.id} className="space-y-3 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-heading">{exp.question}</p>
-                <p className="text-xs text-muted">{exp.id} · {kind === "pesos" ? "pesos del recomendador" : "interfaz"}</p>
-              </div>
-              {canEdit && kind === "pesos" ? (
-                <form action={toggleExperimentAction.bind(null, exp.id, !exp.active)}>
-                  <Button variant={exp.active ? "secondary" : "primary"} className="min-h-10 px-4 text-sm">{exp.active ? "Detener" : "Iniciar"}</Button>
-                </form>
-              ) : (
-                <Badge tone={exp.active ? "mint" : "neutral"}>{exp.active ? "Activo" : "Detenido"}{kind === "interfaz" && " (en el código)"}</Badge>
-              )}
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[46rem] text-sm">
-                <thead>
-                  <tr className="text-left text-muted">
-                    <th scope="col" className="py-2 font-medium">Variante</th>
-                    <th scope="col" className="py-2 text-right font-medium">Sesiones</th>
-                    <th scope="col" className="py-2 text-right font-medium">Inició cotización</th>
-                    <th scope="col" className="py-2 text-right font-medium">Eligió oferta</th>
-                    <th scope="col" className="py-2 text-right font-medium">Eligió la recomendada</th>
-                    <th scope="col" className="py-2 text-right font-medium">Fue a pagar</th>
-                    <th scope="col" className="py-2 text-right font-medium">Compró</th>
-                    <th scope="col" className="py-2 text-right font-medium">Conversión</th>
-                    <th scope="col" className="py-2 text-right font-medium">Valor p</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={r.variantId} className="border-t border-line">
-                      <th scope="row" className="py-2 pr-3 text-left font-normal">
-                        <span className="font-semibold text-ink">{r.variantId}</span>
-                        {i === 0 && <span className="text-muted"> (control)</span>}
-                        <span className="block text-xs text-muted">{r.label}</span>
-                      </th>
-                      <td className="py-2 text-right">{r.exposed}</td>
-                      <td className="py-2 text-right">{r.exposed ? pct(r.started / r.exposed) : "—"}</td>
-                      <td className="py-2 text-right">{r.exposed ? pct(r.chose / r.exposed) : "—"}</td>
-                      <td className="py-2 text-right">{r.exposed ? pct(r.choseRecommended / r.exposed) : "—"}</td>
-                      <td className="py-2 text-right">{r.checkout}</td>
-                      <td className="py-2 text-right">{r.paid}</td>
-                      <td className="py-2 text-right font-semibold">{pct(r.conversion)}</td>
-                      <td className="py-2 text-right">{r.pValue === null ? "—" : r.pValue.toFixed(3)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-xs text-muted">
-              {small
-                ? `Aún no hay datos suficientes: espera al menos ${MIN_SAMPLE} sesiones por variante antes de concluir.`
-                : "Un valor p menor a 0,05 sugiere que la diferencia en compras no es casualidad."}
-            </p>
-          </Card>
-        );
-      })}
+      {experiments.map((exp) => (
+        <ExperimentCard
+          key={exp.id}
+          exp={exp}
+          action={
+            canEdit && exp.kind === "pesos" ? (
+              <form action={toggleExperimentAction.bind(null, exp.id, !exp.active)}>
+                <Button variant={exp.active ? "secondary" : "primary"} className="min-h-10 px-4 text-sm">{exp.active ? "Detener" : "Iniciar"}</Button>
+              </form>
+            ) : undefined
+          }
+        />
+      ))}
     </section>
   );
 }

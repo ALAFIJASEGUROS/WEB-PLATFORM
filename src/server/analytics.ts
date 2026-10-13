@@ -1,6 +1,10 @@
 import "server-only";
 import { FUNNEL_EVENTS, type AnalyticsEvent } from "@/domain/events";
 import type { Order, OrderStatus } from "./db";
+import type { DiscountImpactRow, VariantResult } from "@/domain/admin";
+import { twoProportionPValue } from "@/domain/stats";
+export { twoProportionPValue };
+export type { DiscountImpactRow, VariantResult };
 
 export interface StoredEvent {
   event: AnalyticsEvent;
@@ -12,6 +16,9 @@ export interface StoredEvent {
 const MAX_EVENTS = 20_000;
 const g = globalThis as unknown as { __safEvents?: StoredEvent[] };
 const events = () => (g.__safEvents ??= []);
+
+/** Eventos registrados, del más reciente al más antiguo (para exportar). */
+export const allEvents = (): readonly StoredEvent[] => [...events()].reverse();
 
 export function recordEvent(event: AnalyticsEvent, sid: string, props: StoredEvent["props"] = {}) {
   const list = events();
@@ -49,41 +56,6 @@ export function breakdown(event: AnalyticsEvent, prop: string) {
 
 // ── Experimentos A/B ───────────────────────────────────────────────────────
 
-export interface VariantResult {
-  variantId: string;
-  label: string;
-  exposed: number;
-  started: number;
-  chose: number;
-  choseRecommended: number;
-  checkout: number;
-  paid: number;
-  /** Compras / sesiones expuestas. */
-  conversion: number | null;
-  /** Valor p (dos colas) de la conversión frente al control; null si no aplica. */
-  pValue: number | null;
-}
-
-/** Mínimo de sesiones por variante antes de mirar el valor p. */
-export const MIN_SAMPLE = 100;
-
-/** Función de distribución normal estándar (aproximación de Abramowitz-Stegun). */
-function normalCdf(z: number) {
-  const t = 1 / (1 + 0.2316419 * Math.abs(z));
-  const d = 0.3989423 * Math.exp((-z * z) / 2);
-  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-  return z > 0 ? 1 - p : p;
-}
-
-/** Prueba z de dos proporciones (dos colas). */
-export function twoProportionPValue(x1: number, n1: number, x2: number, n2: number) {
-  if (!n1 || !n2) return null;
-  const p = (x1 + x2) / (n1 + n2);
-  const se = Math.sqrt(p * (1 - p) * (1 / n1 + 1 / n2));
-  if (se === 0) return null;
-  const z = (x1 / n1 - x2 / n2) / se;
-  return 2 * (1 - normalCdf(Math.abs(z)));
-}
 
 /**
  * Resultados de un experimento (de pesos o de interfaz). La exposición es el
@@ -126,21 +98,6 @@ export function experimentResults(experiment: { id: string; variants: { id: stri
 }
 
 // ── Impacto de los descuentos ──────────────────────────────────────────────
-
-export interface DiscountImpactRow {
-  key: string;
-  label: string;
-  source?: "aseguradora" | "plataforma";
-  chosen: number;
-  orders: number;
-  paid: number;
-  /** Pagadas / elegidas. */
-  conversion: number | null;
-  /** Descuento otorgado en compras pagadas (COP). */
-  granted: number;
-  /** Prima anual cobrada en compras pagadas (COP). */
-  premium: number;
-}
 
 export const NO_DISCOUNT = "sin-descuento";
 const PAID: ReadonlySet<OrderStatus> = new Set(["aprobada", "emitida"]);

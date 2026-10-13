@@ -59,6 +59,11 @@ export const quoteStore = {
   },
   getResponse: () => read<QuoteResponse>(KEYS.response),
   setResponse: (r: QuoteResponse) => write(KEYS.response, r),
+  /** Reordenar sin volver a cotizar: guarda ambos y conserva la comparación. */
+  refine: (req: QuoteRequest, res: QuoteResponse) => {
+    write(KEYS.request, req);
+    write(KEYS.response, res);
+  },
   getCompare: () => read<string[]>(KEYS.compare) ?? EMPTY,
   setCompare: (ids: string[]) => write(KEYS.compare, ids),
   clear: () => Object.values(KEYS).forEach((k) => write(k, null)),

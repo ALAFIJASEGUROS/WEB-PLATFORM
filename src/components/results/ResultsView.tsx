@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Pencil, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, Pencil, SlidersHorizontal, Sparkles } from "lucide-react";
 import { formatCOP, PRIORITY_LABELS } from "@/domain/labels";
 import type { QuoteRequest } from "@/domain/types";
 import { fetchQuote } from "@/lib/api-client";
@@ -18,7 +18,9 @@ import {
 } from "@/lib/quote-store";
 import { Button, ButtonLink, SimulatedDataNotice } from "@/components/ui";
 import { OfferCard } from "./OfferCard";
+import { BottomSheet } from "@/components/BottomSheet";
 import { ShareQuote } from "./ShareQuote";
+import { RefinePanel } from "./RefinePanel";
 import { decodeShare } from "@/lib/share";
 
 type Sort = "afinidad" | "precio" | "cobertura";
@@ -34,6 +36,10 @@ export function ResultsView() {
   const [sort, setSort] = useState<Sort>("afinidad");
   const [insurer, setInsurer] = useState("todas");
   const [onlyFull, setOnlyFull] = useState(false);
+  const [maxDeductible, setMaxDeductible] = useState<"todos" | "0" | "10">("todos");
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [refineOpen, setRefineOpen] = useState(false);
 
   useEffect(() => {
     if (!request || data || error) return;
@@ -74,13 +80,15 @@ export function ResultsView() {
     let list = data.offers.filter(
       (o) =>
         (insurer === "todas" || o.insurerId === insurer) &&
-        (!onlyFull || (o.coverages.perdidaTotalDanos && o.coverages.perdidaParcialDanos)),
+        (!onlyFull || (o.coverages.perdidaTotalDanos && o.coverages.perdidaParcialDanos)) &&
+        (maxDeductible === "todos" || o.deductiblePct <= Number(maxDeductible)) &&
+        (maxPrice === null || o.annualPremium <= maxPrice),
     );
     if (sort === "precio") list = [...list].sort((a, b) => a.annualPremium - b.annualPremium);
     if (sort === "cobertura")
       list = [...list].sort((a, b) => b.subscores.coverage - a.subscores.coverage);
     return list;
-  }, [data, sort, insurer, onlyFull]);
+  }, [data, sort, insurer, onlyFull, maxDeductible, maxPrice]);
 
   const insurers = useMemo(
     () => [...new Map(data?.offers.map((o) => [o.insurerId, o.insurerName])).entries()],
@@ -139,23 +147,52 @@ export function ResultsView() {
   }
 
   const pill = "min-h-10 rounded-full border-2 border-line bg-surface px-3 text-sm font-semibold text-heading";
-  const filters = (size: "sm" | "lg") => {
-    const block = size === "lg" ? "w-full" : "";
+  const prices = data.offers.map((o) => o.annualPremium);
+  const priceBounds = { min: Math.floor(Math.min(...prices) / 10_000) * 10_000, max: Math.ceil(Math.max(...prices) / 10_000) * 10_000 };
+  const activeFilters = [insurer !== "todas", onlyFull, maxDeductible !== "todos", maxPrice !== null].filter(Boolean).length;
+  const clearFilters = () => {
+    setInsurer("todas");
+    setOnlyFull(false);
+    setMaxDeductible("todos");
+    setMaxPrice(null);
+  };
+  const filters = (size: "lg" | "sheet") => {
+    // Se pinta en el panel lateral (escritorio) y en el panel inferior (celular): ids distintos.
+    const block = "w-full";
     return (
       <>
-        <label className={size === "lg" ? "block text-xs font-semibold text-muted" : "sr-only"} htmlFor={`sort-${size}`}>Ordenar por</label>
+        <label className="block text-xs font-semibold text-muted" htmlFor={`sort-${size}`}>Ordenar por</label>
         <select id={`sort-${size}`} value={sort} onChange={(e) => setSort(e.target.value as Sort)} className={`${pill} ${block}`}>
           <option value="afinidad">Más afines</option>
           <option value="precio">Menor precio</option>
           <option value="cobertura">Mayor cobertura</option>
         </select>
-        <label className={size === "lg" ? "block text-xs font-semibold text-muted" : "sr-only"} htmlFor={`insurer-${size}`}>Aseguradora</label>
+        <label className="block text-xs font-semibold text-muted" htmlFor={`insurer-${size}`}>Aseguradora</label>
         <select id={`insurer-${size}`} value={insurer} onChange={(e) => setInsurer(e.target.value)} className={`${pill} ${block}`}>
           <option value="todas">Todas las aseguradoras</option>
           {insurers.map(([id, name]) => (
             <option key={id} value={id}>{name}</option>
           ))}
         </select>
+        <label className="block text-xs font-semibold text-muted" htmlFor={`ded-${size}`}>Deducible</label>
+        <select id={`ded-${size}`} value={maxDeductible} onChange={(e) => setMaxDeductible(e.target.value as typeof maxDeductible)} className={`${pill} ${block}`}>
+          <option value="todos">Cualquier deducible</option>
+          <option value="0">Sin deducible</option>
+          <option value="10">Hasta 10%</option>
+        </select>
+        <label className="block text-xs font-semibold text-muted" htmlFor={`price-${size}`}>
+          Precio máximo: <span className="text-heading">{formatCOP(maxPrice ?? priceBounds.max)}</span>
+        </label>
+        <input
+          id={`price-${size}`}
+          type="range"
+          min={priceBounds.min}
+          max={priceBounds.max}
+          step={10_000}
+          value={maxPrice ?? priceBounds.max}
+          onChange={(e) => setMaxPrice(Number(e.target.value) >= priceBounds.max ? null : Number(e.target.value))}
+          className="w-full accent-[var(--color-brand)]"
+        />
         <button
           type="button"
           aria-pressed={onlyFull}
@@ -164,6 +201,11 @@ export function ResultsView() {
         >
           Solo todo riesgo
         </button>
+        {activeFilters > 0 && (
+          <button type="button" onClick={clearFilters} className={`min-h-10 text-sm font-semibold text-brand underline ${block}`}>
+            Limpiar filtros
+          </button>
+        )}
       </>
     );
   };
@@ -187,7 +229,7 @@ export function ResultsView() {
       </aside>
 
       <div className="min-w-0">
-      <div className="mb-5 flex items-start justify-between gap-3">
+      <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-heading">
             {data.offers.length} opciones para tu {v.brand} {v.model} {v.year}
@@ -200,7 +242,14 @@ export function ResultsView() {
             )}
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end">
+        <div className="-ml-3 flex flex-wrap items-center sm:ml-0 sm:shrink-0 sm:justify-end">
+          <button
+            type="button"
+            onClick={() => setRefineOpen(true)}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft"
+          >
+            <Sparkles className="size-4" aria-hidden /> Afinar
+          </button>
           <ShareQuote request={request} />
           <Link
             href={`/cotizar/${v.type}`}
@@ -210,6 +259,8 @@ export function ResultsView() {
           </Link>
         </div>
       </div>
+
+      <RefinePanel open={refineOpen} onClose={() => setRefineOpen(false)} request={request} response={data} />
 
       <SimulatedDataNotice />
 
@@ -241,10 +292,25 @@ export function ResultsView() {
         </section>
       )}
 
-      <div className="hide-scrollbar -mx-4 mt-8 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:hidden">
-        <SlidersHorizontal className="size-4 shrink-0 text-muted" aria-hidden />
-        {filters("sm")}
+      <div className="mt-8 flex items-center justify-between gap-3 lg:hidden">
+        <p className="text-sm text-muted">{offers.length} {offers.length === 1 ? "opción" : "opciones"}</p>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line bg-surface px-4 text-sm font-semibold text-heading"
+        >
+          <SlidersHorizontal className="size-4" aria-hidden /> Filtros y orden
+          {activeFilters > 0 && <span className="rounded-full bg-brand-fill px-2 text-xs text-white">{activeFilters}</span>}
+        </button>
       </div>
+      <BottomSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title="Filtros y orden"
+        footer={<Button className="w-full" onClick={() => setSheetOpen(false)}>Ver {offers.length} {offers.length === 1 ? "opción" : "opciones"}</Button>}
+      >
+        {filters("sheet")}
+      </BottomSheet>
 
       <h2 className="sr-only">Todas las opciones</h2>
       <div className="mt-4 space-y-4">

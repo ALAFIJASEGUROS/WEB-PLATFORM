@@ -532,3 +532,48 @@ describe("experimentos de interfaz en el reporte", () => {
     expect(placa).toMatchObject({ variantId: "placa", exposed: 1, started: 1 });
   });
 });
+
+describe("gestión de órdenes desde admin", () => {
+  it("reintenta una emisión fallida y luego no permite reembolsar una orden emitida", async () => {
+    const { adminRetryIssuance, adminRefund } = await import("./orders");
+    const order = await createOrder(input);
+    order.offer = { ...order.offer, insurerId: "inexistente" };
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "adm1" });
+    let now = Date.now();
+    for (let i = 1; i < ISSUANCE_MAX_ATTEMPTS; i++) {
+      now += issuanceBackoffMs(i) + 1000;
+      await processIssuanceQueue(now);
+    }
+    expect(order.status).toBe("error");
+    // La aseguradora vuelve a responder: reintento manual.
+    order.offer = { ...order.offer, insurerId: "bolivar" };
+    await adminRetryIssuance(order.id, "ops@x.co");
+    expect(order.status).toBe("emitida");
+    expect(order.history?.some((h) => h.note?.includes("Reintento manual"))).toBe(true);
+    expect(() => adminRefund(order.id, "ops@x.co", "prueba")).toThrow(CheckoutError);
+  });
+
+  it("reembolsa una orden pagada sin póliza y avisa al cliente", async () => {
+    const { adminRefund } = await import("./orders");
+    const order = await createOrder(input);
+    order.offer = { ...order.offer, insurerId: "inexistente" };
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "adm2" });
+    expect(order.status).toBe("aprobada");
+    adminRefund(order.id, "ops@x.co", "La aseguradora no pudo emitir");
+    expect(order.status).toBe("reembolsada");
+    expect(order.refund).toMatchObject({ amount: order.amountInCents / 100, by: "ops@x.co" });
+    expect(db().issuanceJobs.has(order.id)).toBe(false);
+    expect(db().outbox[0].subject).toMatch(/Te devolvimos/);
+    expect(() => adminRefund(order.id, "ops@x.co", "otra vez")).toThrow(/ya tiene un reembolso/);
+  });
+
+  it("el resumen del panel trae ventas por día continuas y las órdenes", async () => {
+    const { buildAdminSnapshot } = await import("./admin-snapshot");
+    const order = await createOrder(input);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "adm3" });
+    const snap = buildAdminSnapshot();
+    expect(snap.salesByDay).toHaveLength(30);
+    expect(snap.salesByDay.at(-1)).toMatchObject({ orders: 1, issued: 1, revenue: order.amountInCents / 100 });
+    expect(snap.orders[0]).toMatchObject({ reference: order.reference, status: "emitida" });
+  });
+});
