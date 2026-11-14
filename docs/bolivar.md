@@ -54,7 +54,7 @@ llegue el sandbox, solo faltará implementar el adaptador real.
 | 2.3 | Catálogo de equivalencias: coberturas y servicios de Bolívar frente a `CoverageKey` y `ServiceKey`, con versión | Tecnología y negocio | Tabla revisada por negocio |
 | 2.4 | KYC: reemplazar los campos simulados por los SARLAFT que exige Bolívar | Tecnología | `kycFields` reales |
 | 2.5 | `issue` y `getIssueStatus`: emisión con `idempotencyKey = orderId`, más polling o webhook firmado | Tecnología | Póliza emitida en sandbox |
-| 2.6 | `getPolicyDocument`: guardar el PDF de la póliza y el condicionado con hash y versión | Tecnología | Descarga desde "Mis seguros" |
+| 2.6 | 🟡 `getPolicyDocument` (ruta y enlace listos; falta la API real): guardar el PDF de la póliza y el condicionado con hash y versión | Tecnología | Descarga desde "Mis seguros" |
 | 2.7 | Casos de inspección, rechazo de suscripción y vehículos no asegurables | Tecnología | Mensajes claros en la UI |
 | 2.8 | Pasar los tests de contrato y una suite E2E contra el sandbox (cotizar → pagar → emitir) | Tecnología | CI en verde |
 
@@ -96,7 +96,8 @@ inspección. La salud de cada aseguradora se ve en `/admin` → "Salud de las as
 - El circuit breaker y las métricas viven en memoria por instancia; se compartirán cuando exista Postgres (HU-09.6).
 - Una emisión que pide inspección se reintenta como pendiente y, si no se resuelve en 5 intentos, la orden pasa a error.
   Falta un flujo para agendar la inspección con el cliente; se diseña cuando Bolívar explique su proceso.
-- `getPolicyDocument` está en el contrato, pero "Mis seguros" todavía no lo usa (HU-23.8).
+- El documento de la póliza (`/api/polizas/{id}/documento`) redirige a la URL que entregue la aseguradora; si su
+  política exige guardar una copia propia (hash y versión del condicionado), falta el storage privado (HU-09.6).
 
 ## Dependencias externas
 

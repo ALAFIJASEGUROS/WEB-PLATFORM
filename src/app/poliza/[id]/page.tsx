@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileText, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui";
 import { PrintButton } from "@/components/PrintButton";
 import { COVERAGE_KEYS } from "@/domain/types";
@@ -10,6 +10,7 @@ import { db } from "@/server/db";
 import { canRetract, getPolicyForViewer, retractDeadline } from "@/server/orders";
 import { ActionForm } from "@/components/account/ActionForm";
 import { retractAction } from "../actions";
+import { hasInsurerDocument } from "@/server/policy-document";
 
 export const metadata = { title: "Póliza", robots: { index: false } };
 
@@ -37,7 +38,17 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
             <h1 className="mt-1 text-2xl font-extrabold text-heading">{policy.planName}</h1>
             <p className="text-muted">{policy.insurerName}</p>
           </div>
-          <PrintButton />
+          <div className="flex flex-wrap justify-end gap-2 print:hidden">
+            {hasInsurerDocument(policy) && (
+              <a
+                href={`/api/polizas/${encodeURIComponent(policy.id)}/documento${typeof t === "string" ? `?t=${encodeURIComponent(t)}` : ""}`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line px-4 text-sm font-semibold text-heading hover:border-brand"
+              >
+                <FileText className="size-4" aria-hidden /> Póliza de {policy.insurerName}
+              </a>
+            )}
+            <PrintButton />
+          </div>
         </div>
 
         <dl className="grid gap-3 text-sm sm:grid-cols-2">

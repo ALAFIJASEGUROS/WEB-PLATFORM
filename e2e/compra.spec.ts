@@ -51,6 +51,11 @@ test("cotiza, compra sin cuenta, recibe la póliza y la guarda en su cuenta", as
   await page.getByRole("link", { name: "Ver mi póliza" }).click();
   await expect(page.getByText("Número de póliza", { exact: true })).toBeVisible();
   await expect(page.getByText(/Derecho de retracto/).first()).toBeVisible();
+  // Documento que entrega la aseguradora (simulado).
+  const docLink = page.getByRole("link", { name: /^Póliza de / });
+  const doc = await page.request.get((await docLink.getAttribute("href"))!);
+  expect(doc.status()).toBe(200);
+  expect(await doc.text()).toMatch(/Póliza SIMULADA/);
   await page.getByRole("link", { name: /Tuviste un choque o un hurto/ }).click();
   await expect(page.getByRole("heading", { name: "Si tuviste un choque" })).toBeVisible();
   await page.goBack();

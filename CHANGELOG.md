@@ -13,6 +13,7 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 - Sandbox falso de Bolívar (`/api/sandbox/bolivar`, solo fuera de producción) para probar el modo sandbox de punta a punta.
 - Resiliencia por aseguradora: timeout propio dentro de un presupuesto de 8 s, un reintento ante errores técnicos y circuit breaker.
 - Panel "Salud de las aseguradoras" en `/admin`: estado del circuito, sonda de conexión, latencia p50/p95 y tasas de error, timeout y rechazo.
+- La página de la póliza enlaza el documento que entrega la aseguradora (`/api/polizas/{id}/documento`), con la misma regla de acceso que la póliza.
 - Plan de trabajo para integrar Seguros Bolívar ([docs/bolivar.md](docs/bolivar.md)) y épica HU-23 en el backlog.
 
 ### Cambiado

@@ -210,6 +210,21 @@ describe("retracto", () => {
   });
 });
 
+describe("documento de la póliza", () => {
+  it("lo entrega la aseguradora solo a quien puede ver la póliza", async () => {
+    const { policyDocumentFor } = await import("./policy-document");
+    const user = getOrCreateUser("ana@example.com");
+    const order = await createOrder(input, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: `d-${order.reference}` });
+    const policy = [...db().policies.values()].find((p) => p.orderId === order.id)!;
+
+    const own = await policyDocumentFor(policy.id, undefined, user.id);
+    expect(own.ok && new TextDecoder().decode(own.document.data)).toMatch(policy.number);
+    expect((await policyDocumentFor(policy.id, policy.accessToken)).ok).toBe(true);
+    expect(await policyDocumentFor(policy.id, "token-falso", "otro")).toMatchObject({ ok: false, status: 404 });
+  });
+});
+
 describe("cuotas con Wompi", () => {
   it("reutiliza el intento activo en lugar de crear otro cobro", async () => {
     const user = getOrCreateUser("ana@example.com");
