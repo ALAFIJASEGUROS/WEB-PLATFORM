@@ -6,6 +6,11 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 [docs/versionamiento.md](docs/versionamiento.md).
 
 ## [No publicado]
+### Cambiado
+- Por ahora la plataforma solo ofrece Seguros Bolívar: cotización, resultados, condicionados, calificación, defensor del consumidor y textos del sitio. SURA queda definida en el código (inactiva) para reactivarla. El filtro por aseguradora en resultados solo aparece cuando hay más de una.
+- La regla de descuento de ejemplo de SURA se reemplaza por "Tarifa digital Bolívar" (carros, 5 %).
+- El indicador de afinidad muestra solo el puntaje dentro del círculo y la palabra "afinidad" debajo.
+
 ### Agregado
 - Contrato de adaptador de aseguradoras v2 (`ADAPTER_CONTRACT_VERSION = 2.0.0`): `issue` devuelve un estado (`emitida`, `pendiente`, `requiere_inspeccion` o `rechazada`), más `getIssueStatus`, `getPolicyDocument`, `healthcheck` opcional y capacidades por aseguradora (vigencia de la cotización, emisión asíncrona, inspección, documento).
 - Tests de contrato reutilizables (`src/insurers/contract.suite.ts`) que debe pasar todo adaptador, simulado o real.

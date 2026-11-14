@@ -1,5 +1,6 @@
 import type { Answers, QuoteRequest } from "@/domain/types";
-import { MOCK_INSURERS } from "./mock/insurers";
+import { BOLIVAR_CONFIG, SURA_CONFIG } from "./mock/insurers";
+import { createMockAdapter } from "./mock/tariff";
 import { describeAdapterContract } from "./contract.suite";
 
 const answers: Answers = {
@@ -25,14 +26,16 @@ const moto: QuoteRequest = {
   answers,
 };
 
-describeAdapterContract(MOCK_INSURERS[0], {
+// SURA está inactiva, pero su simulador se mantiene en contrato para poder reactivarla.
+describeAdapterContract(createMockAdapter(SURA_CONFIG), {
   requests: { auto, moto },
   quoteFailPlate: "ERR123",
   rejectPlate: "REC123",
   pendingPlate: "PEN123",
 });
-describeAdapterContract(MOCK_INSURERS[1], {
+describeAdapterContract(createMockAdapter(BOLIVAR_CONFIG), {
   requests: { auto, moto },
+  quoteFailPlate: "ERR123",
   rejectPlate: "REC123",
   pendingPlate: "PEN123",
 });

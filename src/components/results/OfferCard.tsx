@@ -226,7 +226,8 @@ function ScoreRing({ score }: { score: number }) {
   const r = 20;
   const c = 2 * Math.PI * r;
   return (
-    <div className="relative size-14 shrink-0" role="img" aria-label={`Afinidad ${score} de 100`}>
+    <div className="flex shrink-0 flex-col items-center gap-1" role="img" aria-label={`Afinidad ${score} de 100`}>
+      <div className="relative size-14">
       <svg viewBox="0 0 48 48" className="size-14 -rotate-90" aria-hidden>
         <circle cx="24" cy="24" r={r} fill="none" stroke="var(--color-brand-soft)" strokeWidth="5" />
         <circle
@@ -241,10 +242,11 @@ function ScoreRing({ score }: { score: number }) {
           strokeDashoffset={c * (1 - score / 100)}
         />
       </svg>
-      <span className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="text-sm font-extrabold text-heading">{score}</span>
-        <span className="text-[9px] font-semibold text-muted">afinidad</span>
-      </span>
+        <span className="absolute inset-0 flex items-center justify-center text-base font-extrabold tabular-nums leading-none text-heading" aria-hidden>
+          {score}
+        </span>
+      </div>
+      <span className="text-[11px] font-semibold leading-none text-muted" aria-hidden>afinidad</span>
     </div>
   );
 }

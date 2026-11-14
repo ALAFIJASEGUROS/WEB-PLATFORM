@@ -240,9 +240,9 @@ function seed(db: Db) {
   const now = new Date().toISOString();
   const campaigns: Campaign[] = [
     {
-      id: "c-sura-1",
-      sponsor: "SURA",
-      insurerId: "sura",
+      id: "c-bolivar-1",
+      sponsor: "Seguros Bolívar",
+      insurerId: "bolivar",
       title: "Revisión gratuita de frenos",
       body: "Si tienes póliza de autos, agenda una revisión de frenos sin costo en talleres aliados. (Contenido de demostración)",
       ctaLabel: "Conocer más",

@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps<"/seguros/[tipo]">)
   const { tipo } = await params;
   return {
     title: `Seguro de ${tipo} por marca y línea`,
-    description: `Precios de referencia del seguro de ${tipo} en Colombia por marca y línea. Compara aseguradoras y compra en línea.`,
+    description: `Precios de referencia del seguro de ${tipo} en Colombia por marca y línea. Compara planes y compra en línea.`,
   };
 }
 

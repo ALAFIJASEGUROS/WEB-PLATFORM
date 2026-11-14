@@ -64,13 +64,14 @@ export const DEFAULT_DISCOUNT_SETTINGS: DiscountSettings = { enabled: true, maxT
  */
 export const DEFAULT_DISCOUNT_RULES: DiscountRule[] = [
   {
-    id: "sura-digital",
-    insurerId: "sura",
-    label: "Tarifa digital SURA",
+    id: "bolivar-digital",
+    insurerId: "bolivar",
+    label: "Tarifa digital Bolívar",
     source: "aseguradora",
     kind: "porcentaje",
     magnitude: 5,
     enabled: true,
+    vehicleTypes: ["auto"],
   },
   {
     id: "bolivar-motos",

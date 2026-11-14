@@ -3,6 +3,10 @@ import type { Answers, QuoteRequest } from "@/domain/types";
 import { priceOffers } from "@/insurers/mock/tariff";
 import { BOLIVAR_CONFIG, SURA_CONFIG } from "@/insurers/mock/insurers";
 import { quoteAll } from "@/insurers/aggregator";
+import { createMockAdapter } from "@/insurers/mock/tariff";
+
+// El agregador sigue soportando varias aseguradoras; aquí se prueba con dos.
+const TWO = [createMockAdapter(SURA_CONFIG), createMockAdapter({ ...BOLIVAR_CONFIG, failPlatePrefix: undefined })];
 import { recommend, scoreOffers, TIE_THRESHOLD } from "./scoring";
 
 const answers: Answers = {
@@ -106,13 +110,13 @@ describe("tarifas simuladas", () => {
 
 describe("quoteAll", () => {
   it("devuelve resultados parciales si una aseguradora falla", async () => {
-    const { offers, errors } = await quoteAll({ ...req, vehicle: { ...req.vehicle, plate: "ERR123" } });
+    const { offers, errors } = await quoteAll({ ...req, vehicle: { ...req.vehicle, plate: "ERR123" } }, TWO);
     expect(errors.map((e) => e.insurerId)).toEqual(["sura"]);
     expect(offers.every((o) => o.insurerId === "bolivar")).toBe(true);
   });
 
   it("reporta timeout sin bloquear", async () => {
-    const { errors } = await quoteAll(req, undefined, 10);
+    const { errors } = await quoteAll(req, TWO, 10);
     expect(errors).toHaveLength(2);
     expect(errors[0].message).toMatch(/tardó/);
   });

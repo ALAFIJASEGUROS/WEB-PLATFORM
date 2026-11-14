@@ -1,4 +1,4 @@
-import { BOLIVAR_CONFIG, SURA_CONFIG } from "@/insurers/mock/insurers";
+import { ACTIVE_CONFIGS } from "@/insurers/mock/insurers";
 
 /**
  * Información del Defensor del Consumidor Financiero. Cada aseguradora tiene el
@@ -13,7 +13,7 @@ export function DefensorInfo() {
         de tu aseguradora o presentar una queja ante la Superintendencia Financiera de Colombia.
       </p>
       <ul>
-        {[SURA_CONFIG, BOLIVAR_CONFIG].map((c) => (
+        {ACTIVE_CONFIGS.map((c) => (
           <li key={c.id}>
             <strong>{c.name}:</strong> consulta los datos de su Defensor en el sitio web oficial de la aseguradora.
           </li>

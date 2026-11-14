@@ -35,11 +35,9 @@ interface DemoPlan {
 }
 
 const PLANS: DemoPlan[] = [
-  { plan: "Autos Global", insurer: "SURA", type: "auto", min: 1_400_000, max: 2_600_000, rule: "sura-digital" },
-  { plan: "Autos Clásico", insurer: "SURA", type: "auto", min: 2_000_000, max: 3_400_000, rule: "sura-digital" },
-  { plan: "Auto Plus", insurer: "Seguros Bolívar", type: "auto", min: 1_600_000, max: 3_000_000 },
-  { plan: "Auto Esencial", insurer: "Seguros Bolívar", type: "auto", min: 900_000, max: 1_500_000 },
-  { plan: "Motos Integral", insurer: "SURA", type: "moto", min: 600_000, max: 1_100_000, rule: "sura-digital" },
+  { plan: "Auto Plus", insurer: "Seguros Bolívar", type: "auto", min: 1_600_000, max: 3_000_000, rule: "bolivar-digital" },
+  { plan: "Auto Esencial", insurer: "Seguros Bolívar", type: "auto", min: 900_000, max: 1_500_000, rule: "bolivar-digital" },
+  { plan: "Moto Básico", insurer: "Seguros Bolívar", type: "moto", min: 450_000, max: 800_000, rule: "bolivar-motos" },
   { plan: "Moto Plus", insurer: "Seguros Bolívar", type: "moto", min: 700_000, max: 1_300_000, rule: "bolivar-motos" },
 ];
 const VEHICLES = { auto: ["Mazda 2 2022", "Chevrolet Onix 2021", "Renault Duster 2020", "Kia Picanto 2023"], moto: ["Yamaha NMAX 155 2023", "Honda CB 125F 2022", "Bajaj Pulsar NS 200 2021"] };
@@ -121,7 +119,7 @@ export function demoAdminSnapshot(now = new Date(), seed = 2026): AdminSnapshot 
   };
   const byRule = (id: string) => orders.filter((o) => o.discount > 0 && PLANS.find((p) => p.plan === o.plan && p.rule === id));
   const impact = [
-    impactRow("sura-digital", "Tarifa digital SURA", byRule("sura-digital"), "aseguradora"),
+    impactRow("bolivar-digital", "Tarifa digital Bolívar", byRule("bolivar-digital"), "aseguradora"),
     impactRow("bolivar-motos", "Descuento motos Bolívar", byRule("bolivar-motos"), "aseguradora"),
     impactRow("sin-descuento", "Sin descuento", orders.filter((o) => o.discount === 0)),
   ];
@@ -158,7 +156,7 @@ export function demoAdminSnapshot(now = new Date(), seed = 2026): AdminSnapshot 
     byInsurer: count(issued, (o) => o.insurer),
     salesByDay: salesByDay(orders.map((o) => ({ createdAt: o.createdAt, amount: o.amount, issued: o.status === "emitida" })), 30, now),
     funnel,
-    chosenByInsurer: count(orders, (o) => o.insurer).map(([k, v]) => [k === "Seguros Bolívar" ? "bolivar" : "sura", Math.round(v / 0.52)]),
+    chosenByInsurer: count(orders, (o) => o.insurer).map(([, v]) => ["bolivar", Math.round(v / 0.52)]),
     orders,
     reconciliation: {
       at: new Date(now.getTime() - 6 * 3_600_000).toISOString(),
@@ -179,7 +177,7 @@ export function demoAdminSnapshot(now = new Date(), seed = 2026): AdminSnapshot 
       ...UI_EXPERIMENTS.map((e, i) => ({ id: e.id, question: e.question, kind: "interfaz" as const, active: e.active, rows: variantRows(e.variants, i === 0 ? 0.08 : 0.06, i === 0 ? [0, 0.35] : [0, 0.05]) })),
     ],
     campaigns: [
-      { id: "c1", title: "Revisión gratuita de frenos", sponsor: "SURA", audience: "auto", active: true },
+      { id: "c1", title: "Revisión gratuita de frenos", sponsor: "Seguros Bolívar", audience: "auto", active: true },
       { id: "c2", title: "Curso de manejo preventivo para motociclistas", sponsor: "Seguros Bolívar", audience: "moto", active: true },
     ],
     pqrs: [
@@ -188,7 +186,7 @@ export function demoAdminSnapshot(now = new Date(), seed = 2026): AdminSnapshot 
       { id: "q3", radicado: "PQR-2026-0009", type: "reclamo", typeLabel: "Reclamo", name: "Camila López", email: "camila.lopez@ejemplo.com", message: "Me cobraron dos veces la primera cuota.", dueDate: addDays(3), status: "respondida", response: "Verificamos el doble cobro y reversamos uno de los pagos." },
     ],
     leads: [
-      { id: "l1", kind: "llamada", createdAt: new Date(now.getTime() - 3 * 3_600_000).toISOString(), name: "Felipe Ramírez", phone: "3004567812", email: "felipe.ramirez@ejemplo.com", slot: TIME_SLOTS.tarde, status: "nueva", summary: "Mazda CX-30 2023 · Autos Global (SURA) $3.180.000" },
+      { id: "l1", kind: "llamada", createdAt: new Date(now.getTime() - 3 * 3_600_000).toISOString(), name: "Felipe Ramírez", phone: "3004567812", email: "felipe.ramirez@ejemplo.com", slot: TIME_SLOTS.tarde, status: "nueva", summary: "Mazda CX-30 2023 · Auto Plus (Seguros Bolívar) $3.180.000" },
       { id: "l2", kind: "flota", createdAt: new Date(now.getTime() - 20 * 3_600_000).toISOString(), name: "Daniela Moreno", phone: "3157894561", email: "daniela.moreno@ejemplo.com", slot: TIME_SLOTS.manana, status: "contactada", summary: "Mensajería Rápida SAS · 12 vehículos · $9.840.000 al año", notes: "Enviar propuesta con pago mensual." },
       { id: "l3", kind: "llamada", createdAt: new Date(now.getTime() - 50 * 3_600_000).toISOString(), name: "Santiago Hernández", phone: "3201239876", slot: TIME_SLOTS.sabado, status: "vendida", summary: "Yamaha NMAX 155 2024 · Moto Plus (Seguros Bolívar) $890.000" },
     ],

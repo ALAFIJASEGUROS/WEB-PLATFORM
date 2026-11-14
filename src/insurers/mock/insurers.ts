@@ -159,6 +159,7 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
   id: "bolivar",
   name: "Seguros Bolívar",
   latencyMs: [700, 1800],
+  failPlatePrefix: "ERR",
   failIssuePlatePrefix: "EMI",
   rejectIssuePlatePrefix: "REC",
   pendingIssuePlatePrefix: "PEN",
@@ -249,7 +250,10 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
   ],
 };
 
-export const MOCK_INSURERS = [
-  createMockAdapter(SURA_CONFIG),
-  createMockAdapter(BOLIVAR_CONFIG),
-];
+/**
+ * Aseguradoras que ofrece la plataforma. Por ahora solo Seguros Bolívar (ver
+ * docs/bolivar.md). SURA queda definida para reactivarla agregándola aquí.
+ */
+export const ACTIVE_CONFIGS: MockInsurerConfig[] = [BOLIVAR_CONFIG];
+
+export const MOCK_INSURERS = ACTIVE_CONFIGS.map(createMockAdapter);

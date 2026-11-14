@@ -24,7 +24,7 @@ import { ExperimentExposure } from "@/components/home/ExperimentExposure";
 
 const STEPS = [
   { icon: ListChecks, title: "Cuéntanos qué te importa", text: "Precio, cobertura o servicios. Son 2 minutos y no pedimos tu cédula para cotizar." },
-  { icon: ChartNoAxesColumn, title: "Te recomendamos y explicamos", text: "Comparamos varias aseguradoras y te decimos por qué una opción encaja contigo." },
+  { icon: ChartNoAxesColumn, title: "Te recomendamos y explicamos", text: "Comparamos los planes disponibles y te decimos por qué uno encaja contigo." },
   { icon: CreditCard, title: "Compra desde tu celular", text: "Paga con PSE, tarjeta o Nequi a través de Wompi, sin crear cuenta." },
 ];
 
@@ -34,7 +34,7 @@ const BENEFITS = [
   { icon: BellRing, title: "Te avisamos a tiempo", text: "Renovación, SOAT, tecnomecánica y cuotas, por correo o WhatsApp." },
 ];
 
-const INSURERS = ["SURA", "Seguros Bolívar"];
+const INSURERS = ["Seguros Bolívar"];
 
 const COVERAGES = [
   { icon: Users, tone: "bg-brand-soft text-brand", title: "Responsabilidad civil", text: "Paga los daños que le causes a otras personas o a sus bienes. Es la base de cualquier póliza." },
@@ -92,7 +92,7 @@ export default function Home() {
             </h1>
             <p className="mt-4 max-w-lg text-lg text-muted">
               Responde unas preguntas y te recomendamos el seguro que mejor encaja contigo. Compara
-              aseguradoras y compra en minutos desde tu celular.
+              planes y compra en minutos desde tu celular.
             </p>
 
             <div id="hero-cta" className="mt-7">
@@ -129,7 +129,7 @@ export default function Home() {
 
       <section aria-label="Aseguradoras" className="border-y border-line bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-4 py-5 text-sm">
-          <span className="text-muted">Comparamos opciones de</span>
+          <span className="text-muted">Planes de</span>
           {INSURERS.map((n) => (
             <span key={n} className="font-extrabold tracking-tight text-heading/70">{n}</span>
           ))}

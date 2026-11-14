@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <ContentPage title="Cómo funciona" intro="Transparencia sobre cómo cotizamos, recomendamos y ganamos dinero.">
-      <h2>1. Cotizamos con varias aseguradoras a la vez</h2>
+      <h2>1. Cotizamos con la aseguradora en tiempo real</h2>
       <p>
-        Con los datos de tu vehículo, tu edad y tu ciudad consultamos a las aseguradoras conectadas.
-        Si alguna no responde a tiempo, te mostramos las demás y te avisamos.
+        Con los datos de tu vehículo, tu edad y tu ciudad consultamos los planes de Seguros Bolívar, la aseguradora
+        con la que trabajamos hoy. Si no responde a tiempo, te avisamos para que intentes de nuevo.
       </p>
 
       <h2>2. Descartamos lo que no te sirve</h2>
