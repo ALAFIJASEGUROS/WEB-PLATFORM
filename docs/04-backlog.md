@@ -249,9 +249,9 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-23.1 | Como plataforma quiero un contrato de adaptador v2 (estado de emisión, documento, healthcheck, capacidades y versión) | ✅ | M | MVP | 5 |
 | HU-23.2 | Como plataforma quiero tests de contrato que todo adaptador deba pasar | ✅ | M | MVP | 3 |
 | HU-23.3 | Como equipo quiero un cuestionario técnico y una reunión con Bolívar | ⬜ Negocio | M | MVP | 1 |
-| HU-23.4 | Como plataforma quiero un adaptador `bolivar` con modo mock, sandbox o producción | ⬜ | M | V1 | 5 |
-| HU-23.5 | Como plataforma quiero timeout, reintento y circuit breaker por aseguradora | ⬜ | M | V1 | 5 |
-| HU-23.6 | Como operador quiero ver la salud de cada aseguradora en el admin | ⬜ | S | V1 | 3 |
+| HU-23.4 | Como plataforma quiero un adaptador `bolivar` con modo mock, sandbox o producción | ✅ | M | V1 | 5 |
+| HU-23.5 | Como plataforma quiero timeout, reintento y circuit breaker por aseguradora | ✅ | M | V1 | 5 |
+| HU-23.6 | Como operador quiero ver la salud de cada aseguradora en el admin | ✅ | S | V1 | 3 |
 | HU-23.7 | Como plataforma quiero cotizar y emitir contra el sandbox de Bolívar | ⬜ Dep (convenio) | M | V1 | 13 |
 | HU-23.8 | Como usuario quiero descargar el PDF de mi póliza de Bolívar | ⬜ Dep (convenio) | S | V1 | 3 |
 | HU-23.9 | Como negocio quiero un piloto cerrado con pólizas reales de Bolívar | ⬜ Dep (convenio, Wompi, Supabase) | M | V1 | 5 |

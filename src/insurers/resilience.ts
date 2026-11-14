@@ -4,6 +4,8 @@
 // tiene el suyo. Basta para proteger una instancia de una aseguradora caída;
 // cuando exista Postgres o Redis (HU-09.6) conviene compartirlo.
 
+import type { AdapterCapabilities, HealthStatus } from "./adapter";
+
 export type BreakerState = "cerrado" | "abierto" | "semiabierto";
 export type CallOutcome = "ok" | "error" | "timeout" | "rechazo";
 
@@ -103,6 +105,18 @@ export interface InsurerHealth {
   lastError?: string;
   lastErrorAt?: string;
   lastSuccessAt?: string;
+}
+
+/** Fila del panel de salud de aseguradoras en el admin. */
+export interface InsurerHealthRow {
+  id: string;
+  name: string;
+  simulated: boolean;
+  contractVersion: string;
+  contractOk: boolean;
+  capabilities: AdapterCapabilities;
+  metrics: InsurerHealth;
+  probe?: HealthStatus;
 }
 
 export function healthOf(id: string, now = Date.now()): InsurerHealth {

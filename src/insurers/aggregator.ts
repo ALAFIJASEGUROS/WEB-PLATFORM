@@ -1,6 +1,6 @@
 import type { InsurerError, Offer, QuoteRequest } from "@/domain/types";
 import { InsurerUnavailableError, type InsurerAdapter } from "./adapter";
-import { MOCK_INSURERS } from "./mock/insurers";
+import { INSURERS } from "./active";
 import { acquire, record } from "./resilience";
 
 /** Timeout por defecto de cada cotización, si la aseguradora no declara uno. */
@@ -10,7 +10,7 @@ export const QUOTE_BUDGET_MS = 8000;
 /** Margen mínimo de presupuesto para que valga la pena reintentar. */
 const MIN_RETRY_MS = 1000;
 
-export function getAdapter(insurerId: string, adapters = MOCK_INSURERS) {
+export function getAdapter(insurerId: string, adapters = INSURERS) {
   return adapters.find((a) => a.id === insurerId);
 }
 
@@ -61,7 +61,7 @@ async function quoteOne(adapter: InsurerAdapter, req: QuoteRequest, deadline: nu
  */
 export async function quoteAll(
   req: QuoteRequest,
-  adapters: InsurerAdapter[] = MOCK_INSURERS,
+  adapters: InsurerAdapter[] = INSURERS,
   timeoutOrOptions?: number | QuoteAllOptions,
 ): Promise<{ offers: Offer[]; errors: InsurerError[] }> {
   const opts: QuoteAllOptions =

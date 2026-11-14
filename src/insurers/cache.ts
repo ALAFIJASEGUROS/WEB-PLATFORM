@@ -1,7 +1,7 @@
 import type { InsurerError, Offer, QuoteRequest } from "@/domain/types";
 import type { InsurerAdapter } from "./adapter";
 import { quoteAll } from "./aggregator";
-import { MOCK_INSURERS } from "./mock/insurers";
+import { INSURERS } from "./active";
 
 // Caché en memoria de cotizaciones, por aseguradora. La clave solo incluye los datos que cambian
 // la tarifa: las preferencias (prioridad, pesos, servicios, deducible) solo
@@ -35,7 +35,7 @@ export function tariffKey(req: QuoteRequest) {
 export async function quoteWithCache(
   req: QuoteRequest,
   now = Date.now(),
-  adapters: InsurerAdapter[] = MOCK_INSURERS,
+  adapters: InsurerAdapter[] = INSURERS,
 ): Promise<{ offers: Offer[]; errors: InsurerError[]; cached: boolean }> {
   const key = tariffKey(req);
   const eligible = adapters.filter((a) => a.supports.includes(req.vehicle.type));

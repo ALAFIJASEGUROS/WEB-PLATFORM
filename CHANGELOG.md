@@ -9,10 +9,15 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Contrato de adaptador de aseguradoras v2 (`ADAPTER_CONTRACT_VERSION = 2.0.0`): `issue` devuelve un estado (`emitida`, `pendiente`, `requiere_inspeccion` o `rechazada`), más `getIssueStatus`, `getPolicyDocument`, `healthcheck` opcional y capacidades por aseguradora (vigencia de la cotización, emisión asíncrona, inspección, documento).
 - Tests de contrato reutilizables (`src/insurers/contract.suite.ts`) que debe pasar todo adaptador, simulado o real.
+- Adaptador HTTP de Seguros Bolívar con modos `mock`, `sandbox` y `prod` (`INSURER_BOLIVAR_MODE`): token OAuth2, clave de idempotencia, clasificación de errores y catálogos de coberturas. El formato de la API es provisional hasta recibir la especificación.
+- Sandbox falso de Bolívar (`/api/sandbox/bolivar`, solo fuera de producción) para probar el modo sandbox de punta a punta.
+- Resiliencia por aseguradora: timeout propio dentro de un presupuesto de 8 s, un reintento ante errores técnicos y circuit breaker.
+- Panel "Salud de las aseguradoras" en `/admin`: estado del circuito, sonda de conexión, latencia p50/p95 y tasas de error, timeout y rechazo.
 - Plan de trabajo para integrar Seguros Bolívar ([docs/bolivar.md](docs/bolivar.md)) y épica HU-23 en el backlog.
 
 ### Cambiado
 - Un rechazo de suscripción marca la orden en error de inmediato, sin agotar los reintentos. Una emisión pendiente se completa en el siguiente intento con la misma clave de idempotencia.
+- La caché de cotizaciones guarda por aseguradora: si una falla, se conserva lo que respondieron las demás y solo se vuelve a consultar la que falló.
 - Las aseguradoras simuladas aceptan placas de prueba `REC*` (rechazo) y `PEN*` (emisión pendiente).
 
 ### Corregido

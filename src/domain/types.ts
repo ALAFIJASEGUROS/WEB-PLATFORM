@@ -106,6 +106,8 @@ export interface Offer {
   conditionsUrl: string;
   /** Fecha ISO hasta la que el precio es válido. */
   validUntil: string;
+  /** Id de la cotización en la aseguradora; lo exige la emisión real. */
+  externalQuoteId?: string;
   /** Usos del vehículo que el plan acepta. Si no viene, acepta todos. */
   allowedUses?: VehicleUse[];
   /** Cilindraje máximo que asegura el plan (motos). */
