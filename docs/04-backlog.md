@@ -243,6 +243,19 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-22.6 | Como cliente quiero invitar a otros y ganar un bono; como invitado, un descuento | ✅ | S | V1 | 5 |
 | HU-22.7 | Como empresa quiero cotizar varios vehículos y pedir una propuesta | ✅ | S | V1 | 3 |
 
+## E23 · Integración con Seguros Bolívar ([plan](bolivar.md))
+| ID | Historia | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- |
+| HU-23.1 | Como plataforma quiero un contrato de adaptador v2 (estado de emisión, documento, healthcheck, capacidades y versión) | ✅ | M | MVP | 5 |
+| HU-23.2 | Como plataforma quiero tests de contrato que todo adaptador deba pasar | ✅ | M | MVP | 3 |
+| HU-23.3 | Como equipo quiero un cuestionario técnico y una reunión con Bolívar | ⬜ Negocio | M | MVP | 1 |
+| HU-23.4 | Como plataforma quiero un adaptador `bolivar` con modo mock, sandbox o producción | ✅ | M | V1 | 5 |
+| HU-23.5 | Como plataforma quiero timeout, reintento y circuit breaker por aseguradora | ✅ | M | V1 | 5 |
+| HU-23.6 | Como operador quiero ver la salud de cada aseguradora en el admin | ✅ | S | V1 | 3 |
+| HU-23.7 | Como plataforma quiero cotizar y emitir contra el sandbox de Bolívar | ⬜ Dep (convenio) | M | V1 | 13 |
+| HU-23.8 | Como usuario quiero descargar el PDF de mi póliza de Bolívar | ✅ (con el mock; el real: Dep convenio) | S | V1 | 3 |
+| HU-23.9 | Como negocio quiero un piloto cerrado con pólizas reales de Bolívar | ⬜ Dep (convenio, Wompi, Supabase) | M | V1 | 5 |
+
 ---
 
 ## Sprint 3 (completado)

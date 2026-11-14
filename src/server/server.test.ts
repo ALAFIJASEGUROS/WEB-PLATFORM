@@ -210,6 +210,21 @@ describe("retracto", () => {
   });
 });
 
+describe("documento de la póliza", () => {
+  it("lo entrega la aseguradora solo a quien puede ver la póliza", async () => {
+    const { policyDocumentFor } = await import("./policy-document");
+    const user = getOrCreateUser("ana@example.com");
+    const order = await createOrder(input, user.id);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: `d-${order.reference}` });
+    const policy = [...db().policies.values()].find((p) => p.orderId === order.id)!;
+
+    const own = await policyDocumentFor(policy.id, undefined, user.id);
+    expect(own.ok && new TextDecoder().decode(own.document.data)).toMatch(policy.number);
+    expect((await policyDocumentFor(policy.id, policy.accessToken)).ok).toBe(true);
+    expect(await policyDocumentFor(policy.id, "token-falso", "otro")).toMatchObject({ ok: false, status: 404 });
+  });
+});
+
 describe("cuotas con Wompi", () => {
   it("reutiliza el intento activo en lugar de crear otro cobro", async () => {
     const user = getOrCreateUser("ana@example.com");
@@ -380,6 +395,28 @@ describe("emisión asíncrona", () => {
     expect(order.status).toBe("emitida");
     expect(job).toMatchObject({ attempts: 2, status: "completada" });
     expect([...db().policies.values()].filter((p) => p.orderId === order.id)).toHaveLength(1);
+  });
+
+  it("si la emisión queda pendiente, la completa en el siguiente intento con la misma clave", async () => {
+    const pen = { ...input, quote: { ...input.quote, vehicle: { ...input.quote.vehicle, plate: "PEN12A" } } };
+    const order = await createOrder(pen);
+    const t0 = Date.now();
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "p1" });
+    const job = db().issuanceJobs.get(order.id)!;
+    expect(order.status).toBe("aprobada");
+    expect(job.lastError).toMatch(/procesando la emisión/);
+    await processIssuanceQueue(t0 + issuanceBackoffMs(1) + 1000);
+    expect(order.status).toBe("emitida");
+    expect(job).toMatchObject({ attempts: 2, status: "completada" });
+  });
+
+  it("si la aseguradora rechaza la emisión, no reintenta y marca error de inmediato", async () => {
+    const rec = { ...input, quote: { ...input.quote, vehicle: { ...input.quote.vehicle, plate: "REC12A" } } };
+    const order = await createOrder(rec);
+    await applyPaymentUpdate({ reference: order.reference, transactionId: "t", status: "APPROVED", amountInCents: order.amountInCents, eventId: "r1" });
+    expect(db().issuanceJobs.get(order.id)).toMatchObject({ attempts: 1, status: "fallida" });
+    expect(order.status).toBe("error");
+    expect(order.history?.at(-1)?.note).toMatch(/rechazada por la aseguradora/);
   });
 
   it("tras el máximo de intentos marca error y avisa al cliente y a los administradores", async () => {

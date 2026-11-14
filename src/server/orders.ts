@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import type { CheckoutInput } from "@/domain/schemas";
 import { formatCOP } from "@/domain/labels";
+import { InsurerRejectedError } from "@/insurers/adapter";
 import { getAdapter } from "@/insurers/aggregator";
 import { validateKyc } from "@/insurers/registry";
 import {
@@ -189,9 +190,15 @@ export async function processIssuance(orderId: string, now = Date.now()) {
   } catch (e) {
     job.lastError = e instanceof Error ? e.message : String(e);
     console.error(`[emisión] intento ${job.attempts} falló para ${order.reference}: ${job.lastError}`);
-    if (job.attempts >= ISSUANCE_MAX_ATTEMPTS) {
+    if (e instanceof InsurerRejectedError || job.attempts >= ISSUANCE_MAX_ATTEMPTS) {
       job.status = "fallida";
-      transition(order, "error", `Emisión fallida tras ${job.attempts} intentos`);
+      transition(
+        order,
+        "error",
+        e instanceof InsurerRejectedError
+          ? `Emisión rechazada por la aseguradora: ${job.lastError}`
+          : `Emisión fallida tras ${job.attempts} intentos`,
+      );
       notifyIssuanceFailure(order, job.lastError);
     } else {
       job.nextAttemptAt = now + issuanceBackoffMs(job.attempts);
@@ -265,7 +272,7 @@ async function issuePolicy(order: Order) {
   if (!adapter) throw new Error(`Aseguradora ${order.offer.insurerId} no disponible`);
   const h = order.policyholder;
   const startDate = new Date().toISOString().slice(0, 10);
-  const { policyNumber } = await adapter.issue({
+  const result = await adapter.issue({
     offer: order.offer,
     quote: order.quote,
     holder: {
@@ -277,6 +284,17 @@ async function issuePolicy(order: Order) {
     startDate,
     idempotencyKey: order.id,
   });
+  if (result.status === "rechazada") throw new InsurerRejectedError(result.reason);
+  if (result.status !== "emitida") {
+    // Pendiente o con inspección: el trabajo se reintenta y la aseguradora
+    // devuelve el estado actual por la misma clave de idempotencia.
+    throw new Error(
+      result.status === "pendiente"
+        ? `${adapter.name} está procesando la emisión (${result.externalId})`
+        : `${adapter.name} exige inspección del vehículo (${result.externalId})`,
+    );
+  }
+  const { policyNumber } = result;
   const policy: Policy = {
     id: newId(),
     number: policyNumber,

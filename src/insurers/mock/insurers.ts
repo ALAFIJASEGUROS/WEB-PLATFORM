@@ -46,6 +46,9 @@ export const SURA_CONFIG: MockInsurerConfig = {
   latencyMs: [400, 1200],
   failPlatePrefix: "ERR",
   failIssuePlatePrefix: "EMI",
+  rejectIssuePlatePrefix: "REC",
+  pendingIssuePlatePrefix: "PEN",
+  capabilities: { quoteTtlMinutes: 60 * 24 * 15, asyncIssue: true, requiresInspection: false, policyDocument: true },
   regulatory: { contractModel: "simulado", kycFields: [OCCUPATION, PEP] },
   cityFactor: { Bogotá: 1.1, Medellín: 0.95, Cali: 1.08, Barranquilla: 1.05 },
   plans: [
@@ -157,6 +160,10 @@ export const BOLIVAR_CONFIG: MockInsurerConfig = {
   name: "Seguros Bolívar",
   latencyMs: [700, 1800],
   failIssuePlatePrefix: "EMI",
+  rejectIssuePlatePrefix: "REC",
+  pendingIssuePlatePrefix: "PEN",
+  // Valores por confirmar con Bolívar (ver docs/bolivar.md, cuestionario técnico).
+  capabilities: { quoteTtlMinutes: 60 * 24 * 15, asyncIssue: true, requiresInspection: false, policyDocument: true },
   regulatory: { contractModel: "simulado", kycFields: [OCCUPATION, INCOME, PEP] },
   cityFactor: { Bogotá: 1.06, Medellín: 1.0, Cali: 1.12, Cartagena: 0.97 },
   plans: [

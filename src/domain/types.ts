@@ -106,6 +106,8 @@ export interface Offer {
   conditionsUrl: string;
   /** Fecha ISO hasta la que el precio es válido. */
   validUntil: string;
+  /** Id de la cotización en la aseguradora; lo exige la emisión real. */
+  externalQuoteId?: string;
   /** Usos del vehículo que el plan acepta. Si no viene, acepta todos. */
   allowedUses?: VehicleUse[];
   /** Cilindraje máximo que asegura el plan (motos). */
@@ -138,6 +140,8 @@ export interface InsurerError {
   insurerId: string;
   insurerName: string;
   message: string;
+  /** Causa: timeout, error técnico o circuito abierto (no se consultó). */
+  kind?: "timeout" | "error" | "no_disponible";
 }
 
 export interface QuoteResponse {

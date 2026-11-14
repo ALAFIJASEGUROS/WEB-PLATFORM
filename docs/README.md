@@ -3,6 +3,7 @@
 - [Estado del proyecto](estado.md): lo hecho, lo pendiente y los riesgos
 - [Nuevas líneas de seguro](nuevas-lineas.md): cómo agregar hogar, viaje o SOAT
 - [Pasarelas de pago](pasarelas.md): cómo agregar una pasarela además de Wompi
+- [Plan Seguros Bolívar](bolivar.md): primera aseguradora real, por fases (convenio, sandbox, piloto)
 - [Descuentos y tarifas especiales](descuentos.md): reglas por aseguradora, tope global y panel
 - [Experimentos A/B](experimentos.md): pesos del recomendador, guardarraíles y lectura de resultados
 - [Pruebas con usuarios](pruebas-usuarios.md): perfiles, guion de tareas, métricas y registro

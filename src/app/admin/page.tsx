@@ -22,6 +22,8 @@ import {
   SectionTitle,
 } from "@/components/admin/AdminViews";
 import { SalesChart } from "@/components/admin/SalesChart";
+import { InsurerHealthView } from "@/components/admin/InsurerHealthView";
+import { insurerHealthReport } from "@/server/insurer-health";
 import { DiscountsPanel } from "./DiscountsPanel";
 import { ExperimentsPanel } from "./ExperimentsPanel";
 
@@ -51,7 +53,7 @@ export default async function Page() {
     );
   }
   const canEdit = session.role === "admin";
-  const snap = buildAdminSnapshot();
+  const [snap, insurerHealth] = [buildAdminSnapshot(), await insurerHealthReport()];
   const today = todayInColombia();
 
   return (
@@ -86,6 +88,11 @@ export default async function Page() {
           Conciliación de pagos
         </SectionTitle>
         <ReconView report={snap.reconciliation} />
+      </section>
+
+      <section className="space-y-3" aria-labelledby="aseguradoras">
+        <SectionTitle id="aseguradoras">Salud de las aseguradoras</SectionTitle>
+        <InsurerHealthView rows={insurerHealth} />
       </section>
 
       <section className="space-y-3" aria-labelledby="ordenes">

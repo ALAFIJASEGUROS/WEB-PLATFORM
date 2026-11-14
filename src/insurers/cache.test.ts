@@ -26,10 +26,16 @@ describe("caché de cotizaciones", () => {
     expect((await quoteWithCache(req, t0 + 16 * 60_000)).cached).toBe(false);
   });
 
-  it("no guarda resultados parciales", async () => {
+  it("guarda lo que respondió y vuelve a consultar solo la aseguradora que falló", async () => {
     const failing = { ...req, vehicle: { ...req.vehicle, plate: "ERR12D" } };
     const first = await quoteWithCache(failing);
-    expect(first.errors.length).toBe(1);
-    expect((await quoteWithCache(failing)).cached).toBe(false);
+    expect(first.errors.map((e) => e.insurerId)).toEqual(["sura"]);
+    const cache = (globalThis as { __safQuoteCache?: Map<string, unknown> }).__safQuoteCache!;
+    const key = tariffKey(failing);
+    expect(cache.has(`bolivar|${key}`)).toBe(true);
+    expect(cache.has(`sura|${key}`)).toBe(false);
+    const second = await quoteWithCache(failing);
+    expect(second.cached).toBe(false);
+    expect(second.offers.some((o) => o.insurerId === "bolivar")).toBe(true);
   });
 });
