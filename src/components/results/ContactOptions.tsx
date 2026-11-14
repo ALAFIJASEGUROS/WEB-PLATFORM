@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Mail, Phone } from "lucide-react";
 import { CONSENTS } from "@/domain/consents";
-import { formatCOP } from "@/domain/labels";
+import { formatCOP, vehicleName } from "@/domain/labels";
 import { TIME_SLOTS, type TimeSlot } from "@/domain/leads";
 import type { QuoteRequest, QuoteResponse } from "@/domain/types";
 import { requestCall, saveQuoteByEmail } from "@/lib/api-client";
@@ -29,7 +29,7 @@ export function ContactOptions({ request, response }: { request: QuoteRequest; r
           onDone={() => setOpen(null)}
           quote={{
             vehicleType: v.type,
-            vehicle: `${v.brand} ${v.model} ${v.year}`,
+            vehicle: `${vehicleName(v.brand, v.model)} ${v.year}`,
             city: request.driver.city,
             offers: response.offers.length,
             ...(best && { best: { insurerName: best.insurerName, planName: best.planName, annualPremium: best.annualPremium } }),

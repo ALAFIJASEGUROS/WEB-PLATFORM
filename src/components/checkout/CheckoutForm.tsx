@@ -10,7 +10,7 @@ import { currentReferral } from "@/lib/referral";
 import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { policyholderSchema, type Policyholder } from "@/domain/schemas";
-import { formatCOP } from "@/domain/labels";
+import { formatCOP, formatDayMonth, vehicleName } from "@/domain/labels";
 import { Term } from "@/components/Term";
 import { useHydrated, useQuoteRequest, useQuoteResponse } from "@/lib/quote-store";
 import { Button, ButtonLink, Card, Field, InsurerLogo, SimulatedDataNotice, inputClass } from "@/components/ui";
@@ -156,7 +156,7 @@ export function CheckoutForm({
             <InsurerLogo id={offer.insurerId} name={offer.insurerName} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-bold text-heading">{offer.planName}</p>
-              <p className="truncate text-sm text-muted">{offer.insurerName} · {v.brand} {v.model} {v.plate ?? ""}</p>
+              <p className="truncate text-sm text-muted">{offer.insurerName} · {vehicleName(v.brand, v.model)} {v.plate ?? ""}</p>
             </div>
           </Card>
 
@@ -284,9 +284,10 @@ export function CheckoutForm({
               </div>
             </div>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between gap-2"><dt className="text-muted">Vehículo</dt><dd className="text-right font-semibold">{v.brand} {v.model} {v.year}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted">Vehículo</dt><dd className="text-right font-semibold">{vehicleName(v.brand, v.model)} {v.year}</dd></div>
               {v.plate && <div className="flex justify-between"><dt className="text-muted">Placa</dt><dd className="font-semibold">{v.plate}</dd></div>}
               <div className="flex justify-between"><dt className="text-muted">Vigencia</dt><dd className="font-semibold">12 meses</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted">Precio válido hasta</dt><dd className="text-right font-semibold">{formatDayMonth(offer.validUntil)}</dd></div>
               {plan === "anual" && (
                 <>
                   {offer.listPremium && (

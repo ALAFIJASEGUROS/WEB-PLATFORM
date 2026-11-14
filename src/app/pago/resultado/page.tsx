@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/server/db";
-import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Mail, ShieldCheck, XCircle } from "lucide-react";
 import { ButtonLink, Card } from "@/components/ui";
-import { formatCOP } from "@/domain/labels";
+import { formatCOP, vehicleName } from "@/domain/labels";
 import { getCurrentUser } from "@/server/auth";
 import { applyPaymentUpdate, getOrderForViewer, processIssuance } from "@/server/orders";
 import { paymentProvider, providerById } from "@/server/payments";
@@ -67,7 +67,7 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
         </p>
         <Card className="mt-6 space-y-1 p-5 text-left text-sm">
           <p><span className="text-muted">Plan:</span> <strong>{order.offer.planName}</strong> · {order.offer.insurerName}</p>
-          <p><span className="text-muted">Vehículo:</span> {order.quote.vehicle.brand} {order.quote.vehicle.model} {order.quote.vehicle.plate ?? ""}</p>
+          <p><span className="text-muted">Vehículo:</span> {vehicleName(order.quote.vehicle.brand, order.quote.vehicle.model)} {order.quote.vehicle.plate ?? ""}</p>
           <p><span className="text-muted">Referencia de pago:</span> {order.reference}</p>
         </Card>
         <div className="mt-6 grid gap-3">
@@ -89,9 +89,14 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
         <Clock className="mx-auto size-16 text-brand" aria-hidden />
         <h1 className="mt-4 text-2xl font-extrabold text-heading">Pago aprobado. Estamos emitiendo tu póliza</h1>
         <p className="mt-2 text-muted">
-          Recibimos {amount}. {order.offer.insurerName} está tardando más de lo normal en emitir; lo
-          reintentamos automáticamente y te enviaremos la póliza por correo. No vuelvas a pagar.
+          Recibimos {amount}. {order.offer.insurerName} está tardando más de lo normal en emitir tu póliza.
+          Lo seguimos intentando de forma automática.
         </p>
+        <ul className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm">
+          <li className="flex gap-2"><Clock className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />Normalmente queda lista en menos de 30 minutos.</li>
+          <li className="flex gap-2"><Mail className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />Te enviaremos la póliza a {order.policyholder.email}. Puedes cerrar esta página.</li>
+          <li className="flex gap-2"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />No vuelvas a pagar: si no se puede emitir, te devolvemos el dinero completo.</li>
+        </ul>
       </div>
     );
   }

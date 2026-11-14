@@ -4,7 +4,7 @@ import { AlertTriangle, ArrowLeft, FileText, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui";
 import { PrintButton } from "@/components/PrintButton";
 import { COVERAGE_KEYS } from "@/domain/types";
-import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
+import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS, vehicleName } from "@/domain/labels";
 import { getCurrentUser } from "@/server/auth";
 import { db } from "@/server/db";
 import { canRetract, getPolicyForViewer, retractDeadline } from "@/server/orders";
@@ -56,7 +56,7 @@ export default async function Page({ params, searchParams }: PageProps<"/poliza/
           <div><dt className="text-muted">Vigencia</dt><dd className="font-bold">{policy.startDate} a {policy.endDate}</dd></div>
           <div><dt className="text-muted">Tomador y asegurado</dt><dd className="font-bold">{policy.holderName}</dd></div>
           {order && <div><dt className="text-muted">Documento</dt><dd className="font-bold">{order.policyholder.documentType} {order.policyholder.documentNumber}</dd></div>}
-          <div><dt className="text-muted">Vehículo</dt><dd className="font-bold">{v.brand} {v.model} {v.year}</dd></div>
+          <div><dt className="text-muted">Vehículo</dt><dd className="font-bold">{vehicleName(v.brand, v.model)} {v.year}</dd></div>
           <div><dt className="text-muted">Placa</dt><dd className="font-bold">{v.plate ?? "Por asignar"}</dd></div>
           <div><dt className="text-muted">Valor asegurado</dt><dd className="font-bold">{formatCOP(v.commercialValue)}</dd></div>
           {policy.annualPremium && <div><dt className="text-muted">Prima anual</dt><dd className="font-bold">{formatCOP(policy.annualPremium)}</dd></div>}

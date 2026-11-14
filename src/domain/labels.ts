@@ -55,6 +55,17 @@ export function formatCOP(n: number): string {
   }).format(n);
 }
 
+/** "Mazda 2" en vez de "Mazda Mazda 2" cuando la línea ya trae la marca. */
+export const vehicleName = (brand: string, model: string) =>
+  model.toLowerCase().startsWith(brand.toLowerCase()) ? model : `${brand} ${model}`;
+
+/** Fecha corta en español a partir de una fecha ISO (aaaa-mm-dd): "29 de noviembre". */
+export function formatDayMonth(iso: string): string {
+  const d = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", timeZone: "UTC" }).format(d);
+}
+
 export function formatMillions(n: number): string {
   return `$${Math.round(n / 1_000_000).toLocaleString("es-CO")} M`;
 }

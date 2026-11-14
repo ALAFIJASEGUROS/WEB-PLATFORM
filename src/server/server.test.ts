@@ -388,6 +388,9 @@ describe("emisión asíncrona", () => {
     const job = db().issuanceJobs.get(order.id)!;
     expect(job).toMatchObject({ attempts: 1, status: "pendiente" });
     expect(job.lastError).toMatch(/no pudo emitir/);
+    // El cliente recibe un solo aviso de demora, aunque haya varios reintentos.
+    const delayMails = () => db().outbox.filter((m) => m.to === order.policyholder.email && /está en proceso/.test(m.subject));
+    expect(delayMails()).toHaveLength(1);
 
     expect((await processIssuanceQueue(t0)).processed).toBe(0); // aún no le toca
     await processIssuanceQueue(t0 + issuanceBackoffMs(1) + 1000);
@@ -395,6 +398,7 @@ describe("emisión asíncrona", () => {
     expect(order.status).toBe("emitida");
     expect(job).toMatchObject({ attempts: 2, status: "completada" });
     expect([...db().policies.values()].filter((p) => p.orderId === order.id)).toHaveLength(1);
+    expect(delayMails()).toHaveLength(1);
   });
 
   it("si la emisión queda pendiente, la completa en el siguiente intento con la misma clave", async () => {
