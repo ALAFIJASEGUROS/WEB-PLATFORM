@@ -100,12 +100,12 @@ test("edita una respuesta desde el resumen y descarta los planes que no aplican"
   await page.getByRole("button", { name: "Ver mis opciones" }).click();
 
   await expect(page.getByText("Nuestra recomendación")).toBeVisible({ timeout: 15_000 });
-  await page.getByText(/planes no aplican para tu caso/).click();
+  await page.getByText(/(plan no aplica|planes no aplican) para tu caso/).click();
   await expect(page.getByText(/No cubre el uso en domicilios o plataformas/).first()).toBeVisible();
 });
 
 test("el condicionado está disponible desde la oferta", async ({ page }) => {
-  await page.goto("/condicionado/sura/auto-clasico");
+  await page.goto("/condicionado/bolivar/auto-plus");
   await expect(page.getByRole("heading", { name: "Exclusiones principales" })).toBeVisible();
 });
 
@@ -145,7 +145,7 @@ test("es instalable y muestra una página sin conexión", async ({ page, context
 
 test("muestra los descuentos y el admin puede apagarlos", async ({ page }) => {
   await cotizar(page);
-  await expect(page.getByText("Tarifa digital SURA").first()).toBeVisible();
+  await expect(page.getByText("Tarifa digital Bolívar").first()).toBeVisible();
 
   await page.goto("/admin");
   await page.getByLabel("Correo electrónico").fill("admin@e2e.test");
@@ -162,7 +162,7 @@ test("muestra los descuentos y el admin puede apagarlos", async ({ page }) => {
   await expect(panel.getByText("Apagados", { exact: true })).toBeVisible();
 
   await cotizar(page);
-  await expect(page.getByText("Tarifa digital SURA")).toHaveCount(0);
+  await expect(page.getByText("Tarifa digital Bolívar")).toHaveCount(0);
 
   // Deja la configuración como estaba para las demás pruebas.
   await page.goto("/admin");

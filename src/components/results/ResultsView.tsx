@@ -168,13 +168,17 @@ export function ResultsView() {
           <option value="precio">Menor precio</option>
           <option value="cobertura">Mayor cobertura</option>
         </select>
-        <label className="block text-xs font-semibold text-muted" htmlFor={`insurer-${size}`}>Aseguradora</label>
-        <select id={`insurer-${size}`} value={insurer} onChange={(e) => setInsurer(e.target.value)} className={`${pill} ${block}`}>
-          <option value="todas">Todas las aseguradoras</option>
-          {insurers.map(([id, name]) => (
-            <option key={id} value={id}>{name}</option>
-          ))}
-        </select>
+        {insurers.length > 1 && (
+          <>
+            <label className="block text-xs font-semibold text-muted" htmlFor={`insurer-${size}`}>Aseguradora</label>
+            <select id={`insurer-${size}`} value={insurer} onChange={(e) => setInsurer(e.target.value)} className={`${pill} ${block}`}>
+              <option value="todas">Todas las aseguradoras</option>
+              {insurers.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          </>
+        )}
         <label className="block text-xs font-semibold text-muted" htmlFor={`ded-${size}`}>Deducible</label>
         <select id={`ded-${size}`} value={maxDeductible} onChange={(e) => setMaxDeductible(e.target.value as typeof maxDeductible)} className={`${pill} ${block}`}>
           <option value="todos">Cualquier deducible</option>

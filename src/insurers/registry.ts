@@ -1,9 +1,9 @@
 import type { KycField } from "./adapter";
-import { BOLIVAR_CONFIG, SURA_CONFIG } from "./mock/insurers";
+import { ACTIVE_CONFIGS } from "./mock/insurers";
 
 // Metadatos públicos de cada aseguradora (sin lógica de tarifas), usables en el
 // cliente: por ejemplo, para pintar los campos KYC del checkout.
-const CONFIGS = [SURA_CONFIG, BOLIVAR_CONFIG];
+const CONFIGS = ACTIVE_CONFIGS;
 
 export function kycFieldsFor(insurerId: string): KycField[] {
   return CONFIGS.find((c) => c.id === insurerId)?.regulatory.kycFields ?? [];

@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { ContentPage } from "@/components/ContentPage";
 import { COVERAGE_LABELS, formatMillions, SERVICE_LABELS } from "@/domain/labels";
 import { COMMON_EXCLUSIONS } from "@/insurers/mock/tariff";
-import { BOLIVAR_CONFIG, SURA_CONFIG } from "@/insurers/mock/insurers";
+import { ACTIVE_CONFIGS } from "@/insurers/mock/insurers";
 
-const CONFIGS = [SURA_CONFIG, BOLIVAR_CONFIG];
+const CONFIGS = ACTIVE_CONFIGS;
 
 function find(aseguradora: string, plan: string) {
   const config = CONFIGS.find((c) => c.id === aseguradora);

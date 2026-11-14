@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/seguros/[tipo]/[m
   const e = estimate(p);
   return {
     title: `Seguro para ${vehicleName(p.brand, p.model)}: precios y coberturas`,
-    description: `Seguro para ${p.tipo} ${vehicleName(p.brand, p.model)} en Colombia desde ${e ? formatCOP(e.min) : ""} al año. Compara aseguradoras, coberturas y deducibles, y compra en línea.`,
+    description: `Seguro para ${p.tipo} ${vehicleName(p.brand, p.model)} en Colombia desde ${e ? formatCOP(e.min) : ""} al año. Compara planes, coberturas y deducibles, y compra en línea.`,
     alternates: { canonical: modelPath(p) },
   };
 }

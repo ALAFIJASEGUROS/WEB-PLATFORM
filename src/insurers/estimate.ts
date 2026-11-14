@@ -1,6 +1,6 @@
 import type { Answers, QuoteRequest, VehicleType } from "@/domain/types";
 import { estimateValue, findModel } from "@/vehicles/lookup";
-import { BOLIVAR_CONFIG, SURA_CONFIG } from "./mock/insurers";
+import { ACTIVE_CONFIGS } from "./mock/insurers";
 import { priceOffers } from "./mock/tariff";
 
 // Precio de referencia para un vehículo y un perfil típico, sin placa. Usa las
@@ -47,7 +47,7 @@ export function estimatePrice(i: EstimateInput, answers: Answers = REFERENCE_ANS
     driver: { birthdate: `${2026 - i.age}-01-15`, city: i.city },
     answers,
   };
-  const offers = [SURA_CONFIG, BOLIVAR_CONFIG]
+  const offers = ACTIVE_CONFIGS
     .flatMap((c) => priceOffers(req, c))
     .filter((o) => !o.maxEngineCc || !m.cc || m.cc <= o.maxEngineCc);
   if (!offers.length) return null;

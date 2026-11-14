@@ -3,6 +3,11 @@
 > Creado el 2026-11-14. Es la primera aseguradora real (HU-02.5). Las historias nuevas se registran como
 > épica **HU-23** en el [backlog](04-backlog.md).
 
+## Alcance
+
+**Por ahora la plataforma solo ofrece Seguros Bolívar.** SURA sigue definida en `src/insurers/mock/insurers.ts`, pero no
+está en `ACTIVE_CONFIGS` ni en `src/insurers/active.ts`. Para sumar otra aseguradora se agrega en esas dos listas.
+
 ## Punto de partida
 
 - Bolívar existe solo como **mock**, con la marca real y tarifas inventadas (`src/insurers/mock/insurers.ts`).

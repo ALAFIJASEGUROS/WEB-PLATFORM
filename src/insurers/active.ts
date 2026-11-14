@@ -2,7 +2,6 @@
 // según sus variables de entorno; sin configuración, todas son simuladas.
 import type { InsurerAdapter } from "./adapter";
 import { bolivarAdapter } from "./bolivar";
-import { SURA_CONFIG } from "./mock/insurers";
-import { createMockAdapter } from "./mock/tariff";
 
-export const INSURERS: InsurerAdapter[] = [createMockAdapter(SURA_CONFIG), bolivarAdapter()];
+/** Por ahora solo Seguros Bolívar. Para sumar otra, agregar su adaptador aquí y en ACTIVE_CONFIGS. */
+export const INSURERS: InsurerAdapter[] = [bolivarAdapter()];

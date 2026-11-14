@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s · SeguAlaFija",
   },
   description:
-    "Responde unas preguntas y te recomendamos el seguro de carro o moto que mejor se ajusta a ti. Compara aseguradoras y compra desde tu celular.",
+    "Responde unas preguntas y te recomendamos el seguro de carro o moto que mejor se ajusta a ti. Compara planes y compra desde tu celular.",
   applicationName: "SeguAlaFija",
 };
 
