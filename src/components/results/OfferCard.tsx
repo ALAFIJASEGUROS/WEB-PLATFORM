@@ -7,7 +7,7 @@ import { formatScore, reputationFor } from "@/insurers/reputation";
 import { useUiVariant } from "@/lib/experiments";
 import type { ScoredOffer } from "@/domain/types";
 import { COVERAGE_KEYS } from "@/domain/types";
-import { COVERAGE_LABELS, formatCOP, formatMillions, SERVICE_LABELS } from "@/domain/labels";
+import { COVERAGE_LABELS, formatCOP, formatDayMonth, formatMillions, SERVICE_LABELS } from "@/domain/labels";
 import { discountTotal } from "@/domain/discounts";
 import { Badge, Button, ButtonLink, Card, InsurerLogo } from "@/components/ui";
 import { discountProps, track } from "@/lib/analytics";
@@ -92,6 +92,7 @@ export function OfferCard({
             <p className="text-sm text-muted">
               o {formatCOP(offer.monthlyPremium)} al mes
             </p>
+            <p className="mt-1 text-xs text-muted">Precio válido hasta el {formatDayMonth(offer.validUntil)}</p>
           </div>
           <div className="text-right text-xs text-muted md:border-t md:border-line md:pt-3 md:text-left">
             <p><Term id="deducible" align="right">Deducible</Term></p>
@@ -163,9 +164,6 @@ export function OfferCard({
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-muted">
-                Precio válido hasta {offer.validUntil}.
-              </p>
             </div>
             <div>
               <h4 className="mb-2 text-sm font-bold text-heading">Exclusiones principales</h4>

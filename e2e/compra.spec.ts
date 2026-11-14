@@ -117,7 +117,7 @@ test("abre una cotización compartida por enlace", async ({ page }) => {
     answers: { priority: "precio", use: "domicilios", parking: "calle", mileage: "alto", drivers: "solo", financed: false, deductibleTolerance: "alto", services: [], claimsLast3Years: 0 },
   })).toString("base64url");
   await page.goto(`/resultados?c=${c}`);
-  await expect(page.getByRole("heading", { name: /opciones para tu Yamaha NMAX 155 2023/ })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: /(opción|opciones) para tu Yamaha NMAX 155 2023/ })).toBeVisible({ timeout: 15_000 });
   await expect(page).toHaveURL(/\/resultados$/);
 });
 

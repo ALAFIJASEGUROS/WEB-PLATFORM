@@ -64,6 +64,8 @@ export interface IssuanceJob {
   status: "pendiente" | "completada" | "fallida";
   running?: boolean;
   lastError?: string;
+  /** Ya se le avisó al cliente que la emisión está tardando. */
+  delayNotified?: boolean;
 }
 
 export interface Policy {

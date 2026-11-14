@@ -6,6 +6,15 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 [docs/versionamiento.md](docs/versionamiento.md).
 
 ## [No publicado]
+### Agregado
+- Resultados: "¿Qué ganas con el plan superior?" muestra el costo extra al año y al mes de cada salto de plan y lo que suma (coberturas, deducible, responsabilidad civil y asistencias).
+- La vigencia del precio se ve en la tarjeta de cada oferta y en el resumen del checkout ("Precio válido hasta el 29 de noviembre").
+- Si la emisión no sale al primer intento, el cliente recibe un solo correo avisando que el pago está aprobado y la póliza va en camino; la página de espera explica el tiempo normal, a qué correo llega y que no debe volver a pagar.
+
+### Corregido
+- El nombre del vehículo ya no repite la marca ("Mazda 2 2022" en lugar de "Mazda Mazda 2 2022") en resultados, perfil, checkout, póliza, correos y admin.
+- Con una sola opción, los títulos dicen "1 opción"; si la aseguradora no responde y no hay más opciones, el aviso invita a intentar de nuevo en vez de decir "mostramos las demás".
+
 ### Cambiado
 - Por ahora la plataforma solo ofrece Seguros Bolívar: cotización, resultados, condicionados, calificación, defensor del consumidor y textos del sitio. SURA queda definida en el código (inactiva) para reactivarla. El filtro por aseguradora en resultados solo aparece cuando hay más de una.
 - La regla de descuento de ejemplo de SURA se reemplaza por "Tarifa digital Bolívar" (carros, 5 %).

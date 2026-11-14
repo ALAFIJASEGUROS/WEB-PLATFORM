@@ -4,7 +4,7 @@ import { Bike, CarFront, Trash2 } from "lucide-react";
 import { getCurrentUser } from "@/server/auth";
 import { daysUntil, overdueInstallment, userPolicies, userVehicles } from "@/server/queries";
 import type { Policy } from "@/server/db";
-import { formatCOP } from "@/domain/labels";
+import { formatCOP, vehicleName } from "@/domain/labels";
 import { Badge, Button, ButtonLink, Card, Field, InsurerLogo, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/account/ActionForm";
 import { ExternalPolicyForm } from "@/components/account/ExternalPolicyForm";
@@ -111,7 +111,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta/seguros"
             <Card key={v.id} className="space-y-3 p-5">
               <div className="flex items-center gap-3">
                 {v.type === "moto" ? <Bike className="size-6 text-brand" aria-hidden /> : <CarFront className="size-6 text-brand" aria-hidden />}
-                <p className="flex-1 font-bold text-heading">{v.plate} · {v.brand} {v.model} {v.year}</p>
+                <p className="flex-1 font-bold text-heading">{v.plate} · {vehicleName(v.brand, v.model)} {v.year}</p>
                 <form action={deleteVehicleAction.bind(null, v.id)}>
                   <button aria-label={`Eliminar ${v.plate}`} className="flex size-10 items-center justify-center rounded-full text-muted hover:bg-coral-soft hover:text-coral"><Trash2 className="size-4" aria-hidden /></button>
                 </form>
@@ -152,7 +152,7 @@ export default async function Page({ searchParams }: PageProps<"/cuenta/seguros"
             <summary className="cursor-pointer font-semibold text-heading">+ Registrar una póliza que ya tengo</summary>
             <ExternalPolicyForm
               action={addExternalPolicyAction}
-              vehicles={vehicles.map((v) => ({ id: v.id, plate: v.plate, label: `${v.plate} · ${v.brand} ${v.model}` }))}
+              vehicles={vehicles.map((v) => ({ id: v.id, plate: v.plate, label: `${v.plate} · ${vehicleName(v.brand, v.model)}` }))}
             />
           </details>
         )}

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Pencil, SlidersHorizontal, Sparkles } from "lucide-react";
-import { formatCOP, PRIORITY_LABELS } from "@/domain/labels";
+import { formatCOP, PRIORITY_LABELS, vehicleName } from "@/domain/labels";
 import type { QuoteRequest } from "@/domain/types";
 import { fetchQuote } from "@/lib/api-client";
 import { track } from "@/lib/analytics";
@@ -18,6 +18,8 @@ import {
 } from "@/lib/quote-store";
 import { Button, ButtonLink, SimulatedDataNotice } from "@/components/ui";
 import { OfferCard } from "./OfferCard";
+import { PlanSteps } from "./PlanSteps";
+import { planSteps } from "@/recommendation/upgrade";
 import { BottomSheet } from "@/components/BottomSheet";
 import { ShareQuote } from "./ShareQuote";
 import { RefinePanel } from "./RefinePanel";
@@ -95,6 +97,8 @@ export function ResultsView() {
     () => [...new Map(data?.offers.map((o) => [o.insurerId, o.insurerName])).entries()],
     [data],
   );
+  // Con pocos planes, la decisión es subir o no de plan: mostramos qué suma cada salto.
+  const steps = useMemo(() => planSteps(data?.offers ?? []), [data]);
 
   function toggleCompare(id: string) {
     const next = compare.includes(id)
@@ -237,7 +241,7 @@ export function ResultsView() {
       <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-heading">
-            {data.offers.length} opciones para tu {v.brand} {v.model} {v.year}
+            {data.offers.length} {data.offers.length === 1 ? "opción" : "opciones"} para tu {vehicleName(v.brand, v.model)} {v.year}
           </h1>
           <p className="mt-1 text-sm text-muted">
             {request.answers.weights ? (
@@ -271,7 +275,8 @@ export function ResultsView() {
 
       {data.errors.map((e) => (
         <p key={e.insurerId} role="status" className="mt-3 flex gap-2 rounded-xl bg-coral-soft px-3 py-2 text-sm text-coral">
-          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden /> {e.message} Mostramos las demás opciones.
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden /> {e.message}{" "}
+          {data.offers.length > 0 ? "Mostramos las demás opciones." : "Intenta de nuevo en unos minutos."}
         </p>
       ))}
 
@@ -296,6 +301,8 @@ export function ResultsView() {
           />
         </section>
       )}
+
+      {sort === "afinidad" && insurer === "todas" && !onlyFull && <PlanSteps steps={steps} />}
 
       <div className="mt-8 flex items-center justify-between gap-3 lg:hidden">
         <p className="text-sm text-muted">{offers.length} {offers.length === 1 ? "opción" : "opciones"}</p>
@@ -376,7 +383,7 @@ export function ResultsView() {
 function ProfileCard({ request }: { request: QuoteRequest }) {
   const { vehicle: v, driver, answers: a } = request;
   const rows = [
-    ["Vehículo", `${v.brand} ${v.model} ${v.year}`],
+    ["Vehículo", `${vehicleName(v.brand, v.model)} ${v.year}`],
     ["Placa", v.plate ?? "—"],
     ["Valor asegurado", formatCOP(v.commercialValue)],
     ["Ciudad", driver.city],

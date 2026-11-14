@@ -7,6 +7,7 @@ import type { QuoteRequest } from "@/domain/types";
 import { encodeShare } from "@/lib/share";
 import { db, newId, sendMessage, type SavedQuote } from "./db";
 import { audit } from "./admin";
+import { vehicleName } from "@/domain/labels";
 
 type Ctx = { ip?: string; userAgent?: string };
 
@@ -62,7 +63,7 @@ export function saveQuote(email: string, request: QuoteRequest, base: string, be
     to: e,
     channel: "email",
     kind: "transaccional",
-    subject: `Tu cotización para tu ${v.brand} ${v.model}`,
+    subject: `Tu cotización para tu ${vehicleName(v.brand, v.model)}`,
     body: `Aquí tienes tu cotización para retomarla cuando quieras${best ? ` (la recomendada: ${best})` : ""}:\n${link}\n\nLos precios se recalculan al abrirla.`,
   });
   return saved;
@@ -94,7 +95,7 @@ export function sendSavedQuoteReminder(q: SavedQuote, today: string) {
     to: q.email,
     channel: "email",
     kind: "vencimientos",
-    subject: `¿Seguimos con el seguro de tu ${v.brand} ${v.model}?`,
+    subject: `¿Seguimos con el seguro de tu ${vehicleName(v.brand, v.model)}?`,
     body: `Guardaste tu cotización ayer. Puedes retomarla aquí:\n${q.link}\n\nSi prefieres que te llamemos, pídelo desde la misma página.`,
   });
   q.reminderSentAt = today;

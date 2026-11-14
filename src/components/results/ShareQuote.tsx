@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MessageCircle, Share2 } from "lucide-react";
 import type { QuoteRequest } from "@/domain/types";
 import { encodeShare } from "@/lib/share";
+import { vehicleName } from "@/domain/labels";
 
 export function shareUrl(req: QuoteRequest) {
   return `${window.location.origin}${window.location.pathname}?c=${encodeShare(req)}`;
@@ -12,7 +13,7 @@ export function shareUrl(req: QuoteRequest) {
 /** Comparte la cotización: menú nativo del celular o copiar enlace, y WhatsApp. */
 export function ShareQuote({ request }: { request: QuoteRequest }) {
   const [copied, setCopied] = useState(false);
-  const text = `Mira estas opciones de seguro para ${request.vehicle.brand} ${request.vehicle.model} ${request.vehicle.year}`;
+  const text = `Mira estas opciones de seguro para ${vehicleName(request.vehicle.brand, request.vehicle.model)} ${request.vehicle.year}`;
 
   async function share() {
     const url = shareUrl(request);

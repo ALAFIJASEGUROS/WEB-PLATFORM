@@ -29,7 +29,7 @@ import type {
   VehicleType,
 } from "@/domain/types";
 import { SERVICE_KEYS } from "@/domain/types";
-import { CITIES, formatCOP, PRIORITY_LABELS, SERVICE_LABELS, USE_LABELS } from "@/domain/labels";
+import { CITIES, formatCOP, PRIORITY_LABELS, SERVICE_LABELS, USE_LABELS, vehicleName } from "@/domain/labels";
 import {
   CATALOG,
   CURRENT_YEAR,
@@ -282,7 +282,7 @@ function Wizard({ type }: { type: VehicleType }) {
           className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-heading shadow-sm"
         >
           {type === "auto" ? <CarFront className="size-4 text-brand" aria-hidden /> : <Bike className="size-4 text-brand" aria-hidden />}
-          {vehicle.brand} {vehicle.model} {vehicle.year}
+          {vehicleName(vehicle.brand, vehicle.model)} {vehicle.year}
           {vehicle.plate && <span className="text-muted">· {vehicle.plate}</span>}
         </button>
       )}
@@ -328,7 +328,7 @@ function Wizard({ type }: { type: VehicleType }) {
                 <div className="rounded-2xl bg-mint-soft p-4" aria-live="polite">
                   <p className="text-sm font-semibold text-mint">Encontramos tu {noun}</p>
                   <p className="mt-1 text-lg font-bold text-heading">
-                    {vehicle.brand} {vehicle.model} {vehicle.year}
+                    {vehicleName(vehicle.brand, vehicle.model)} {vehicle.year}
                     {vehicle.engineCc && <span className="font-semibold text-muted"> · {vehicle.engineCc} cc</span>}
                   </p>
                 </div>
@@ -586,7 +586,7 @@ function Summary({
       title: "Vehículo",
       step: 0,
       rows: [
-        ["Modelo", `${v.brand} ${v.model} ${v.year}`],
+        ["Modelo", `${vehicleName(v.brand, v.model)} ${v.year}`],
         ...(v.plate ? [["Placa", v.plate] as [string, string]] : []),
         ...(v.engineCc ? [["Cilindraje", `${v.engineCc} cc`] as [string, string]] : []),
         ["Valor asegurado", formatCOP(v.commercialValue)],
@@ -665,7 +665,7 @@ function WhyWeAsk({
 }) {
   const why = WHY[step];
   const summary = [
-    vehicle && `${vehicle.brand} ${vehicle.model} ${vehicle.year}`,
+    vehicle && `${vehicleName(vehicle.brand, vehicle.model)} ${vehicle.year}`,
     step > 1 && city,
     step > 2 && `Uso ${USE_LABELS[answers.use]}, ${answers.parking === "calle" ? "parquea en la calle" : "parqueadero cerrado"}`,
     step > 3 && `Prioridad: ${PRIORITY_LABELS[answers.priority].toLowerCase()}`,

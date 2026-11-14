@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Building2 } from "lucide-react";
 import { CONSENTS } from "@/domain/consents";
 import { MAX_FLEET, parsePlates, summarizeFleet, type FleetLine } from "@/domain/fleet";
-import { CITIES, formatCOP } from "@/domain/labels";
+import { CITIES, formatCOP, vehicleName } from "@/domain/labels";
 import { TIME_SLOTS, type TimeSlot } from "@/domain/leads";
 import type { Answers, VehicleUse } from "@/domain/types";
 import { fetchQuote, lookupVehicle, requestCall } from "@/lib/api-client";
@@ -50,7 +50,7 @@ export function FleetQuote() {
         out.push({
           plate,
           type,
-          vehicle: `${vehicle.brand} ${vehicle.model} ${vehicle.year}`,
+          vehicle: `${vehicleName(vehicle.brand, vehicle.model)} ${vehicle.year}`,
           ...(best ? { best: { insurerName: best.insurerName, planName: best.planName, annualPremium: best.annualPremium } } : { error: "Ningún plan aplica" }),
         });
       } catch {

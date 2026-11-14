@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ORDER_STATUS_LABELS } from "@/domain/admin";
-import { formatCOP } from "@/domain/labels";
+import { formatCOP, vehicleName } from "@/domain/labels";
 import { adminSession } from "@/server/admin";
 import { db } from "@/server/db";
 import { findOrderByReference } from "@/server/orders";
@@ -55,7 +55,7 @@ export default async function Page({ params }: PageProps<"/admin/ordenes/[refere
           <dl className="divide-y divide-line text-sm">
             <Row k="Fecha" v={when(order.createdAt)} />
             <Row k="Plan" v={`${order.offer.planName} · ${order.offer.insurerName}`} />
-            <Row k="Vehículo" v={`${v.brand} ${v.model} ${v.year}${v.plate ? ` · ${v.plate}` : ""}${v.engineCc ? ` · ${v.engineCc} cc` : ""}`} />
+            <Row k="Vehículo" v={`${vehicleName(v.brand, v.model)} ${v.year}${v.plate ? ` · ${v.plate}` : ""}${v.engineCc ? ` · ${v.engineCc} cc` : ""}`} />
             <Row k="Valor asegurado" v={formatCOP(v.commercialValue)} />
             <Row k="Forma de pago" v={order.paymentPlan} />
             {order.offer.listPremium && <Row k="Precio de lista" v={formatCOP(order.offer.listPremium)} />}

@@ -10,6 +10,7 @@ import { experiments } from "./experiments";
 import { PQR_TYPE_LABELS } from "./pqr";
 import { leadSummary, TIME_SLOTS } from "@/domain/leads";
 import { lastReconciliation } from "./reconciliation";
+import { vehicleName } from "@/domain/labels";
 
 const CONSENT_TITLES: Record<string, string> = { terms: "Términos", dataProcessing: "Datos", marketing: "Marketing" };
 
@@ -22,7 +23,7 @@ export function orderRow(o: Order) {
     email: o.policyholder.email,
     plan: o.offer.planName,
     insurer: o.offer.insurerName,
-    vehicle: `${o.quote.vehicle.brand} ${o.quote.vehicle.model} ${o.quote.vehicle.year}${o.quote.vehicle.plate ? ` · ${o.quote.vehicle.plate}` : ""}`,
+    vehicle: `${vehicleName(o.quote.vehicle.brand, o.quote.vehicle.model)} ${o.quote.vehicle.year}${o.quote.vehicle.plate ? ` · ${o.quote.vehicle.plate}` : ""}`,
     amount: o.amountInCents / 100,
     paymentPlan: o.paymentPlan,
     discount: (o.offer.discounts ?? []).reduce((s, d) => s + d.amount, 0),

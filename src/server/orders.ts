@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import type { CheckoutInput } from "@/domain/schemas";
-import { formatCOP } from "@/domain/labels";
+import { formatCOP, vehicleName } from "@/domain/labels";
 import { InsurerRejectedError } from "@/insurers/adapter";
 import { getAdapter } from "@/insurers/aggregator";
 import { validateKyc } from "@/insurers/registry";
@@ -202,6 +202,10 @@ export async function processIssuance(orderId: string, now = Date.now()) {
       notifyIssuanceFailure(order, job.lastError);
     } else {
       job.nextAttemptAt = now + issuanceBackoffMs(job.attempts);
+      if (!job.delayNotified) {
+        job.delayNotified = true;
+        notifyIssuanceDelay(order);
+      }
     }
   } finally {
     job.running = false;
@@ -219,6 +223,21 @@ export async function processIssuanceQueue(now = Date.now()) {
     }
   }
   return { processed };
+}
+
+/** Primer aviso al cliente: el pago está aprobado y la póliza va en camino. */
+function notifyIssuanceDelay(order: Order) {
+  const h = order.policyholder;
+  sendMessage({
+    to: h.email,
+    channel: "email",
+    subject: `Recibimos tu pago. Tu póliza está en proceso (${order.reference})`,
+    body: [
+      `Hola ${h.firstName}, tu pago fue aprobado.`,
+      `${order.offer.insurerName} está tardando un poco más de lo normal en emitir tu póliza ${order.offer.planName}. Lo seguimos intentando de forma automática y normalmente queda lista en menos de 30 minutos.`,
+      "Te enviaremos otro correo con la póliza apenas esté lista. No necesitas hacer nada y no vuelvas a pagar.",
+    ].join("\n\n"),
+  });
 }
 
 function notifyIssuanceFailure(order: Order, error: string) {
@@ -333,7 +352,7 @@ async function issuePolicy(order: Order) {
     subject: `Tu póliza ${policy.number} está activa`,
     body: [
       `Hola ${h.firstName},`,
-      `Tu seguro ${policy.planName} de ${policy.insurerName} para ${policy.vehicle.brand} ${policy.vehicle.model} quedó activo desde el ${policy.startDate} hasta el ${policy.endDate}.`,
+      `Tu seguro ${policy.planName} de ${policy.insurerName} para ${vehicleName(policy.vehicle.brand, policy.vehicle.model)} quedó activo desde el ${policy.startDate} hasta el ${policy.endDate}.`,
       `Pagaste ${formatCOP(order.amountInCents / 100)} (${order.paymentPlan === "anual" ? "pago anual" : "primera cuota mensual"}).`,
       `Ver tu póliza: ${base}/poliza/${policy.id}?t=${policy.accessToken}`,
       `Crea tu cuenta con este correo para recibir recordatorios de renovación, SOAT y tecnomecánica: ${base}/cuenta`,
