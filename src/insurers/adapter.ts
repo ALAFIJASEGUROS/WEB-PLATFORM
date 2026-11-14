@@ -49,6 +49,8 @@ export type IssueResult =
 export interface AdapterCapabilities {
   /** Minutos que la aseguradora sostiene el precio cotizado. */
   quoteTtlMinutes: number;
+  /** Timeout de cada cotización. Si se omite, se usa el del agregador. */
+  quoteTimeoutMs?: number;
   /** La emisión puede quedar `pendiente` y resolverse después. */
   asyncIssue: boolean;
   /** Algunos vehículos requieren inspección antes de emitir. */

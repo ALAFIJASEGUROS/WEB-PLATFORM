@@ -138,6 +138,8 @@ export interface InsurerError {
   insurerId: string;
   insurerName: string;
   message: string;
+  /** Causa: timeout, error técnico o circuito abierto (no se consultó). */
+  kind?: "timeout" | "error" | "no_disponible";
 }
 
 export interface QuoteResponse {

@@ -1,7 +1,9 @@
 import type { InsurerError, Offer, QuoteRequest } from "@/domain/types";
+import type { InsurerAdapter } from "./adapter";
 import { quoteAll } from "./aggregator";
+import { MOCK_INSURERS } from "./mock/insurers";
 
-// Caché en memoria de cotizaciones. La clave solo incluye los datos que cambian
+// Caché en memoria de cotizaciones, por aseguradora. La clave solo incluye los datos que cambian
 // la tarifa: las preferencias (prioridad, pesos, servicios, deducible) solo
 // afectan el puntaje, que se recalcula en cada consulta.
 
@@ -25,21 +27,40 @@ export function tariffKey(req: QuoteRequest) {
   ]);
 }
 
+/**
+ * Cotiza usando la caché por aseguradora: solo consulta las que no tienen una
+ * cotización vigente. Si una falla, lo que respondieron las demás se guarda.
+ * El TTL es el menor entre la política interna y la vigencia de la aseguradora.
+ */
 export async function quoteWithCache(
   req: QuoteRequest,
   now = Date.now(),
+  adapters: InsurerAdapter[] = MOCK_INSURERS,
 ): Promise<{ offers: Offer[]; errors: InsurerError[]; cached: boolean }> {
   const key = tariffKey(req);
-  const hit = cache().get(key);
-  if (hit && hit.expiresAt > now) return { offers: hit.offers, errors: [], cached: true };
-
-  const { offers, errors } = await quoteAll(req);
-  // Los resultados parciales no se guardan: la próxima consulta reintenta.
-  if (errors.length === 0) {
-    if (cache().size >= MAX_ENTRIES) cache().delete(cache().keys().next().value!);
-    cache().set(key, { offers, expiresAt: now + TTL_MS });
-  } else {
-    cache().delete(key);
+  const eligible = adapters.filter((a) => a.supports.includes(req.vehicle.type));
+  const fresh = new Map<string, Offer[]>();
+  for (const a of eligible) {
+    const hit = cache().get(`${a.id}|${key}`);
+    if (hit && hit.expiresAt > now) fresh.set(a.id, hit.offers);
   }
-  return { offers, errors, cached: false };
+  const missing = eligible.filter((a) => !fresh.has(a.id));
+  let errors: InsurerError[] = [];
+  if (missing.length > 0) {
+    const result = await quoteAll(req, missing);
+    errors = result.errors;
+    for (const a of missing) {
+      if (errors.some((e) => e.insurerId === a.id)) {
+        cache().delete(`${a.id}|${key}`);
+        continue;
+      }
+      const offers = result.offers.filter((o) => o.insurerId === a.id);
+      fresh.set(a.id, offers);
+      if (cache().size >= MAX_ENTRIES) cache().delete(cache().keys().next().value!);
+      const ttl = Math.min(TTL_MS, a.capabilities.quoteTtlMinutes * 60_000);
+      cache().set(`${a.id}|${key}`, { offers, expiresAt: now + ttl });
+    }
+  }
+  const offers = eligible.flatMap((a) => fresh.get(a.id) ?? []);
+  return { offers, errors, cached: missing.length === 0 };
 }
