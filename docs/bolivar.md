@@ -26,8 +26,8 @@ llegue el sandbox, solo faltará implementar el adaptador real.
 | 0.2 | Identificar el contacto comercial de canales digitales o intermediarios en Bolívar y agendar la primera reunión | C | Negocio | Reunión agendada |
 | 0.3 | Preparar el **cuestionario técnico** para Bolívar (ver anexo) | T | Tecnología | Documento enviado antes de la reunión |
 | 0.4 | Decidir qué hacer con el mock mientras no haya convenio: renombrarlo a una aseguradora ficticia o mantenerlo con el aviso "precio simulado" (HU-17.12) | C | Negocio | Decisión escrita y aplicada |
-| 0.5 | **Adaptador v2**: añadir `getIssueStatus`, `getPolicyDocument`, `healthcheck` y capacidades (`quoteTtl`, `requiresInspection`, `asyncIssue`, ciudades, años y tipos admitidos) | T | Tecnología | PR con la interfaz y los mocks actualizados |
-| 0.6 | **Tests de contrato** compartidos que todo adaptador debe pasar (cotiza, rechaza, timeout, idempotencia de la emisión) | T | Tecnología | Suite en Vitest |
+| 0.5 | ✅ **Adaptador v2**: añadir `getIssueStatus`, `getPolicyDocument`, `healthcheck` y capacidades (`quoteTtl`, `requiresInspection`, `asyncIssue`, ciudades, años y tipos admitidos) | T | Tecnología | PR con la interfaz y los mocks actualizados |
+| 0.6 | ✅ **Tests de contrato** compartidos que todo adaptador debe pasar (cotiza, rechaza, timeout, idempotencia de la emisión) | T | Tecnología | Suite en Vitest |
 
 **Criterio de salida:** reunión con Bolívar agendada, cuestionario enviado y adaptador v2 en `main`.
 

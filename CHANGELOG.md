@@ -6,6 +6,17 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 [docs/versionamiento.md](docs/versionamiento.md).
 
 ## [No publicado]
+### Agregado
+- Contrato de adaptador de aseguradoras v2 (`ADAPTER_CONTRACT_VERSION = 2.0.0`): `issue` devuelve un estado (`emitida`, `pendiente`, `requiere_inspeccion` o `rechazada`), más `getIssueStatus`, `getPolicyDocument`, `healthcheck` opcional y capacidades por aseguradora (vigencia de la cotización, emisión asíncrona, inspección, documento).
+- Tests de contrato reutilizables (`src/insurers/contract.suite.ts`) que debe pasar todo adaptador, simulado o real.
+- Plan de trabajo para integrar Seguros Bolívar ([docs/bolivar.md](docs/bolivar.md)) y épica HU-23 en el backlog.
+
+### Cambiado
+- Un rechazo de suscripción marca la orden en error de inmediato, sin agotar los reintentos. Una emisión pendiente se completa en el siguiente intento con la misma clave de idempotencia.
+- Las aseguradoras simuladas aceptan placas de prueba `REC*` (rechazo) y `PEN*` (emisión pendiente).
+
+### Corregido
+- La cotización simulada no respetaba una señal de cancelación que ya llegaba abortada.
 
 ## [0.15.0] - 2026-10-13 · Sprint 13 (crecimiento, carro y moto)
 ### Agregado
