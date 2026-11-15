@@ -17,6 +17,10 @@ export default function Page() {
           <p className="text-lg text-muted">
             Mensajería, domicilios o vehículos de trabajo: escribe las placas y te mostramos la mejor opción para cada uno y el total.
           </p>
+          <p className="text-sm text-muted">
+            ¿Quieres ofrecer el seguro del carro o la moto personal a tus empleados?{" "}
+            <a href="/empresas" className="font-semibold text-brand hover:underline">Conoce el beneficio para empleados</a>.
+          </p>
           <SimulatedDataNotice />
         </header>
         <FleetQuote />

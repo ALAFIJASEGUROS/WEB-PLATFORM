@@ -25,6 +25,8 @@ import { SalesChart } from "@/components/admin/SalesChart";
 import { InsurerHealthView } from "@/components/admin/InsurerHealthView";
 import { insurerHealthReport } from "@/server/insurer-health";
 import { DiscountsPanel } from "./DiscountsPanel";
+import { CompaniesPanel } from "./CompaniesPanel";
+import { enrolledCount, listCompanies, pendingCount } from "@/server/companies";
 import { ExperimentsPanel } from "./ExperimentsPanel";
 
 export const metadata: Metadata = { title: "Administración", robots: { index: false } };
@@ -121,6 +123,11 @@ export default async function Page() {
       </section>
 
       <DiscountsPanel canEdit={canEdit} discounts={snap.discounts} />
+
+      <CompaniesPanel
+        canEdit={canEdit}
+        rows={listCompanies().map((company) => ({ company, enrolled: enrolledCount(company.id), pending: pendingCount(company.id) }))}
+      />
 
       <ExperimentsPanel canEdit={canEdit} experiments={snap.experiments} />
 

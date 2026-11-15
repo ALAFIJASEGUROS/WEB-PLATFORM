@@ -259,8 +259,8 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 ## E24 · Seguro como beneficio para empleados ([plan](empresas.md))
 | ID | Historia | Estado | Prio | Rel | Pts |
 | --- | --- | --- | --- | --- | --- |
-| HU-24.1 | Como plataforma quiero registrar empresas con sus tramos de precio, dominios y código de vinculación | ⬜ | M | V1 | 5 |
-| HU-24.2 | Como empresa quiero una página que explique el beneficio y me deje pedirlo | ⬜ | M | V1 | 3 |
+| HU-24.1 | Como plataforma quiero registrar empresas con sus tramos de precio, dominios y código de vinculación | ✅ | M | V1 | 5 |
+| HU-24.2 | Como empresa quiero una página que explique el beneficio y me deje pedirlo | ✅ | M | V1 | 3 |
 | HU-24.3 | Como empleado quiero vincularme con un código o mi correo corporativo | ⬜ | M | V1 | 5 |
 | HU-24.4 | Como empleado quiero cotizar con los planes que habilitó mi empresa y ver el precio de mi tramo | ⬜ | M | V1 | 5 |
 | HU-24.5 | Como admin de la empresa quiero aprobar o rechazar vinculaciones | ⬜ | M | V1 | 3 |

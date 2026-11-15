@@ -90,10 +90,10 @@ El tope general de descuentos (`maxTotalPct`, hoy 15 %) sigue aplicando sobre la
 
 | # | Tarea | Entregable |
 |---|---|---|
-| 1.1 | Modelo de datos (`Company`, `CompanyAdmin`, `Membership`, `EnrollmentPeriod`) y tramos simulados | Tipos, almacenamiento y pruebas |
-| 1.2 | En el admin de la plataforma: crear empresas, subir logo, definir tramos, dominios y código | Sección "Empresas" en `/admin` |
-| 1.3 | Landing `/empresas` para captar empresas: beneficio, ejemplo de ahorro por tramo, formulario "Quiero el beneficio para mi empresa" que llega a la bandeja de oportunidades | Página pública con SEO |
-| 1.4 | Precio corporativo: regla de descuento de origen "empresa" según el tramo, calculada en el servidor | Pruebas de precios por tramo y del tope |
+| 1.1 | ✅ Modelo de datos (`Company`, `CompanyAdmin`, `Membership`, `EnrollmentPeriod`) y tramos simulados | Tipos, almacenamiento y pruebas |
+| 1.2 | ✅ En el admin de la plataforma: crear empresas, subir logo, definir tramos, dominios y código | Sección "Empresas" en `/admin` |
+| 1.3 | ✅ Landing `/empresas` para captar empresas: beneficio, ejemplo de ahorro por tramo, formulario "Quiero el beneficio para mi empresa" que llega a la bandeja de oportunidades | Página pública con SEO |
+| 1.4 | ✅ Precio corporativo: regla de descuento de origen "empresa" según el tramo, calculada en el servidor | Pruebas de precios por tramo y del tope |
 
 ### Fase 2: portal del empleado
 

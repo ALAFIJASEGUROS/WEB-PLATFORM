@@ -7,6 +7,13 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 ### Agregado
+- Seguro como beneficio para empleados, fase 1 ([docs/empresas.md](docs/empresas.md)):
+  - Página `/empresas` para captar empresas: cómo funciona, calculadora de ahorro por tramos, quién paga, preguntas frecuentes y formulario "Quiero el beneficio para mi empresa", que llega a la bandeja de oportunidades como "Beneficio empleados".
+  - Sección "Empresas" en el admin: crear y editar empresas con logo, dominios de correo, código de vinculación, quién paga (empresa, empleado o copago), planes habilitados y tramos de precio; ver inscritos, pendientes, tramo actual y cuántos faltan para el siguiente.
+  - Tarifa corporativa por tramos (simulados: 5 % desde 10 inscritos hasta 14 % desde 100) como regla del motor de descuentos. No se acumula con otras promociones de la aseguradora (gana la más favorable y, si empatan, la corporativa) y respeta el tope global.
+  - Empresa de demostración "Andina Logística (demo)" con 18 inscritos y 4 pendientes.
+
+### Agregado
 - Retomar la cotización: el avance del cuestionario se guarda en el navegador por 7 días. Al volver aparece "Tienes una cotización sin terminar" con el vehículo y el paso, y las opciones Retomar o Empezar de nuevo. Se borra al terminar.
 - Analítica del cuestionario: cada paso visto se registra (`paso_cuestionario`) y el embudo del admin muestra hasta qué paso llegan las sesiones y cuántas se pierden en cada uno. También se mide cuántos retoman (`cotizacion_retomada`).
 

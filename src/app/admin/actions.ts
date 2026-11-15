@@ -13,6 +13,8 @@ import type { FormState } from "../cuenta/actions";
 import { describeRule, type DiscountRule } from "@/domain/discounts";
 import { setExperimentActive } from "@/server/experiments";
 import { deleteDiscountRule, discountConfig, updateDiscountSettings, upsertDiscountRule } from "@/server/discounts";
+import { companyInputSchema } from "@/domain/companies";
+import { CompanyError, logoToDataUrl, rotateJoinCode, saveCompany } from "@/server/companies";
 
 const campaignSchema = z.object({
   sponsor: z.string().trim().min(2).max(60),
@@ -216,4 +218,47 @@ export async function updateLeadAction(id: string, _: FormState, form: FormData)
   if (!updateLead(id, admin.email, parsed.data.status, parsed.data.note || undefined)) return { error: "No encontramos la oportunidad." };
   revalidatePath("/admin");
   return { ok: true, message: "Oportunidad actualizada." };
+}
+
+// ── Empresas (beneficio para empleados) ───────────────────────────────────
+
+const MAX_TIER_ROWS = 6;
+
+export async function saveCompanyAction(_: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const tiers = Array.from({ length: MAX_TIER_ROWS }, (_, i) => ({
+    minEmployees: form.get(`tier_min_${i}`),
+    discountPct: form.get(`tier_pct_${i}`),
+  })).filter((t) => t.minEmployees && t.discountPct);
+  const parsed = companyInputSchema.safeParse({
+    id: form.get("id") || undefined,
+    name: form.get("name"),
+    nit: form.get("nit") || undefined,
+    slug: form.get("slug") || undefined,
+    domains: form.get("domains") ?? "",
+    paymentModel: form.get("paymentModel"),
+    copayAmount: form.get("copayAmount") ?? "",
+    allowedPlanCodes: form.getAll("plans").map(String),
+    tiers,
+    status: form.get("status") === "pausada" ? "pausada" : "activa",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Revisa los datos de la empresa." };
+  try {
+    const logo = await logoToDataUrl(form.get("logo") as File | null);
+    const company = saveCompany(parsed.data, logo, form.get("removeLogo") === "on");
+    audit(admin.email, parsed.data.id ? "Editó empresa" : "Creó empresa", `${company.name} · ${company.tiers.map((t) => `${t.minEmployees}+: ${t.discountPct}%`).join(", ")}`);
+  } catch (e) {
+    if (e instanceof CompanyError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/admin");
+  revalidatePath("/empresas");
+  return { ok: true };
+}
+
+export async function rotateJoinCodeAction(id: string) {
+  const admin = await requireAdmin();
+  const code = rotateJoinCode(id);
+  audit(admin.email, "Cambió código de vinculación", `${id} → ${code}`);
+  revalidatePath("/admin");
 }

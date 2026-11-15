@@ -5,7 +5,7 @@ import { ORDER_STATUS_LABELS } from "@/domain/admin";
 import { describeRule } from "@/domain/discounts";
 import { FUNNEL_LABELS } from "@/domain/events";
 import { formatCOP } from "@/domain/labels";
-import { LEAD_STATUS_LABELS } from "@/domain/leads";
+import { LEAD_KIND_LABELS, LEAD_STATUS_LABELS } from "@/domain/leads";
 import { Badge, Card } from "@/components/ui";
 
 // Vistas de solo lectura del panel. Las usan /admin (con datos reales y
@@ -386,7 +386,7 @@ export function LeadList({ leads, savedQuotes, form }: Pick<AdminSnapshot, "lead
           <Card key={l.id} className="space-y-2 p-4 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <strong className="text-heading">{l.name}</strong>
-              <Badge tone={l.kind === "flota" ? "brand" : "sun"}>{l.kind === "flota" ? "Flota" : "Llamada"}</Badge>
+              <Badge tone={l.kind === "llamada" ? "sun" : l.kind === "empresa" ? "mint" : "brand"}>{LEAD_KIND_LABELS[l.kind]}</Badge>
               <Badge tone={LEAD_TONE[l.status]}>{LEAD_STATUS_LABELS[l.status]}</Badge>
               <span className="text-xs text-muted">{when(l.createdAt)}</span>
             </div>

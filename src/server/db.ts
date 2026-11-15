@@ -1,4 +1,5 @@
 import "server-only";
+import { DEFAULT_TIERS, type Company, type Membership } from "@/domain/companies";
 import type { CheckoutInput } from "@/domain/schemas";
 import type { ConsentRecord } from "@/domain/consents";
 import type { Offer, QuoteRequest, Vehicle, VehicleType } from "@/domain/types";
@@ -236,10 +237,38 @@ interface Db {
   leads: Map<string, Lead>;
   savedQuotes: Map<string, SavedQuote>;
   referralRewards: Map<string, ReferralReward>;
+  companies: Map<string, Company>;
+  memberships: Map<string, Membership>;
 }
 
 function seed(db: Db) {
   const now = new Date().toISOString();
+  // Empresa de demostración del beneficio para empleados, con inscritos para ver el avance del tramo.
+  const demoCompany: Company = {
+    id: "demo-andina",
+    name: "Andina Logística (demo)",
+    slug: "andina-logistica",
+    emailDomains: ["andina-demo.co"],
+    joinCode: "ANDINA7K2P",
+    paymentModel: "copago",
+    copayAmount: 600_000,
+    allowedPlanCodes: ["auto-esencial", "auto-plus", "moto-plus"],
+    tiers: DEFAULT_TIERS,
+    status: "activa",
+    createdAt: now,
+    demo: true,
+  };
+  db.companies.set(demoCompany.id, demoCompany);
+  for (let i = 1; i <= 22; i++) {
+    db.memberships.set(`demo-m-${i}`, {
+      id: `demo-m-${i}`,
+      companyId: demoCompany.id,
+      email: `empleado${i}@andina-demo.co`,
+      status: i <= 18 ? "aprobado" : "pendiente",
+      source: i % 3 === 0 ? "csv" : "dominio",
+      createdAt: now,
+    });
+  }
   const campaigns: Campaign[] = [
     {
       id: "c-bolivar-1",
@@ -289,6 +318,8 @@ export function db(): Db {
       leads: new Map(),
       savedQuotes: new Map(),
       referralRewards: new Map(),
+      companies: new Map(),
+      memberships: new Map(),
     };
     seed(g.__safDb);
   }
