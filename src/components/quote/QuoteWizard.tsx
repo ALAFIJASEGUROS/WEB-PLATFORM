@@ -12,6 +12,7 @@ import {
   CarFront,
   Briefcase,
   Building2,
+  History,
   Package,
   Pencil,
   Scale,
@@ -41,6 +42,7 @@ import {
   plateType,
 } from "@/vehicles/lookup";
 import { quoteStore, useHydrated } from "@/lib/quote-store";
+import { quoteDraft, type QuoteDraft } from "@/lib/quote-draft";
 import { lookupVehicle } from "@/lib/api-client";
 import { track } from "@/lib/analytics";
 import { Button, Card, Field, inputClass } from "@/components/ui";
@@ -111,6 +113,10 @@ function Wizard({ type }: { type: VehicleType }) {
     const p = quoteStore.getRequest();
     return p && p.vehicle.type === type && !fromHome && !fromModel ? p : null;
   });
+  // Borrador de una cotización que quedó a medias (otra visita, hasta 7 días).
+  const [draft, setDraft] = useState<QuoteDraft | null>(() =>
+    !prev && !fromHome && !fromModel ? quoteDraft.load(type) : null,
+  );
   const noun = type === "auto" ? "carro" : "moto";
   const [step, setStep] = useState(0);
   /** Si se llegó a un paso desde el resumen, "Continuar" vuelve al resumen. */
@@ -133,6 +139,31 @@ function Wizard({ type }: { type: VehicleType }) {
   const [answers, setAnswers] = useState<Answers>({ ...DEFAULT_ANSWERS, ...prev?.answers });
   const set = <K extends keyof Answers>(k: K, v: Answers[K]) =>
     setAnswers((a) => ({ ...a, [k]: v }));
+
+  // Mide hasta qué paso llega cada sesión, para ver dónde abandonan.
+  useEffect(() => track("paso_cuestionario", { tipo: type, paso: step + 1 }), [type, step]);
+
+  // Guarda el avance para poder retomarlo. No pisa un borrador pendiente de decidir.
+  useEffect(() => {
+    if (draft || !vehicle) return;
+    quoteDraft.save(type, { step, vehicle, birthdate, city, answers });
+  }, [draft, type, step, vehicle, birthdate, city, answers]);
+
+  function resumeDraft(d: QuoteDraft) {
+    setVehicle(d.vehicle);
+    setPlate(d.vehicle.plate ?? "");
+    setBirthdate(d.birthdate);
+    setCity(d.city);
+    setAnswers({ ...DEFAULT_ANSWERS, ...d.answers });
+    setStep(Math.min(d.step, SUMMARY_STEP));
+    setDraft(null);
+    track("cotizacion_retomada", { tipo: type, paso: d.step + 1 });
+  }
+
+  function discardDraft() {
+    quoteDraft.clear(type);
+    setDraft(null);
+  }
 
   const manualVehicle = useMemo<Vehicle | null>(() => {
     const m = findModel(type, brand, model);
@@ -216,6 +247,7 @@ function Wizard({ type }: { type: VehicleType }) {
     if (!v) return;
     const req: QuoteRequest = { vehicle: v, driver: { birthdate, city }, answers };
     quoteStore.setRequest(req);
+    quoteDraft.clear(type);
     track("cuestionario_completado", { tipo: type, prioridad: answers.priority });
     router.push("/resultados");
   }
@@ -249,6 +281,30 @@ function Wizard({ type }: { type: VehicleType }) {
       >
         <ArrowLeft className="size-4" aria-hidden /> Volver
       </button>
+
+      {draft && (
+        <section
+          aria-labelledby="draft-title"
+          className="mb-5 flex flex-col gap-3 rounded-[var(--radius-card)] border border-brand/30 bg-brand-soft p-4 sm:flex-row sm:items-center"
+        >
+          <History className="hidden size-6 shrink-0 text-brand sm:block" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p id="draft-title" className="font-bold text-heading">Tienes una cotización sin terminar</p>
+            <p className="text-sm text-muted">
+              {vehicleName(draft.vehicle.brand, draft.vehicle.model)} {draft.vehicle.year} · ibas en el paso{" "}
+              {Math.min(draft.step, SUMMARY_STEP) + 1} de {STEPS.length}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" className="min-h-10 px-4 text-sm" onClick={() => resumeDraft(draft)}>
+              Retomar
+            </Button>
+            <Button type="button" variant="secondary" className="min-h-10 px-4 text-sm" onClick={discardDraft}>
+              Empezar de nuevo
+            </Button>
+          </div>
+        </section>
+      )}
 
       <div
         className="mb-2 flex gap-1.5"

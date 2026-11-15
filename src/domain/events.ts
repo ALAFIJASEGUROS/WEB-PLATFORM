@@ -9,10 +9,13 @@ export const FUNNEL_EVENTS = [
   "pago_aprobado",
 ] as const;
 
-export const OTHER_EVENTS = ["comparacion_abierta", "detalle_abierto", "experimento_visto", "pesos_afinados", "llamada_solicitada", "cotizacion_guardada", "calculadora_usada", "flota_cotizada", "referido_llego"] as const;
+export const OTHER_EVENTS = ["comparacion_abierta", "detalle_abierto", "experimento_visto", "pesos_afinados", "llamada_solicitada", "cotizacion_guardada", "calculadora_usada", "flota_cotizada", "referido_llego", "paso_cuestionario", "cotizacion_retomada"] as const;
 
 export type FunnelEvent = (typeof FUNNEL_EVENTS)[number];
 export type AnalyticsEvent = FunnelEvent | (typeof OTHER_EVENTS)[number];
+
+/** Pasos del cuestionario, en el mismo orden que el asistente de cotización. */
+export const WIZARD_STEP_LABELS = ["Vehículo", "Sobre ti", "Uso", "Prioridad", "Detalles", "Resumen"] as const;
 
 export const FUNNEL_LABELS: Record<FunnelEvent, string> = {
   cotizacion_iniciada: "Inició cotización",

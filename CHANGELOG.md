@@ -7,6 +7,10 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 ### Agregado
+- Retomar la cotización: el avance del cuestionario se guarda en el navegador por 7 días. Al volver aparece "Tienes una cotización sin terminar" con el vehículo y el paso, y las opciones Retomar o Empezar de nuevo. Se borra al terminar.
+- Analítica del cuestionario: cada paso visto se registra (`paso_cuestionario`) y el embudo del admin muestra hasta qué paso llegan las sesiones y cuántas se pierden en cada uno. También se mide cuántos retoman (`cotizacion_retomada`).
+
+### Agregado
 - Resultados: "¿Qué ganas con el plan superior?" muestra el costo extra al año y al mes de cada salto de plan y lo que suma (coberturas, deducible, responsabilidad civil y asistencias).
 - La vigencia del precio se ve en la tarjeta de cada oferta y en el resumen del checkout ("Precio válido hasta el 29 de noviembre").
 - Si la emisión no sale al primer intento, el cliente recibe un solo correo avisando que el pago está aprobado y la póliza va en camino; la página de espera explica el tiempo normal, a qué correo llega y que no debe volver a pagar.

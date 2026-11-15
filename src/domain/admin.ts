@@ -121,6 +121,8 @@ export interface AdminSnapshot {
   salesByDay: DailySales[];
   funnel: { step: FunnelEvent; sessions: number; fromPrevious: number | null }[];
   chosenByInsurer: [string, number][];
+  /** Sesiones que llegaron al menos hasta cada paso del cuestionario. */
+  wizardSteps: { label: string; sessions: number }[];
   orders: AdminOrderRow[];
   reconciliation: ReconciliationReport | null;
   discounts: { settings: DiscountSettings; rules: DiscountRule[]; impact: DiscountImpactRow[] };

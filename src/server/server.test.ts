@@ -169,6 +169,16 @@ describe("analítica", () => {
     expect(vehicle.sessions).toBe(1);
     expect(vehicle.fromPrevious).toBe(0.5);
   });
+
+  it("muestra hasta qué paso del cuestionario llega cada sesión", async () => {
+    const { recordEvent, wizardSteps } = await import("./analytics");
+    (globalThis as { __safEvents?: unknown }).__safEvents = undefined;
+    for (const p of [1, 2, 3]) recordEvent("paso_cuestionario", "s1", { tipo: "auto", paso: p });
+    recordEvent("paso_cuestionario", "s1", { tipo: "auto", paso: 2 }); // volvió atrás
+    recordEvent("paso_cuestionario", "s2", { tipo: "moto", paso: 1 });
+    recordEvent("paso_cuestionario", "s3", { tipo: "auto", paso: 99 }); // inválido
+    expect(wizardSteps().map((s) => s.sessions)).toEqual([2, 1, 1, 0, 0, 0]);
+  });
 });
 
 describe("evidencia de consentimientos", () => {
