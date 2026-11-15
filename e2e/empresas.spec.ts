@@ -84,8 +84,8 @@ test("el admin de la empresa aprueba en lote, invita por lista y configura el pr
   await expect(page.getByRole("cell", { name: "Invitado por la empresa" }).first()).toBeVisible();
 
   // Configurar el cierre de la inscripción.
-  await page.getByLabel("Cierre de la inscripción").fill("2026-12-20");
-  await page.getByRole("button", { name: "Guardar programa" }).click();
+  await page.locator("#pr-close").fill("2026-12-20");
+  await page.locator("#pr-close").press("Enter");
   await expect(page.getByText("Programa actualizado.")).toBeVisible();
   await expect(page.getByText(/Actualizó el programa/)).toBeVisible();
 
@@ -110,4 +110,61 @@ test("un empleado sin rol no ve el panel; un invitado acepta y queda aprobado", 
   await page.goto("/empresas/andina-logistica");
   await page.getByRole("button", { name: "Aceptar la invitación" }).click();
   await expect(page.getByText("Aprobado", { exact: true })).toBeVisible();
+});
+
+// Va al final del archivo: cierra la inscripción de la empresa de demostración.
+test("al cerrar la inscripción el empleado confirma su plan con descuento por nómina y queda asegurado", async ({ page, browser }) => {
+  const email = `cierre-${Date.now()}@andina-demo.co`;
+  await page.goto("/empresas/andina-logistica");
+  await login(page, email);
+  await page.getByRole("button", { name: "Unirme" }).click();
+  await page.getByRole("link", { name: "Cotizar mi carro" }).click();
+  await quoteCar(page);
+  await page.getByRole("button", { name: "Elegir este plan" }).first().click();
+  await expect(page.getByText("Guardamos tu elección")).toBeVisible();
+
+  // El admin de la empresa aprueba y cierra la inscripción.
+  const admin = await (await browser.newContext()).newPage();
+  await admin.goto("/empresas/andina-logistica/admin");
+  await login(admin, "rrhh@andina-demo.co");
+  const bandeja = admin.locator("section", { has: admin.getByRole("heading", { name: "Vinculaciones por aprobar" }) });
+  await bandeja.getByLabel(/Seleccionar todas/).check();
+  await bandeja.getByRole("button", { name: /^Aprobar/ }).click();
+  await expect(bandeja.getByText("No hay vinculaciones pendientes.")).toBeVisible();
+  await admin.locator("#pr-close").fill("2026-12-20");
+  await admin.locator("#pr-close").blur();
+  await admin.getByRole("button", { name: "Guardar programa" }).click();
+  await expect(admin.getByText("Programa actualizado.")).toBeVisible();
+  await admin.getByRole("button", { name: "Cerrar la inscripción ahora" }).click();
+  await expect(admin.getByRole("region", { name: "Cierre de la inscripción" })).toContainText(/Cerró el .* con \d+ inscritos/);
+
+  // El empleado confirma con el precio final y paga su parte por nómina.
+  await page.reload();
+  await expect(page.getByText(/La inscripción cerró el/)).toBeVisible();
+  await page.getByRole("button", { name: /^Confirmar y pagar/ }).click();
+  await expect(page.getByRole("heading", { name: /Confirma tu seguro con Andina/ })).toBeVisible();
+  await page.getByLabel("Nombres").fill("Ana");
+  await page.getByLabel("Apellidos").fill("Gómez");
+  await page.getByLabel("Número de documento").fill("1020304050");
+  await page.getByLabel("Celular").fill("3001234567");
+  await page.getByLabel("Dirección").fill("Calle 10 # 43-21");
+  const kyc = page.getByRole("region", { name: "Conocimiento del cliente" });
+  for (const select of await kyc.locator("select").all()) await select.selectOption({ index: 1 });
+  for (const no of await kyc.getByText("No", { exact: true }).all()) await no.click();
+  await page.getByText(/Pagar mi parte por nómina/).click();
+  await page.getByText("Leí y acepto").click();
+  await page.getByText("Autorizo el tratamiento").click();
+  await page.getByRole("button", { name: "Confirmar" }).filter({ visible: true }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Confirma tu compra" });
+  await dialog.getByLabel("Código de aceptación").fill(await dialog.locator("strong.tracking-widest").innerText());
+  await dialog.getByRole("button", { name: "Aceptar" }).click();
+
+  await expect(page.getByRole("heading", { name: "¡Listo, ya estás asegurado!" })).toBeVisible();
+  await expect(page.getByText(/se descontará de tu nómina en 12 cuotas/)).toBeVisible();
+  await page.goto("/empresas/andina-logistica");
+  await expect(page.getByText("Tu póliza está emitida.")).toBeVisible();
+
+  // La parte de la empresa aparece en su cobro.
+  const cobro = await admin.request.get("/api/empresas/andina-logistica/cobro");
+  expect(await cobro.text()).toContain("Descuento por nómina");
 });

@@ -44,6 +44,16 @@ export interface Order {
   };
   /** Respuestas KYC/SARLAFT validadas contra la aseguradora. */
   kyc: Record<string, string | boolean>;
+  /** Compra con el beneficio de una empresa: cómo se reparte y por dónde paga el empleado. */
+  company?: {
+    id: string;
+    slug: string;
+    membershipId: string;
+    companyPart: number;
+    employeePart: number;
+    /** wompi: el empleado paga su parte; nomina: descuento por nómina; empresa: la empresa paga todo. */
+    channel: "wompi" | "nomina" | "empresa";
+  };
   /** Evidencia de las autorizaciones otorgadas en el checkout. */
   consentEvidence: ConsentRecord[];
   /** Historial de cambios de estado (ver order-state.ts). */

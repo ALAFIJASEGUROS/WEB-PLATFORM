@@ -56,6 +56,13 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
   if (order.status === "aprobada") await processIssuance(order.id);
 
   const amount = formatCOP(order.amountInCents / 100);
+  // Beneficio de empresa: quién pagó y cómo.
+  const paidText =
+    order.company?.channel === "empresa"
+      ? "Tu empresa paga este seguro."
+      : order.company?.channel === "nomina"
+        ? `Tu parte (${formatCOP(order.company.employeePart)}) se descontará de tu nómina en 12 cuotas.`
+        : `Pagaste ${amount}.`;
 
   if (order.status === "emitida" && order.policyId) {
     return (
@@ -63,7 +70,7 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
         <CheckCircle2 className="mx-auto size-16 text-mint" aria-hidden />
         <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-heading">¡Listo, ya estás asegurado!</h1>
         <p className="mt-2 text-muted">
-          Pagaste {amount}. Enviamos la póliza a <strong>{order.policyholder.email}</strong>.
+          {paidText} Enviamos la póliza a <strong>{order.policyholder.email}</strong>.
         </p>
         <Card className="mt-6 space-y-1 p-5 text-left text-sm">
           <p><span className="text-muted">Plan:</span> <strong>{order.offer.planName}</strong> · {order.offer.insurerName}</p>
@@ -89,7 +96,7 @@ export default async function Page({ searchParams }: PageProps<"/pago/resultado"
         <Clock className="mx-auto size-16 text-brand" aria-hidden />
         <h1 className="mt-4 text-2xl font-extrabold text-heading">Pago aprobado. Estamos emitiendo tu póliza</h1>
         <p className="mt-2 text-muted">
-          Recibimos {amount}. {order.offer.insurerName} está tardando más de lo normal en emitir tu póliza.
+          {order.company && order.company.channel !== "wompi" ? "Confirmamos tu compra." : `Recibimos ${amount}.`} {order.offer.insurerName} está tardando más de lo normal en emitir tu póliza.
           Lo seguimos intentando de forma automática.
         </p>
         <ul className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm">

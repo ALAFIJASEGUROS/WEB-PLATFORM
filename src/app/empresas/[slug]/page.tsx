@@ -2,7 +2,19 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Bike, Building2, CalendarClock, CarFront, CheckCircle2, Clock, XCircle } from "lucide-react";
-import { MEMBERSHIP_STATUS_LABELS, nextTier, PAYMENT_MODEL_LABELS, tierFor, type Company, type Membership } from "@/domain/companies";
+import {
+  effectiveDiscountPct,
+  isEnrollmentClosed,
+  MEMBERSHIP_STATUS_LABELS,
+  nextTier,
+  PAYMENT_MODEL_LABELS,
+  selectionPremium,
+  splitPremium,
+  type Company,
+  type Membership,
+} from "@/domain/companies";
+import { findOrderByReference } from "@/server/orders";
+import { ConfirmBenefitButton } from "@/components/benefit/ConfirmBenefitButton";
 import { formatCOP, formatDayMonth } from "@/domain/labels";
 import { ACTIVE_CONFIGS } from "@/insurers/mock/insurers";
 import { getCurrentUser } from "@/server/auth";
@@ -31,8 +43,9 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
   const user = await getCurrentUser();
   const membership = user ? membershipFor(company.id, user) : null;
   const enrolled = enrolledCount(company.id);
-  const tier = tierFor(enrolled, company.tiers);
-  const next = nextTier(enrolled, company.tiers);
+  const closed = isEnrollmentClosed(company);
+  const pct = effectiveDiscountPct(company, enrolled);
+  const next = closed ? null : nextTier(enrolled, company.tiers);
   const plans = enabledPlans(company);
   const types = [...new Set(plans.map((p) => p.vehicleType))];
   const first = company.tiers[0];
@@ -77,31 +90,43 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
             {PAYMENT_MODEL_LABELS[company.paymentModel]}
             {company.paymentModel === "copago" && company.copayAmount ? `: ${formatCOP(company.copayAmount)} al año por persona` : ""}.
           </p>
-          <div>
-            <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-              <p className="font-semibold text-heading">
-                {tier ? `Hoy: ${tier.discountPct} % de descuento` : `El descuento empieza con ${first.minEmployees} inscritos`}
-              </p>
-              <p className="text-muted">{enrolled} {enrolled === 1 ? "inscrito" : "inscritos"}</p>
-            </div>
-            <div
-              className="mt-2 h-2.5 overflow-hidden rounded-full bg-canvas"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={goal}
-              aria-valuenow={enrolled}
-              aria-label="Inscritos frente al siguiente tramo"
-            >
-              <span className="block h-full rounded-full bg-mint" style={{ width: `${goal ? Math.min(100, (enrolled / goal) * 100) : 100}%` }} />
-            </div>
-            <p className="mt-2 text-sm text-muted">
-              {next ? `Si se inscriben ${next.missing} más, el descuento sube al ${next.tier.discountPct} % para todos.` : "Llegaron al descuento máximo."}
+          {closed ? (
+            <p className="flex items-start gap-2 rounded-xl bg-mint-soft p-3 text-sm text-ink">
+              <CalendarClock className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />
+              <span>
+                La inscripción cerró el {formatDayMonth(company.lockedTier!.closedAt)} con {company.lockedTier!.enrolled} inscritos:{" "}
+                <strong>{company.lockedTier!.discountPct ? `${company.lockedTier!.discountPct} % de descuento fijo` : "sin descuento"}</strong> en este periodo.
+              </span>
             </p>
-          </div>
-          {company.enrollmentClosesAt && (
-            <p className="flex items-center gap-2 text-sm text-ink">
-              <CalendarClock className="size-4 text-brand" aria-hidden /> La inscripción cierra el {formatDayMonth(company.enrollmentClosesAt)}. Ese día se fija el precio final.
-            </p>
+          ) : (
+            <>
+              <div>
+                <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+                  <p className="font-semibold text-heading">
+                    {pct ? `Hoy: ${pct} % de descuento` : `El descuento empieza con ${first.minEmployees} inscritos`}
+                  </p>
+                  <p className="text-muted">{enrolled} {enrolled === 1 ? "inscrito" : "inscritos"}</p>
+                </div>
+                <div
+                  className="mt-2 h-2.5 overflow-hidden rounded-full bg-canvas"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={goal}
+                  aria-valuenow={enrolled}
+                  aria-label="Inscritos frente al siguiente tramo"
+                >
+                  <span className="block h-full rounded-full bg-mint" style={{ width: `${goal ? Math.min(100, (enrolled / goal) * 100) : 100}%` }} />
+                </div>
+                <p className="mt-2 text-sm text-muted">
+                  {next ? `Si se inscriben ${next.missing} más, el descuento sube al ${next.tier.discountPct} % para todos.` : "Llegaron al descuento máximo."}
+                </p>
+              </div>
+              {company.enrollmentClosesAt && (
+                <p className="flex items-center gap-2 text-sm text-ink">
+                  <CalendarClock className="size-4 text-brand" aria-hidden /> La inscripción cierra el {formatDayMonth(company.enrollmentClosesAt)}. Ese día se fija el precio final.
+                </p>
+              )}
+            </>
           )}
           <div>
             <p className="mb-1 text-sm font-semibold text-heading">Planes disponibles</p>
@@ -175,6 +200,12 @@ function MembershipCard({
   const active = m.status === "pendiente" || m.status === "aprobado";
   const Icon = m.status === "aprobado" ? CheckCircle2 : m.status === "pendiente" ? Clock : XCircle;
   const s = m.selection;
+  const closed = isEnrollmentClosed(company);
+  const price = s ? selectionPremium(s) : undefined;
+  const split = price !== undefined ? splitPremium(company, price) : undefined;
+  // Orden creada al confirmar (se ignora si fue rechazada en la pasarela).
+  const found = s?.orderReference ? findOrderByReference(s.orderReference) : undefined;
+  const order = found && found.status !== "rechazada" ? found : undefined;
   return (
     <Card className="space-y-4 p-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -186,7 +217,7 @@ function MembershipCard({
       {m.status === "rechazado" && <p className="text-sm text-ink">{company.name} no aprobó la vinculación{m.reason ? `: ${m.reason}` : "."} Si crees que es un error, habla con el área encargada.</p>}
       {m.status === "retirado" && <p className="text-sm text-ink">Ya no haces parte del programa. Si tienes una póliza, sigue vigente hasta su vencimiento.</p>}
 
-      {justChose && s && (
+      {justChose && s && !closed && (
         <p role="status" className="rounded-xl bg-mint-soft p-3 text-sm text-ink">Guardamos tu elección. Te avisaremos al cierre de la inscripción para confirmar el precio final y pagar.</p>
       )}
 
@@ -195,23 +226,46 @@ function MembershipCard({
           <p className="font-semibold text-heading">Tu plan elegido: {s.planName}</p>
           <p className="text-muted">{s.vehicleLabel} · {s.insurerName}</p>
           <p>
-            Precio estimado hoy: <strong className="text-heading">{formatCOP(s.estimatedPremium)}</strong> al año
-            {s.listPremium > s.estimatedPremium && <span className="text-muted"> (antes {formatCOP(s.listPremium)})</span>}
+            {s.finalPremium !== undefined ? "Precio final" : "Precio estimado hoy"}:{" "}
+            <strong className="text-heading">{formatCOP(price!)}</strong> al año
+            {s.listPremium > price! && <span className="text-muted"> (antes {formatCOP(s.listPremium)})</span>}
           </p>
           {company.paymentModel === "empresa" && <p className="font-semibold text-mint">{company.name} paga el total: tú no pagas nada.</p>}
           {company.paymentModel === "copago" && company.copayAmount ? (
             <p>
-              {company.name} aporta {formatCOP(company.copayAmount)}. Tu parte:{" "}
-              <strong className="text-heading">{formatCOP(Math.max(0, s.estimatedPremium - company.copayAmount))}</strong> al año.
+              {company.name} aporta {formatCOP(company.copayAmount)}. Tu parte: <strong className="text-heading">{formatCOP(split!.employeePart)}</strong> al año.
             </p>
           ) : null}
-          {nextPct !== null && (
+          {!closed && nextPct !== null && (
             <p className="text-muted">Si la empresa llega al siguiente tramo, quedaría cerca de {formatCOP(roundK(s.listPremium * (1 - nextPct / 100)))}.</p>
           )}
         </div>
       )}
 
-      {active && (
+      {order && (order.status === "aprobada" || order.status === "emitida") ? (
+        <div className="space-y-2 rounded-xl bg-mint-soft p-4 text-sm text-ink">
+          <p className="font-semibold text-heading">{order.status === "emitida" ? "Tu póliza está emitida." : "Confirmaste tu plan. Estamos emitiendo tu póliza."}</p>
+          <ButtonLink href={`/pago/resultado?ref=${encodeURIComponent(order.reference)}&t=${encodeURIComponent(order.accessToken)}`} variant="secondary">
+            Ver el detalle
+          </ButtonLink>
+        </div>
+      ) : closed && s ? (
+        m.status === "aprobado" && s.finalPremium !== undefined ? (
+          <div className="space-y-2">
+            <p className="text-sm text-ink">Cerró la inscripción y tu precio quedó fijo. Confirma para que emitamos tu póliza.</p>
+            <ConfirmBenefitButton
+              slug={company.slug}
+              quote={s.quote}
+              offerId={s.offerId}
+              label={split!.employeePart > 0 ? `Confirmar y pagar ${formatCOP(split!.employeePart)}` : "Confirmar mi plan"}
+            />
+          </div>
+        ) : m.status === "pendiente" ? (
+          <p className="text-sm text-muted">Cerró la inscripción. Cuando {company.name} apruebe tu vinculación podrás confirmar con el precio final.</p>
+        ) : null
+      ) : null}
+
+      {active && !order && (
         <div className="flex flex-wrap gap-3">
           {types.includes("auto") && (
             <ButtonLink href={`/cotizar/auto?empresa=${company.slug}`} variant={s ? "secondary" : "primary"}>
