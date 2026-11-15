@@ -31,7 +31,17 @@ export function changedPrice(err: unknown): number | undefined {
   return typeof p?.current === "number" ? p.current : undefined;
 }
 
-export async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
+export async function fetchQuote(req: QuoteRequest, companySlug?: string): Promise<QuoteResponse> {
+  if (companySlug) {
+    // Cotización como empleado: la sesión y la vinculación se verifican en el servidor.
+    return json(
+      await fetch(`/api/empresas/${encodeURIComponent(companySlug)}/cotizacion`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(req),
+      }),
+    );
+  }
   if (STATIC_DEMO) {
     const [{ quoteAll }, { buildQuoteResponse }, d] = await Promise.all([
       import("@/insurers/aggregator"),
@@ -52,6 +62,17 @@ export async function fetchQuote(req: QuoteRequest): Promise<QuoteResponse> {
       method: "POST",
       headers: { "content-type": "application/json", ...(sid && { "x-saf-sid": sid }), ...(ref && { "x-saf-ref": ref }) },
       body: JSON.stringify(req),
+    }),
+  );
+}
+
+/** El empleado elige su plan con la tarifa corporativa (paga al cierre del periodo). */
+export async function chooseCompanyPlan(companySlug: string, quote: QuoteRequest, offerId: string): Promise<{ planName: string }> {
+  return json(
+    await fetch(`/api/empresas/${encodeURIComponent(companySlug)}/eleccion`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ quote, offerId }),
     }),
   );
 }

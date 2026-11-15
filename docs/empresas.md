@@ -99,10 +99,16 @@ El tope general de descuentos (`maxTotalPct`, hoy 15 %) sigue aplicando sobre la
 
 | # | Tarea | Entregable |
 |---|---|---|
-| 2.1 | Portal `/empresas/[slug]` con el logo de la empresa: qué incluye el beneficio, quién paga, cierre del periodo | Página del programa |
-| 2.2 | Vinculación: por enlace con código, por dominio de correo o por invitación del CSV. Ingreso con código por correo | Solicitud de vinculación |
-| 2.3 | Cotizar con los planes habilitados y precio estimado del tramo actual ("hoy: 8 %; si llegan a 50 inscritos, 11 %") | Resultados de cotización para empleados |
-| 2.4 | Estado del empleado: pendiente, aprobado, rechazado (con motivo), precio final, póliza | Sección en "Mi cuenta" |
+| 2.1 | ✅ Portal `/empresas/[slug]` con el logo de la empresa: qué incluye el beneficio, quién paga, cierre del periodo | Página del programa |
+| 2.2 | ✅ Vinculación: por enlace con código, por dominio de correo o por invitación del CSV. Ingreso con código por correo | Solicitud de vinculación |
+| 2.3 | ✅ Cotizar con los planes habilitados y precio estimado del tramo actual ("hoy: 8 %; si llegan a 50 inscritos, 11 %") | Resultados de cotización para empleados |
+| 2.4 | ✅ Estado del empleado: pendiente, aprobado, rechazado (con motivo), precio final, póliza | Sección en "Mi cuenta" |
+
+**Cómo quedó la fase 2:** durante la inscripción el empleado **elige** su plan con el precio estimado del tramo
+actual; no paga todavía. La elección queda guardada en su vinculación y se confirma y paga al cierre (fase 4). La
+cotización como empleado usa rutas propias (`/api/empresas/[slug]/cotizacion` y `/eleccion`) que verifican la sesión y
+la vinculación; la cotización individual no cambia. El portal (`/empresas/[slug]`) es solo del servidor, así que no
+está en la demo estática.
 
 ### Fase 3: admin de la empresa
 

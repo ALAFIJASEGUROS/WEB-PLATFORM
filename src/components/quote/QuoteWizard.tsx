@@ -104,6 +104,9 @@ function Wizard({ type }: { type: VehicleType }) {
     const model = params.get("modelo") ?? "";
     return !fromHome && findModel(type, brand, model) ? { brand, model, origin: params.get("origen") ?? "enlace" } : null;
   });
+  // Cotizar como empleado (?empresa=slug desde el portal de la empresa) o de forma individual.
+  const companySlug = params.get("empresa");
+  useEffect(() => quoteStore.setCompany(companySlug ? { slug: companySlug } : null), [companySlug]);
   useEffect(
     () => track("cotizacion_iniciada", { tipo: type, ...((fromHome ?? fromModel) && { origen: (fromHome ?? fromModel)!.origin }) }),
     [type, fromHome, fromModel],
@@ -323,6 +326,7 @@ function Wizard({ type }: { type: VehicleType }) {
       </div>
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
         Seguro de {noun} · Paso {step + 1} de {STEPS.length}
+        {companySlug && <span className="ml-2 rounded-full bg-mint-soft px-2 py-0.5 normal-case tracking-normal text-mint">Tarifa de tu empresa</span>}
       </p>
       <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-heading">
         {STEPS[step].title}

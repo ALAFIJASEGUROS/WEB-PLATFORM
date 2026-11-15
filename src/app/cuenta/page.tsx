@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { Bell, CarFront, Gift, Megaphone, ShieldCheck, TrendingDown } from "lucide-react";
+import { Bell, Building2, CarFront, Gift, Megaphone, ShieldCheck, TrendingDown } from "lucide-react";
+import { MEMBERSHIP_STATUS_LABELS } from "@/domain/companies";
+import { membershipsForUser } from "@/server/companies";
 import { baseUrl, getCurrentUser } from "@/server/auth";
 import { referralCodeFor, referralSummary } from "@/server/referrals";
 import { referralLink, REFERRER_REWARD } from "@/domain/referrals";
@@ -36,6 +38,9 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
     ? { link: referralLink(await baseUrl(), referralCodeFor(user)), summary: referralSummary(user.id), discount: inviteRule.kind === "valor" ? formatCOP(inviteRule.magnitude) : `${inviteRule.magnitude}%` }
     : null;
 
+  // Empresas de las que el usuario es empleado (beneficio de seguro).
+  const benefits = membershipsForUser(user);
+
   const tiles = [
     { href: "/cuenta/seguros", icon: ShieldCheck, label: "Pólizas", value: policies.length },
     { href: "/cuenta/seguros#vehiculos", icon: CarFront, label: "Vehículos", value: vehicles.length },
@@ -60,6 +65,20 @@ export default async function Page({ searchParams }: PageProps<"/cuenta">) {
           </Link>
         ))}
       </div>
+
+      {benefits.map(({ membership: m, company: c }) => (
+        <Card key={m.id} className="flex flex-wrap items-center gap-3 p-5">
+          <Building2 className="size-6 shrink-0 text-brand" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold text-heading">Beneficio de {c.name}</h2>
+            <p className="text-sm text-muted">
+              {MEMBERSHIP_STATUS_LABELS[m.status]}
+              {m.selection ? ` · elegiste ${m.selection.planName} para tu ${m.selection.vehicleLabel}` : " · aún no eliges plan"}
+            </p>
+          </div>
+          <ButtonLink href={`/empresas/${c.slug}`} variant="secondary" className="min-h-10 px-4 text-sm">Ver el beneficio</ButtonLink>
+        </Card>
+      ))}
 
       {invite && (
         <Card className="space-y-3 p-5">

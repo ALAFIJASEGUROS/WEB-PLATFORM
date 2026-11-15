@@ -5,8 +5,14 @@ import { createLead } from "./leads";
 import type { QuoteRequest } from "@/domain/types";
 import { BOLIVAR_CONFIG } from "@/insurers/mock/insurers";
 import { priceOffers } from "@/insurers/mock/tariff";
+import { getOrCreateUser } from "./db";
 import {
+  choosePlan,
   CompanyError,
+  joinCompany,
+  membershipFor,
+  membershipsForUser,
+  quoteAsEmployee,
   companiesForEmail,
   enrolledCount,
   findCompanyByJoinCode,
@@ -83,5 +89,51 @@ describe("solicitud del beneficio desde /empresas", () => {
   it("exige los datos de la empresa", () => {
     expect(leadInputSchema.safeParse(base).success).toBe(false);
     expect(leadInputSchema.safeParse({ ...base, benefit: { company: "TDV", employees: 0 } }).success).toBe(false);
+  });
+});
+
+describe("portal del empleado", () => {
+  const andina = () => findCompanyBySlug("andina-logistica")!;
+
+  it("vincula por dominio de correo y queda pendiente", () => {
+    const user = getOrCreateUser("ana@andina-demo.co");
+    const m = joinCompany(andina(), user);
+    expect(m).toMatchObject({ source: "dominio", status: "pendiente", userId: user.id });
+    expect(joinCompany(andina(), user).id).toBe(m.id); // no duplica
+  });
+
+  it("con otro correo exige el código de la empresa", () => {
+    const user = getOrCreateUser("ana@gmail.com");
+    expect(() => joinCompany(andina(), user)).toThrow(/código/);
+    expect(() => joinCompany(andina(), user, "MAL")).toThrow(/no es correcto/);
+    expect(joinCompany(andina(), user, "andina7k2p").source).toBe("codigo");
+  });
+
+  it("asocia a su cuenta la invitación hecha por correo", () => {
+    const user = getOrCreateUser("empleado19@andina-demo.co");
+    const m = membershipFor("demo-andina", user)!;
+    expect(m.userId).toBeUndefined();
+    joinCompany(andina(), user);
+    expect(m.userId).toBe(user.id);
+    expect(membershipsForUser(user).map((x) => x.company.slug)).toEqual(["andina-logistica"]);
+  });
+
+  it("no deja volver a entrar a quien fue rechazado", () => {
+    const user = getOrCreateUser("pedro@andina-demo.co");
+    const m = joinCompany(andina(), user);
+    m.status = "rechazado";
+    expect(() => joinCompany(andina(), user)).toThrow(CompanyError);
+  });
+
+  it("cotiza solo los planes habilitados con la tarifa del tramo y guarda la elección", async () => {
+    const user = getOrCreateUser("ana@andina-demo.co");
+    const m = joinCompany(andina(), user);
+    const { offers, context } = await quoteAsEmployee(andina(), m, req);
+    expect(offers.map((o) => o.id).sort()).toEqual(["bolivar:auto-esencial", "bolivar:auto-plus"]);
+    expect(context).toMatchObject({ enrolled: 18, tierPct: 5, next: { pct: 8, missing: 7 }, membershipStatus: "pendiente" });
+    const sel = await choosePlan(andina(), m, req, "bolivar:auto-plus");
+    expect(sel).toMatchObject({ planName: "Auto Plus", vehicleLabel: "Mazda 2 2022 · ABC123", tierPct: 5 });
+    expect(sel.estimatedPremium).toBeLessThan(sel.listPremium);
+    await expect(choosePlan(andina(), m, req, "bolivar:moto-basico")).rejects.toThrow(CompanyError);
   });
 });

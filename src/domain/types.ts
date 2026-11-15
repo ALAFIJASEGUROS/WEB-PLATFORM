@@ -154,4 +154,6 @@ export interface QuoteResponse {
   algorithm?: string;
   /** Variante del experimento A/B de pesos que recibió esta sesión. */
   experiment?: { id: string; variant: string };
+  /** Cotización con tarifa corporativa: datos de la empresa del empleado. */
+  company?: import("./companies").CompanyQuoteContext;
 }

@@ -29,15 +29,21 @@ export async function requestCodeAction(_: FormState, form: FormData): Promise<F
   return { ok: true, email: email.data, demoCode };
 }
 
+/**
+ * Solo rutas internas, para evitar redirecciones abiertas: empieza por una sola
+ * "/" y admite parámetros simples (p. ej. /empresas/andina?codigo=ANDINA7K2P).
+ */
+function safeNext(next: string) {
+  return /^\/(?!\/)[\w\-/]*(\?[\w\-=&.%]*)?$/.test(next) ? next : "/cuenta";
+}
+
 export async function verifyCodeAction(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "");
   const code = String(form.get("code") ?? "");
   if (!/^\d{6}$/.test(code)) return { email, error: "El código tiene 6 dígitos." };
   const res = await verifyOtp(email, code);
   if (!res.ok) return { email, error: res.error };
-  // Solo rutas internas, para evitar redirecciones abiertas.
-  const next = String(form.get("next") ?? "");
-  redirect(/^\/(?!\/)[\w\-/]*$/.test(next) ? next : "/cuenta");
+  redirect(safeNext(String(form.get("next") ?? "")));
 }
 
 export async function logoutAction() {
