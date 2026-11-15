@@ -78,7 +78,14 @@ export function buildAdminSnapshot(now = new Date()): AdminSnapshot {
       ...experiments().map((e) => ({ id: e.id, question: e.question, kind: "pesos" as const, active: e.active, rows: experimentResults(e) })),
       ...UI_EXPERIMENTS.map((e) => ({ id: e.id, question: e.question, kind: "interfaz" as const, active: e.active, rows: experimentResults(e) })),
     ],
-    campaigns: [...d.campaigns.values()].map((c) => ({ id: c.id, title: c.title, sponsor: c.sponsor, audience: c.audience, active: c.active })),
+    campaigns: [...d.campaigns.values()].map((c) => ({
+      id: c.id,
+      title: c.title,
+      sponsor: c.sponsor,
+      audience: c.audience,
+      active: c.active,
+      ...(c.createdBy === "aseguradora" && !c.reviewedAt && { pendingReview: true }),
+    })),
     pqrs: [...d.pqrs.values()]
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .map((q) => ({ ...q, typeLabel: PQR_TYPE_LABELS[q.type] })),

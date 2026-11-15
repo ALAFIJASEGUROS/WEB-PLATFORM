@@ -180,6 +180,9 @@ export interface Campaign {
   audience: VehicleType | "todos";
   /** Solo para los empleados de esta empresa (beneficio para empleados). */
   companyId?: string;
+  /** La creó una aseguradora desde su portal: queda en revisión hasta que SeguAlaFija la active. */
+  createdBy?: "aseguradora";
+  reviewedAt?: string;
   active: boolean;
   createdAt: string;
 }
@@ -320,7 +323,7 @@ function seed(db: Db) {
       createdAt: now,
     },
     {
-      id: "c-bolivar-1",
+      id: "c-bolivar-2",
       sponsor: "Seguros Bolívar",
       insurerId: "bolivar",
       title: "Curso de manejo preventivo para motociclistas",

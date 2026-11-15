@@ -127,7 +127,7 @@ export interface AdminSnapshot {
   reconciliation: ReconciliationReport | null;
   discounts: { settings: DiscountSettings; rules: DiscountRule[]; impact: DiscountImpactRow[] };
   experiments: { id: string; question: string; kind: "pesos" | "interfaz"; active: boolean; rows: VariantResult[] }[];
-  campaigns: { id: string; title: string; sponsor: string; audience: string; active: boolean }[];
+  campaigns: { id: string; title: string; sponsor: string; audience: string; active: boolean; pendingReview?: boolean }[];
   pqrs: {
     id: string;
     radicado: string;

@@ -43,6 +43,8 @@ export async function toggleCampaignAction(id: string) {
   const c = db().campaigns.get(id);
   if (c) {
     c.active = !c.active;
+    // Activarla es aprobar la campaña que creó una aseguradora.
+    if (c.active && c.createdBy === "aseguradora" && !c.reviewedAt) c.reviewedAt = new Date().toISOString();
     audit(admin.email, c.active ? "Activó campaña" : "Pausó campaña", c.title);
   }
   revalidatePath("/admin");

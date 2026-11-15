@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { CampaignLink } from "@/components/CampaignLink";
 import { redirect } from "next/navigation";
 import { Megaphone } from "lucide-react";
 import { getCurrentUser } from "@/server/auth";
@@ -43,9 +43,9 @@ export default async function Page() {
             <Badge tone="sun">Publicidad · {c.sponsor}</Badge>
             <h2 className="font-bold text-heading">{c.title}</h2>
             <p className="text-sm text-muted">{c.body}</p>
-            <Link href={c.ctaUrl} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline">
+            <CampaignLink campaignId={c.id} href={c.ctaUrl} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline">
               {c.ctaLabel}
-            </Link>
+            </CampaignLink>
           </Card>
         ))}
       </div>
