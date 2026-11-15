@@ -114,14 +114,19 @@ está en la demo estática.
 
 | # | Tarea | Entregable |
 |---|---|---|
-| 3.1 | Panel `/empresas/[slug]/admin` con roles administrador y solo lectura | Acceso protegido |
-| 3.2 | Bandeja de vinculaciones: aprobar o rechazar, una por una o en lote | Aprobaciones con bitácora |
-| 3.3 | Configuración: planes habilitados, quién paga, aporte del copago, periodos de inscripción | Formulario de programa |
-| 3.4 | Invitaciones por CSV (nombre y correo) con validación y aviso de duplicados | Carga masiva |
-| 3.5 | Resumen: inscritos, tramo actual y siguiente, ahorro total, pendientes; reporte para nómina en CSV | Panel y exportación |
+| 3.1 | ✅ Panel `/empresas/[slug]/admin` con roles administrador y solo lectura | Acceso protegido |
+| 3.2 | ✅ Bandeja de vinculaciones: aprobar o rechazar, una por una o en lote | Aprobaciones con bitácora |
+| 3.3 | ✅ Configuración: planes habilitados, quién paga, aporte del copago, periodos de inscripción | Formulario de programa |
+| 3.4 | ✅ Invitaciones por CSV (nombre y correo) con validación y aviso de duplicados | Carga masiva |
+| 3.5 | ✅ Resumen: inscritos, tramo actual y siguiente, ahorro total, pendientes; reporte para nómina en CSV | Panel y exportación |
 
 El admin de la empresa ve nombre, correo, plan elegido, estado y valor. **No ve** la fecha de nacimiento, la placa
 ni las respuestas del cuestionario del empleado.
+
+**Cómo quedó la fase 3:** los administradores de cada empresa los asigna SeguAlaFija en `/admin` (correo y rol). Las
+personas invitadas por lista o CSV quedan en estado "invitado" y **no cuentan para el tramo** hasta que entran con ese
+correo; al entrar quedan aprobadas, porque la empresa ya las invitó. La empresa configura quién paga, el aporte del
+copago, el cierre de la inscripción y los planes; los tramos y dominios siguen en manos de SeguAlaFija.
 
 ### Fase 4: cierre del periodo, cobro y emisión
 

@@ -239,6 +239,17 @@ interface Db {
   referralRewards: Map<string, ReferralReward>;
   companies: Map<string, Company>;
   memberships: Map<string, Membership>;
+  /** Bitácora de cada empresa (aprobaciones, invitaciones, cambios del programa). */
+  companyAudit: CompanyAuditEntry[];
+}
+
+export interface CompanyAuditEntry {
+  id: string;
+  companyId: string;
+  at: string;
+  actor: string;
+  action: string;
+  detail: string;
 }
 
 function seed(db: Db) {
@@ -249,6 +260,7 @@ function seed(db: Db) {
     name: "Andina Logística (demo)",
     slug: "andina-logistica",
     emailDomains: ["andina-demo.co"],
+    admins: [{ email: "rrhh@andina-demo.co", role: "admin" }, { email: "finanzas@andina-demo.co", role: "lectura" }],
     joinCode: "ANDINA7K2P",
     paymentModel: "copago",
     copayAmount: 600_000,
@@ -265,7 +277,7 @@ function seed(db: Db) {
       id: `demo-m-${i}`,
       companyId: demoCompany.id,
       email: `empleado${i}@andina-demo.co`,
-      status: i <= 18 ? "aprobado" : "pendiente",
+      status: i <= 18 ? "aprobado" : i <= 20 ? "pendiente" : "invitado",
       source: i % 3 === 0 ? "csv" : "dominio",
       createdAt: now,
     });
@@ -321,6 +333,7 @@ export function db(): Db {
       referralRewards: new Map(),
       companies: new Map(),
       memberships: new Map(),
+      companyAudit: [],
     };
     seed(g.__safDb);
   }

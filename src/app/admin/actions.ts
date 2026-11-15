@@ -236,6 +236,7 @@ export async function saveCompanyAction(_: FormState, form: FormData): Promise<F
     nit: form.get("nit") || undefined,
     slug: form.get("slug") || undefined,
     domains: form.get("domains") ?? "",
+    admins: form.get("admins") ?? "",
     paymentModel: form.get("paymentModel"),
     copayAmount: form.get("copayAmount") ?? "",
     allowedPlanCodes: form.getAll("plans").map(String),

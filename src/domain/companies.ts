@@ -34,6 +34,13 @@ export const DEFAULT_TIERS: VolumeTier[] = [
 
 export type CompanyStatus = "activa" | "pausada";
 
+/** Rol en el panel de la empresa: administrador (aprueba y configura) o solo lectura. */
+export type CompanyRole = "admin" | "lectura";
+export interface CompanyAdmin {
+  email: string;
+  role: CompanyRole;
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -52,6 +59,8 @@ export interface Company {
   /** Códigos de plan habilitados (p. ej. "auto-plus"). Vacío: todos. */
   allowedPlanCodes: string[];
   tiers: VolumeTier[];
+  /** Personas de la empresa con acceso a su panel (/empresas/{slug}/admin). */
+  admins: CompanyAdmin[];
   /** Cierre del periodo de inscripción actual (fecha ISO). Al cerrar se fija el tramo. */
   enrollmentClosesAt?: string;
   status: CompanyStatus;
@@ -60,7 +69,11 @@ export interface Company {
   demo?: boolean;
 }
 
-export type MembershipStatus = "pendiente" | "aprobado" | "rechazado" | "retirado";
+/**
+ * `invitado`: la empresa lo cargó por CSV y aún no entra; no cuenta para el tramo.
+ * Al entrar con ese correo queda aprobado, porque la empresa ya lo invitó.
+ */
+export type MembershipStatus = "invitado" | "pendiente" | "aprobado" | "rechazado" | "retirado";
 export type MembershipSource = "codigo" | "dominio" | "csv";
 
 /** Plan que el empleado eligió durante el periodo de inscripción (paga al cierre). */
@@ -97,6 +110,7 @@ export interface Membership {
 }
 
 export const MEMBERSHIP_STATUS_LABELS: Record<MembershipStatus, string> = {
+  invitado: "Invitado por la empresa",
   pendiente: "Pendiente de aprobación",
   aprobado: "Aprobado",
   rechazado: "No aprobado",
@@ -195,6 +209,7 @@ export const companyInputSchema = z
     nit: z.string().trim().max(20).optional(),
     slug: z.string().trim().max(40).optional(),
     domains: z.string().max(300).default(""),
+    admins: z.string().max(1000).default(""),
     paymentModel: z.enum(["empresa", "empleado", "copago"]),
     copayAmount: z.union([z.literal(""), z.coerce.number().int().min(0).max(20_000_000)]).optional(),
     allowedPlanCodes: z.array(z.string().max(40)).max(20).default([]),
@@ -208,6 +223,8 @@ export const companyInputSchema = z
     const domains = parseDomains(c.domains);
     const bad = domains.filter((d) => !DOMAIN.test(d));
     if (bad.length) ctx.addIssue({ code: "custom", path: ["domains"], message: `Dominio no válido: ${bad.join(", ")}` });
+    const { invalid } = parseCompanyAdmins(c.admins);
+    if (invalid.length) ctx.addIssue({ code: "custom", path: ["admins"], message: `Administrador no válido: ${invalid.join(", ")} (usa correo:admin o correo:lectura).` });
     const pub = domains.filter((d) => PUBLIC_EMAIL_DOMAINS.includes(d));
     if (pub.length) ctx.addIssue({ code: "custom", path: ["domains"], message: `${pub.join(", ")} es un correo público; usa el dominio de la empresa.` });
     if (c.paymentModel === "copago" && !c.copayAmount) {
@@ -215,3 +232,101 @@ export const companyInputSchema = z
     }
   });
 export type CompanyInput = z.input<typeof companyInputSchema>;
+
+// ── Panel de la empresa (fase 3) ──────────────────────────────────────────
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** "ana@x.co:admin, luis@x.co:lectura" → administradores de la empresa. */
+export function parseCompanyAdmins(raw: string): { admins: CompanyAdmin[]; invalid: string[] } {
+  const admins = new Map<string, CompanyAdmin>();
+  const invalid: string[] = [];
+  for (const part of raw.split(/[\s,;]+/).filter(Boolean)) {
+    const [email, role = "admin"] = part.toLowerCase().split(":");
+    if (!EMAIL.test(email) || (role !== "admin" && role !== "lectura")) invalid.push(part);
+    else admins.set(email, { email, role });
+  }
+  return { admins: [...admins.values()], invalid };
+}
+
+export interface EmployeeRow {
+  name?: string;
+  email: string;
+}
+
+/**
+ * Lista de empleados pegada o subida como CSV: una persona por línea, con
+ * "nombre, correo" o solo el correo, separado por coma, punto y coma o tabulación.
+ * La primera línea se ignora si es un encabezado.
+ */
+export function parseEmployeeList(text: string, max = 1000) {
+  const valid: EmployeeRow[] = [];
+  const invalid: string[] = [];
+  const duplicates: string[] = [];
+  const seen = new Set<string>();
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  for (const [i, line] of lines.entries()) {
+    const cells = line.split(/[,;\t]/).map((c) => c.trim().replace(/^"|"$/g, "").trim()).filter(Boolean);
+    const email = cells.find((c) => EMAIL.test(c))?.toLowerCase();
+    if (!email) {
+      if (i === 0 && /correo|email/i.test(line)) continue; // encabezado
+      invalid.push(line.slice(0, 80));
+      continue;
+    }
+    if (seen.has(email)) {
+      duplicates.push(email);
+      continue;
+    }
+    seen.add(email);
+    const name = cells.find((c) => !EMAIL.test(c));
+    valid.push({ email, ...(name && { name: name.slice(0, 80) }) });
+  }
+  return { valid: valid.slice(0, max), invalid, duplicates, tooMany: valid.length > max };
+}
+
+/** Lo que la empresa configura de su programa (los tramos y dominios los negocia SeguAlaFija). */
+export const companyProgramSchema = z
+  .object({
+    paymentModel: z.enum(["empresa", "empleado", "copago"]),
+    copayAmount: z.union([z.literal(""), z.coerce.number().int().min(0).max(20_000_000)]).optional(),
+    allowedPlanCodes: z.array(z.string().max(40)).max(20).default([]),
+    enrollmentClosesAt: z.union([z.literal(""), z.iso.date("Escribe una fecha válida.")]).optional(),
+  })
+  .superRefine((c, ctx) => {
+    if (c.paymentModel === "copago" && !c.copayAmount) {
+      ctx.addIssue({ code: "custom", path: ["copayAmount"], message: "Indica cuánto aporta la empresa en el copago." });
+    }
+  });
+
+/** Parte que paga la empresa y parte del empleado, según el modelo de pago. */
+export function splitPremium(company: Pick<Company, "paymentModel" | "copayAmount">, annual: number) {
+  const companyPart =
+    company.paymentModel === "empresa" ? annual : company.paymentModel === "copago" ? Math.min(annual, company.copayAmount ?? 0) : 0;
+  return { companyPart, employeePart: annual - companyPart };
+}
+
+/** Filas del reporte para nómina: empleados aprobados con plan elegido. */
+export function payrollRows(company: Company, members: Membership[]) {
+  return members
+    .filter((m) => m.status === "aprobado" && m.selection)
+    .map((m) => {
+      const s = m.selection!;
+      const { companyPart, employeePart } = splitPremium(company, s.estimatedPremium);
+      return {
+        name: m.name ?? "",
+        email: m.email,
+        plan: s.planName,
+        vehicle: s.vehicleType === "auto" ? "Carro" : "Moto",
+        annual: s.estimatedPremium,
+        companyPart,
+        employeePart,
+        employeeMonthly: Math.round(employeePart / 12),
+      };
+    });
+}
+
+/** Ahorro anual del equipo frente al precio sin tarifa corporativa (planes elegidos y aprobados). */
+export const teamSavings = (members: Membership[]) =>
+  members
+    .filter((m) => m.status === "aprobado" && m.selection)
+    .reduce((s, m) => s + (m.selection!.listPremium - m.selection!.estimatedPremium), 0);

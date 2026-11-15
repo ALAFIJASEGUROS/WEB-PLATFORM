@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { companyInputSchema, DEFAULT_TIERS } from "@/domain/companies";
+import { companyInputSchema, companyProgramSchema, DEFAULT_TIERS } from "@/domain/companies";
+
+const companyInputSchemaProgram = (x: unknown) => companyProgramSchema.parse(x);
 import { leadInputSchema, leadSummary } from "@/domain/leads";
 import { createLead } from "./leads";
 import type { QuoteRequest } from "@/domain/types";
 import { BOLIVAR_CONFIG } from "@/insurers/mock/insurers";
 import { priceOffers } from "@/insurers/mock/tariff";
-import { getOrCreateUser } from "./db";
+import { db, getOrCreateUser } from "./db";
 import {
   choosePlan,
+  companyAuditFor,
+  companyRole,
   CompanyError,
+  decideMemberships,
+  inviteEmployees,
+  membersOf,
+  updateProgram,
   joinCompany,
   membershipFor,
   membershipsForUser,
@@ -70,7 +78,7 @@ describe("empresas del beneficio para empleados", () => {
 
   it("la empresa de demostración tiene inscritos y precio de su tramo", () => {
     expect(enrolledCount("demo-andina")).toBe(18);
-    expect(pendingCount("demo-andina")).toBe(4);
+    expect(pendingCount("demo-andina")).toBe(2);
     const offers = withCompanyPricing(priceOffers(req, BOLIVAR_CONFIG), "demo-andina");
     const plus = offers.find((o) => o.id === "bolivar:auto-plus")!;
     expect(plus.discounts?.map((d) => d.label)).toContain("Tarifa corporativa Andina Logística (demo)");
@@ -135,5 +143,45 @@ describe("portal del empleado", () => {
     expect(sel).toMatchObject({ planName: "Auto Plus", vehicleLabel: "Mazda 2 2022 · ABC123", tierPct: 5 });
     expect(sel.estimatedPremium).toBeLessThan(sel.listPremium);
     await expect(choosePlan(andina(), m, req, "bolivar:moto-basico")).rejects.toThrow(CompanyError);
+  });
+});
+
+describe("panel de la empresa", () => {
+  const andina = () => findCompanyBySlug("andina-logistica")!;
+
+  it("da acceso según el rol y no a otros correos", () => {
+    expect(companyRole(andina(), { email: "RRHH@andina-demo.co" })).toBe("admin");
+    expect(companyRole(andina(), { email: "finanzas@andina-demo.co" })).toBe("lectura");
+    expect(companyRole(andina(), { email: "empleado1@andina-demo.co" })).toBeNull();
+  });
+
+  it("aprueba en lote solo pendientes, sube el tramo, avisa y deja bitácora", () => {
+    const pend = membersOf("demo-andina").filter((m) => m.status === "pendiente");
+    const approved = membersOf("demo-andina").find((m) => m.status === "aprobado")!;
+    expect(decideMemberships(andina(), [...pend.map((m) => m.id), approved.id], "aprobar", "rrhh@andina-demo.co")).toBe(2);
+    expect(enrolledCount("demo-andina")).toBe(20);
+    expect(db().outbox.filter((o) => /aprobó tu beneficio/.test(o.subject))).toHaveLength(2);
+    expect(companyAuditFor("demo-andina")[0]).toMatchObject({ action: "Aprobó vinculaciones", detail: "2" });
+  });
+
+  it("rechaza con motivo", () => {
+    const user = getOrCreateUser("intruso@andina-demo.co");
+    const m = joinCompany(andina(), user);
+    decideMemberships(andina(), [m.id], "rechazar", "rrhh@andina-demo.co", "No trabaja en la empresa");
+    expect(m).toMatchObject({ status: "rechazado", reason: "No trabaja en la empresa" });
+  });
+
+  it("invita por CSV sin duplicar; el invitado no cuenta hasta entrar y entonces queda aprobado", () => {
+    const r = inviteEmployees(andina(), [{ email: "nuevo@andina-demo.co", name: "Nuevo" }, { email: "empleado1@andina-demo.co" }], "rrhh@andina-demo.co");
+    expect(r).toEqual({ created: 1, skipped: ["empleado1@andina-demo.co"] });
+    const before = enrolledCount("demo-andina");
+    const m = joinCompany(andina(), getOrCreateUser("nuevo@andina-demo.co"));
+    expect(m).toMatchObject({ status: "aprobado", name: "Nuevo", decidedBy: "Invitación de la empresa" });
+    expect(enrolledCount("demo-andina")).toBe(before + 1);
+  });
+
+  it("actualiza el programa de la empresa", () => {
+    updateProgram(andina(), companyInputSchemaProgram({ paymentModel: "empresa", allowedPlanCodes: ["auto-plus"], enrollmentClosesAt: "2026-12-20" }), "rrhh@andina-demo.co");
+    expect(andina()).toMatchObject({ paymentModel: "empresa", copayAmount: undefined, allowedPlanCodes: ["auto-plus"], enrollmentClosesAt: "2026-12-20" });
   });
 });
