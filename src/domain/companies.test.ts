@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { QuoteRequest } from "./types";
 import { applyDiscounts, DEFAULT_DISCOUNT_SETTINGS } from "./discounts";
 import {
+  companyProgramSchema,
+  parseCompanyAdmins,
+  parseEmployeeList,
+  payrollRows,
+  splitPremium,
+  teamSavings,
+  type Membership,
   companyDiscountRule,
   companyInputSchema,
   DEFAULT_TIERS,
@@ -21,6 +28,7 @@ const company: Company = {
   name: "Andina Logística",
   slug: "andina-logistica",
   emailDomains: ["andina.com.co"],
+  admins: [],
   joinCode: "ANDINA25",
   paymentModel: "empleado",
   allowedPlanCodes: [],
@@ -109,5 +117,53 @@ describe("formulario de empresa", () => {
   it("exige el aporte en copago", () => {
     expect(companyInputSchema.safeParse({ ...base, paymentModel: "copago" }).success).toBe(false);
     expect(companyInputSchema.safeParse({ ...base, paymentModel: "copago", copayAmount: "500000" }).success).toBe(true);
+  });
+});
+
+describe("panel de la empresa", () => {
+  it("lee administradores con su rol", () => {
+    expect(parseCompanyAdmins("RRHH@andina.co:admin, fin@andina.co:lectura ana@andina.co")).toEqual({
+      admins: [
+        { email: "rrhh@andina.co", role: "admin" },
+        { email: "fin@andina.co", role: "lectura" },
+        { email: "ana@andina.co", role: "admin" },
+      ],
+      invalid: [],
+    });
+    expect(parseCompanyAdmins("ana@andina.co:jefe, nocorreo").invalid).toEqual(["ana@andina.co:jefe", "nocorreo"]);
+  });
+
+  it("lee la lista de empleados con encabezado, separadores mixtos, duplicados e inválidos", () => {
+    const r = parseEmployeeList("nombre;correo\nAna Gómez;ANA@andina.co\n\"Luis Pérez\",luis@andina.co\nana@andina.co\nsin correo\npedro@andina.co");
+    expect(r.valid).toEqual([
+      { name: "Ana Gómez", email: "ana@andina.co" },
+      { name: "Luis Pérez", email: "luis@andina.co" },
+      { email: "pedro@andina.co" },
+    ]);
+    expect(r.duplicates).toEqual(["ana@andina.co"]);
+    expect(r.invalid).toEqual(["sin correo"]);
+  });
+
+  it("reparte la prima según quién paga", () => {
+    expect(splitPremium({ paymentModel: "empresa" }, 1_000_000)).toEqual({ companyPart: 1_000_000, employeePart: 0 });
+    expect(splitPremium({ paymentModel: "empleado" }, 1_000_000)).toEqual({ companyPart: 0, employeePart: 1_000_000 });
+    expect(splitPremium({ paymentModel: "copago", copayAmount: 600_000 }, 1_000_000)).toEqual({ companyPart: 600_000, employeePart: 400_000 });
+    expect(splitPremium({ paymentModel: "copago", copayAmount: 600_000 }, 500_000)).toEqual({ companyPart: 500_000, employeePart: 0 });
+  });
+
+  it("arma el reporte para nómina solo con aprobados que eligieron plan, sin placa", () => {
+    const sel = { offerId: "bolivar:auto-plus", planName: "Auto Plus", insurerName: "Seguros Bolívar", vehicleType: "auto" as const, vehicleLabel: "Mazda 2 2022 · ABC123", listPremium: 1_350_000, estimatedPremium: 1_284_000, tierPct: 5, quote: req, at: "" };
+    const m = (status: Membership["status"], selection?: typeof sel): Membership => ({ id: status, companyId: "c1", email: `${status}@a.co`, name: "Ana", status, source: "dominio", createdAt: "", selection });
+    const members = [m("aprobado", sel), m("aprobado"), m("pendiente", sel)];
+    const rows = payrollRows({ ...company, paymentModel: "copago", copayAmount: 600_000 }, members);
+    expect(rows).toEqual([{ name: "Ana", email: "aprobado@a.co", plan: "Auto Plus", vehicle: "Carro", annual: 1_284_000, companyPart: 600_000, employeePart: 684_000, employeeMonthly: 57_000 }]);
+    expect(JSON.stringify(rows)).not.toContain("ABC123");
+    expect(teamSavings(members)).toBe(66_000);
+  });
+
+  it("valida la configuración del programa", () => {
+    expect(companyProgramSchema.safeParse({ paymentModel: "copago" }).success).toBe(false);
+    expect(companyProgramSchema.safeParse({ paymentModel: "empleado", enrollmentClosesAt: "2026-12-05" }).success).toBe(true);
+    expect(companyProgramSchema.safeParse({ paymentModel: "empleado", enrollmentClosesAt: "mañana" }).success).toBe(false);
   });
 });

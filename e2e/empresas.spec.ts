@@ -62,3 +62,52 @@ test("la cotización individual no se mezcla con la de la empresa", async ({ pag
   await page.goto("/cotizar/auto");
   await expect(page.getByText("Tarifa de tu empresa")).toHaveCount(0);
 });
+
+test("el admin de la empresa aprueba en lote, invita por lista y configura el programa", async ({ page }) => {
+  await page.goto("/empresas/andina-logistica/admin");
+  await login(page, "rrhh@andina-demo.co");
+  await expect(page.getByRole("heading", { name: "Andina Logística (demo)" })).toBeVisible();
+  await expect(page.getByText("rrhh@andina-demo.co · administrador")).toBeVisible();
+
+  // Aprobar en lote todo lo pendiente.
+  const bandeja = page.locator("section", { has: page.getByRole("heading", { name: "Vinculaciones por aprobar" }) });
+  await bandeja.getByLabel(/Seleccionar todas/).check();
+  await bandeja.getByRole("button", { name: /^Aprobar/ }).click();
+  await expect(bandeja.getByText(/aprobadas?\./)).toBeVisible();
+  await expect(bandeja.getByText("No hay vinculaciones pendientes.")).toBeVisible();
+
+  // Invitar con una lista pegada (un repetido y una línea inválida).
+  const correo = `nuevo-${Date.now()}@andina-demo.co`;
+  await page.getByLabel("Lista de empleados").fill(`Nuevo Empleado, ${correo}\n${correo}\nsin correo`);
+  await page.getByRole("button", { name: "Enviar invitaciones" }).click();
+  await expect(page.getByText(/Enviamos 1 invitación\. 1 repetidos en la lista, 1 líneas sin correo válido\./)).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Invitado por la empresa" }).first()).toBeVisible();
+
+  // Configurar el cierre de la inscripción.
+  await page.getByLabel("Cierre de la inscripción").fill("2026-12-20");
+  await page.getByRole("button", { name: "Guardar programa" }).click();
+  await expect(page.getByText("Programa actualizado.")).toBeVisible();
+  await expect(page.getByText(/Actualizó el programa/)).toBeVisible();
+
+  // Reporte para nómina.
+  const csv = await page.request.get("/api/empresas/andina-logistica/reporte");
+  expect(csv.status()).toBe(200);
+  expect(await csv.text()).toContain("Descuento mensual por nómina");
+});
+
+test("el rol de solo lectura no puede aprobar ni configurar", async ({ page }) => {
+  await page.goto("/empresas/andina-logistica/admin");
+  await login(page, "finanzas@andina-demo.co");
+  await expect(page.getByText("finanzas@andina-demo.co · solo lectura")).toBeVisible();
+  await expect(page.getByText(/Solo los administradores pueden aprobar/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Guardar programa" })).toHaveCount(0);
+});
+
+test("un empleado sin rol no ve el panel; un invitado acepta y queda aprobado", async ({ page }) => {
+  await page.goto("/empresas/andina-logistica/admin");
+  await login(page, "empleado21@andina-demo.co");
+  await expect(page.getByRole("heading", { name: "Sin acceso al panel" })).toBeVisible();
+  await page.goto("/empresas/andina-logistica");
+  await page.getByRole("button", { name: "Aceptar la invitación" }).click();
+  await expect(page.getByText("Aprobado", { exact: true })).toBeVisible();
+});

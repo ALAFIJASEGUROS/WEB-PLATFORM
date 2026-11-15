@@ -35,6 +35,9 @@ function CompanyForm({ company, idPrefix }: { company?: Company; idPrefix: strin
         <Field label="Dominios de correo" htmlFor={f("domains")} hint="Separados por coma, p. ej. andina.com.co">
           <input id={f("domains")} name="domains" defaultValue={company?.emailDomains.join(", ")} className={inputClass} />
         </Field>
+        <Field label="Administradores de la empresa" htmlFor={f("admins")} hint="correo:admin o correo:lectura, separados por coma">
+          <input id={f("admins")} name="admins" defaultValue={company?.admins.map((a) => `${a.email}:${a.role}`).join(", ")} placeholder="rrhh@empresa.co:admin" className={inputClass} />
+        </Field>
         <Field label="Quién paga" htmlFor={f("pay")}>
           <select id={f("pay")} name="paymentModel" defaultValue={company?.paymentModel ?? "empleado"} className={inputClass}>
             {Object.entries(PAYMENT_MODEL_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -133,6 +136,11 @@ export function CompaniesPanel({ canEdit, rows }: { canEdit: boolean; rows: Comp
                     {c.paymentModel === "copago" && c.copayAmount ? ` (${formatCOP(c.copayAmount)} al año)` : ""}
                     {" · "}
                     {c.allowedPlanCodes.length ? `${c.allowedPlanCodes.length} planes habilitados` : "todos los planes"}
+                  </p>
+                  <p className="break-words text-sm text-muted">
+                    {c.admins.length ? `Panel: ${c.admins.map((a) => `${a.email} (${a.role === "admin" ? "admin" : "lectura"})`).join(", ")}` : "Sin administradores de la empresa"}
+                    {" · "}
+                    <Link href={`/empresas/${c.slug}/admin`} className="font-semibold text-brand hover:underline">abrir panel</Link>
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

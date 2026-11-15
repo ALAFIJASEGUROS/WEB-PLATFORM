@@ -7,6 +7,16 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 ### Agregado
+- Beneficio para empleados, fase 3 (panel de la empresa en `/empresas/[slug]/admin`):
+  - Acceso con roles administrador y solo lectura; los asigna SeguAlaFija en la sección "Empresas" de `/admin`.
+  - Resumen: inscritos, pendientes, invitados sin entrar, tramo actual y siguiente, y ahorro anual del equipo.
+  - Bandeja para aprobar o rechazar vinculaciones una por una o en lote, con motivo; cada empleado recibe un correo.
+  - Invitar empleados pegando una lista o subiendo un CSV (nombre, correo), con aviso de repetidos, inválidos y quienes ya estaban. Los invitados no cuentan para el tramo hasta que entran; al entrar quedan aprobados.
+  - Configurar quién paga, el aporte del copago, el cierre de la inscripción y los planes habilitados.
+  - Tabla de empleados (sin placa, fecha de nacimiento ni respuestas del cuestionario), reporte para nómina en CSV y bitácora de la empresa.
+  - El portal del empleado enlaza el panel a quien lo administra, y los invitados ven "Aceptar la invitación".
+
+### Agregado
 - Beneficio para empleados, fase 2 (portal del empleado):
   - Portal `/empresas/[slug]` con el logo de la empresa: quién paga, planes disponibles, inscritos y avance hacia el siguiente tramo, y fecha de cierre de la inscripción.
   - Vinculación con el correo corporativo (dominio de la empresa) o con el código de la empresa (también por enlace `?codigo=`); queda pendiente de aprobación. Si la empresa invitó al correo, la vinculación se asocia a la cuenta.

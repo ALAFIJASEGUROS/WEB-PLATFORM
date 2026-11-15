@@ -4,11 +4,15 @@ import {
   companyDiscountRule,
   nextTier,
   normalizeTiers,
+  parseCompanyAdmins,
   parseDomains,
   slugify,
   tierFor,
   type Company,
+  type companyProgramSchema,
   type CompanyQuoteContext,
+  type CompanyRole,
+  type EmployeeRow,
   type companyInputSchema,
   type Membership,
   type MembershipSelection,
@@ -19,7 +23,7 @@ import { applyDiscounts, type DiscountContext } from "@/domain/discounts";
 import { todayInColombia } from "@/domain/holidays";
 import type { Offer, QuoteRequest } from "@/domain/types";
 import type { z } from "zod";
-import { db, newId, type User } from "./db";
+import { db, newId, sendMessage, type User } from "./db";
 import { discountConfig } from "./discounts";
 
 // Empresas del programa de beneficio para empleados: alta, tramos, precio
@@ -98,6 +102,7 @@ export function saveCompany(input: z.output<typeof companyInputSchema>, logo?: s
     ...(input.nit && { nit: input.nit }),
     logo: removeLogo ? undefined : (logo ?? prev?.logo),
     emailDomains: domains,
+    admins: parseCompanyAdmins(input.admins).admins,
     joinCode: prev?.joinCode ?? newJoinCode(input.name),
     paymentModel: input.paymentModel,
     copayAmount: input.paymentModel === "copago" && input.copayAmount ? Number(input.copayAmount) : undefined,
@@ -164,9 +169,17 @@ export function joinCompany(company: Company, user: Pick<User, "id" | "email" | 
   if (company.status !== "activa") throw new CompanyError("El programa de esta empresa está pausado.");
   const existing = membershipFor(company.id, user);
   if (existing) {
-    existing.userId ??= user.id;
     if (existing.status === "retirado" || existing.status === "rechazado") {
       throw new CompanyError("Tu vinculación no está activa. Habla con el área encargada en tu empresa.");
+    }
+    existing.userId ??= user.id;
+    if (user.name && !existing.name) existing.name = user.name;
+    // La empresa ya lo invitó: queda aprobado al entrar.
+    if (existing.status === "invitado") {
+      existing.status = "aprobado";
+      existing.decidedAt = new Date().toISOString();
+      existing.decidedBy = "Invitación de la empresa";
+      companyAudit(company.id, existing.email, "Aceptó la invitación");
     }
     return existing;
   }
@@ -237,4 +250,110 @@ export async function choosePlan(company: Company, membership: Membership, req: 
     at: new Date().toISOString(),
   };
   return membership.selection;
+}
+
+// ── Panel de la empresa (fase 3) ──────────────────────────────────────────
+
+/** Rol del usuario en el panel de la empresa, o null si no tiene acceso. */
+export function companyRole(company: Company, user: Pick<User, "email"> | null): CompanyRole | null {
+  if (!user) return null;
+  return company.admins.find((a) => a.email === user.email.toLowerCase())?.role ?? null;
+}
+
+/** Empresas que el usuario administra (para enlazar el panel). */
+export const companiesAdministeredBy = (user: Pick<User, "email">) =>
+  listCompanies().filter((c) => companyRole(c, user));
+
+export function companyAudit(companyId: string, actor: string, action: string, detail = "") {
+  const log = db().companyAudit;
+  log.unshift({ id: newId(), companyId, at: new Date().toISOString(), actor, action, detail });
+  if (log.length > 2000) log.length = 2000;
+}
+
+export const companyAuditFor = (companyId: string, limit = 30) =>
+  db().companyAudit.filter((e) => e.companyId === companyId).slice(0, limit);
+
+const STATUS_ORDER: Record<Membership["status"], number> = { pendiente: 0, aprobado: 1, invitado: 2, rechazado: 3, retirado: 4 };
+
+export const membersOf = (companyId: string) =>
+  [...db().memberships.values()]
+    .filter((m) => m.companyId === companyId)
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || a.email.localeCompare(b.email));
+
+/** Aprueba o rechaza vinculaciones pendientes y avisa a cada empleado. Devuelve cuántas cambió. */
+export function decideMemberships(company: Company, ids: string[], decision: "aprobar" | "rechazar", actor: string, reason?: string) {
+  let changed = 0;
+  const now = new Date().toISOString();
+  for (const id of ids) {
+    const m = db().memberships.get(id);
+    if (!m || m.companyId !== company.id || m.status !== "pendiente") continue;
+    m.status = decision === "aprobar" ? "aprobado" : "rechazado";
+    m.decidedAt = now;
+    m.decidedBy = actor;
+    m.reason = decision === "rechazar" ? reason?.trim() || undefined : undefined;
+    changed++;
+    sendMessage({
+      to: m.email,
+      channel: "email",
+      kind: "transaccional",
+      subject: decision === "aprobar" ? `${company.name} aprobó tu beneficio de seguro` : `Sobre tu solicitud del beneficio de ${company.name}`,
+      body:
+        decision === "aprobar"
+          ? `Hola${m.name ? ` ${m.name}` : ""}, ya haces parte del beneficio de seguro de ${company.name}. Puedes cotizar y elegir tu plan en /empresas/${company.slug}.`
+          : `Hola${m.name ? ` ${m.name}` : ""}, ${company.name} no aprobó tu vinculación al beneficio${m.reason ? `: ${m.reason}` : "."} Si crees que es un error, habla con el área encargada.`,
+    });
+  }
+  if (changed) companyAudit(company.id, actor, decision === "aprobar" ? "Aprobó vinculaciones" : "Rechazó vinculaciones", `${changed}${reason ? ` · ${reason}` : ""}`);
+  return changed;
+}
+
+/**
+ * Invita empleados de la lista (CSV): crea vinculaciones "invitado" y envía un
+ * correo con el enlace. Omite a quien ya está en la empresa.
+ */
+export function inviteEmployees(company: Company, rows: EmployeeRow[], actor: string) {
+  const existing = new Set(membersOf(company.id).map((m) => m.email.toLowerCase()));
+  let created = 0;
+  const skipped: string[] = [];
+  for (const r of rows) {
+    if (existing.has(r.email)) {
+      skipped.push(r.email);
+      continue;
+    }
+    const m: Membership = {
+      id: newId(),
+      companyId: company.id,
+      email: r.email,
+      ...(r.name && { name: r.name }),
+      status: "invitado",
+      source: "csv",
+      createdAt: new Date().toISOString(),
+    };
+    db().memberships.set(m.id, m);
+    existing.add(r.email);
+    created++;
+    sendMessage({
+      to: r.email,
+      channel: "email",
+      kind: "transaccional",
+      subject: `${company.name} te invita a asegurar tu carro o moto con tarifa corporativa`,
+      body: `Hola${r.name ? ` ${r.name}` : ""}, ${company.name} te ofrece el seguro de tu carro o moto personal con Seguros Bolívar a tarifa corporativa. Entra con este correo en /empresas/${company.slug} para cotizar y elegir tu plan.`,
+    });
+  }
+  if (created) companyAudit(company.id, actor, "Invitó empleados", `${created} invitados${skipped.length ? `, ${skipped.length} ya estaban` : ""}`);
+  return { created, skipped };
+}
+
+/** La empresa actualiza su programa: planes, quién paga y cierre de la inscripción. */
+export function updateProgram(company: Company, input: z.output<typeof companyProgramSchema>, actor: string) {
+  company.paymentModel = input.paymentModel;
+  company.copayAmount = input.paymentModel === "copago" && input.copayAmount ? Number(input.copayAmount) : undefined;
+  company.allowedPlanCodes = input.allowedPlanCodes;
+  company.enrollmentClosesAt = input.enrollmentClosesAt || undefined;
+  companyAudit(
+    company.id,
+    actor,
+    "Actualizó el programa",
+    `${company.paymentModel}${company.copayAmount ? ` (${company.copayAmount})` : ""} · ${company.allowedPlanCodes.length || "todos los"} planes${company.enrollmentClosesAt ? ` · cierre ${company.enrollmentClosesAt}` : ""}`,
+  );
 }

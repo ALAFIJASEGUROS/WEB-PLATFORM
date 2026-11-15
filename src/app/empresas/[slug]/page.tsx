@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Bike, Building2, CalendarClock, CarFront, CheckCircle2, Clock, XCircle } from "lucide-react";
@@ -5,7 +6,7 @@ import { MEMBERSHIP_STATUS_LABELS, nextTier, PAYMENT_MODEL_LABELS, tierFor, type
 import { formatCOP, formatDayMonth } from "@/domain/labels";
 import { ACTIVE_CONFIGS } from "@/insurers/mock/insurers";
 import { getCurrentUser } from "@/server/auth";
-import { emailMatchesCompany, enrolledCount, findCompanyBySlug, membershipFor } from "@/server/companies";
+import { companyRole, emailMatchesCompany, enrolledCount, findCompanyBySlug, membershipFor } from "@/server/companies";
 import { LoginForm } from "@/components/account/LoginForm";
 import { ActionForm } from "@/components/account/ActionForm";
 import { Badge, ButtonLink, Card, Field, inputClass, SimulatedDataNotice } from "@/components/ui";
@@ -55,6 +56,13 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
           </div>
         </header>
         <SimulatedDataNotice />
+
+        {companyRole(company, user) && (
+          <p className="rounded-xl bg-brand-soft p-3 text-sm text-ink">
+            Administras este beneficio.{" "}
+            <Link href={`/empresas/${company.slug}/admin`} className="font-semibold text-brand hover:underline">Abrir el panel de la empresa</Link>
+          </p>
+        )}
 
         {company.status !== "activa" && (
           <p role="status" className="rounded-xl bg-sun-soft p-4 text-sm text-sun-ink">
@@ -111,8 +119,8 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
             <p className="text-sm text-muted">Usa tu correo de la empresa. Si no tienes uno, entra con tu correo personal y escribe el código que te compartieron.</p>
             <LoginForm next={`/empresas/${company.slug}${typeof codigo === "string" && codigo ? `?codigo=${encodeURIComponent(codigo)}` : ""}`} />
           </section>
-        ) : !membership ? (
-          <JoinCard company={company} email={user.email} code={typeof codigo === "string" ? codigo : ""} />
+        ) : !membership || membership.status === "invitado" ? (
+          <JoinCard company={company} email={user.email} code={typeof codigo === "string" ? codigo : ""} invited={membership?.status === "invitado"} />
         ) : (
           <MembershipCard
             company={company}
@@ -128,17 +136,19 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
   );
 }
 
-function JoinCard({ company, email, code }: { company: Company; email: string; code: string }) {
-  const byDomain = emailMatchesCompany(company, email);
+function JoinCard({ company, email, code, invited }: { company: Company; email: string; code: string; invited: boolean }) {
+  const byDomain = invited || emailMatchesCompany(company, email);
   return (
     <Card className="space-y-3 p-5">
       <h2 className="font-bold text-heading">Únete al beneficio</h2>
       <p className="text-sm text-muted">
-        {byDomain
+        {invited
+          ? `${company.name} te invitó al beneficio. Al aceptar quedas inscrito y puedes elegir tu plan.`
+          : byDomain
           ? `Tu correo ${email} es de ${company.name}. Al unirte, el área encargada confirma tu vinculación.`
           : `Entraste como ${email}. Escribe el código que te compartió ${company.name}.`}
       </p>
-      <ActionForm action={joinCompanyAction.bind(null, company.slug)} submitLabel="Unirme" resetOnSuccess={false} className="space-y-3">
+      <ActionForm action={joinCompanyAction.bind(null, company.slug)} submitLabel={invited ? "Aceptar la invitación" : "Unirme"} resetOnSuccess={false} className="space-y-3">
         {!byDomain && (
           <Field label="Código de tu empresa" htmlFor="join-code">
             <input id="join-code" name="code" required defaultValue={code} autoCapitalize="characters" autoComplete="off" className={`${inputClass} font-mono uppercase`} />
