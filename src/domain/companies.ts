@@ -72,6 +72,8 @@ export interface Company {
   admins: CompanyAdmin[];
   /** Cierre del periodo de inscripción actual (fecha ISO). Al cerrar se fija el tramo. */
   enrollmentClosesAt?: string;
+  /** Fecha de cierre para la que ya se envió el recordatorio previo (evita repetirlo). */
+  closeReminderSentFor?: string;
   /** Tramo fijado al cerrar la inscripción (fase 4). Rige mientras `periodEnd` sea el cierre vigente. */
   lockedTier?: LockedTier;
   status: CompanyStatus;

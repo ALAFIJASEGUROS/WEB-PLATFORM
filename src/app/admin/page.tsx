@@ -26,7 +26,7 @@ import { InsurerHealthView } from "@/components/admin/InsurerHealthView";
 import { insurerHealthReport } from "@/server/insurer-health";
 import { DiscountsPanel } from "./DiscountsPanel";
 import { CompaniesPanel } from "./CompaniesPanel";
-import { enrolledCount, listCompanies, pendingCount } from "@/server/companies";
+import { companyFunnel, enrolledCount, listCompanies, pendingCount } from "@/server/companies";
 import { ExperimentsPanel } from "./ExperimentsPanel";
 
 export const metadata: Metadata = { title: "Administración", robots: { index: false } };
@@ -126,7 +126,7 @@ export default async function Page() {
 
       <CompaniesPanel
         canEdit={canEdit}
-        rows={listCompanies().map((company) => ({ company, enrolled: enrolledCount(company.id), pending: pendingCount(company.id) }))}
+        rows={listCompanies().map((company) => ({ company, enrolled: enrolledCount(company.id), pending: pendingCount(company.id), funnel: companyFunnel(company.id) }))}
       />
 
       <ExperimentsPanel canEdit={canEdit} experiments={snap.experiments} />
@@ -154,6 +154,12 @@ export default async function Page() {
               </div>
               <Field label="Audiencia" htmlFor="c-a">
                 <select id="c-a" name="audience" className={inputClass}><option value="todos">Todos</option><option value="auto">Carro</option><option value="moto">Moto</option></select>
+              </Field>
+              <Field label="Solo para empleados de (opcional)" htmlFor="c-co" hint="Se muestra en el portal de la empresa y en las ofertas de sus empleados">
+                <select id="c-co" name="companyId" defaultValue="" className={inputClass}>
+                  <option value="">Todas las personas</option>
+                  {listCompanies().map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </Field>
             </ActionForm>
           </Card>}

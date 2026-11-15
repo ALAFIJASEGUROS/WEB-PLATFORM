@@ -14,7 +14,7 @@ import { describeRule, type DiscountRule } from "@/domain/discounts";
 import { setExperimentActive } from "@/server/experiments";
 import { deleteDiscountRule, discountConfig, updateDiscountSettings, upsertDiscountRule } from "@/server/discounts";
 import { companyInputSchema } from "@/domain/companies";
-import { CompanyError, logoToDataUrl, rotateJoinCode, saveCompany } from "@/server/companies";
+import { CompanyError, getCompany, logoToDataUrl, rotateJoinCode, saveCompany } from "@/server/companies";
 
 const campaignSchema = z.object({
   sponsor: z.string().trim().min(2).max(60),
@@ -23,12 +23,14 @@ const campaignSchema = z.object({
   ctaLabel: z.string().trim().min(2).max(30),
   ctaUrl: z.string().trim().refine((u) => u.startsWith("/") || u.startsWith("https://"), "URL inválida"),
   audience: z.enum(["auto", "moto", "todos"]),
+  companyId: z.string().max(60).optional(),
 });
 
 export async function createCampaignAction(_: FormState, form: FormData): Promise<FormState> {
   const admin = await requireAdmin();
-  const parsed = campaignSchema.safeParse(Object.fromEntries(form));
+  const parsed = campaignSchema.safeParse({ ...Object.fromEntries(form), companyId: form.get("companyId") || undefined });
   if (!parsed.success) return { error: "Revisa los campos de la campaña (URL debe iniciar por / o https://)." };
+  if (parsed.data.companyId && !getCompany(parsed.data.companyId)) return { error: "La empresa elegida no existe." };
   const id = newId();
   db().campaigns.set(id, { id, ...parsed.data, active: true, createdAt: new Date().toISOString() });
   audit(admin.email, "Creó campaña", `${parsed.data.sponsor}: ${parsed.data.title}`);

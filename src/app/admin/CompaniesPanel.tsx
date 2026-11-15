@@ -11,6 +11,7 @@ export interface CompanyRow {
   company: Company;
   enrolled: number;
   pending: number;
+  funnel: { invited: number; pending: number; approved: number; chose: number; confirmed: number };
 }
 
 const TIER_ROWS = 6;
@@ -111,7 +112,7 @@ export function CompaniesPanel({ canEdit, rows }: { canEdit: boolean; rows: Comp
 
       <Card className="divide-y divide-line">
         {rows.length === 0 && <p className="p-4 text-sm text-muted">Aún no hay empresas.</p>}
-        {rows.map(({ company: c, enrolled, pending }) => {
+        {rows.map(({ company: c, enrolled, pending, funnel }) => {
           const tier = tierFor(enrolled, c.tiers);
           const next = nextTier(enrolled, c.tiers);
           return (
@@ -157,6 +158,10 @@ export function CompaniesPanel({ canEdit, rows }: { canEdit: boolean; rows: Comp
                   <dd className="font-bold text-heading">{next ? `${next.tier.discountPct} % · faltan ${next.missing}` : "Tramo máximo"}</dd>
                 </div>
               </dl>
+              <p className="text-sm text-muted" aria-label="Embudo de la empresa">
+                Embudo: {funnel.invited} invitados por lista · {funnel.pending} pendientes · {funnel.approved} aprobados ·{" "}
+                {funnel.chose} eligieron plan · <strong className="text-heading">{funnel.confirmed} confirmaron</strong>
+              </p>
               {canEdit && (
                 <div className="flex flex-wrap items-center gap-3">
                   <details className="min-w-0 flex-1">

@@ -473,3 +473,74 @@ export function companyChargeRows(company: Company) {
       channel: o.company!.channel,
     }));
 }
+
+// ── Anuncios y comunicaciones (fase 5) ────────────────────────────────────
+
+export const REMINDER_DAYS_BEFORE_CLOSE = 3;
+
+const daysBetween = (from: string, to: string) =>
+  Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000);
+
+/**
+ * Recordatorio antes del cierre: a quien no ha elegido plan y a quien fue
+ * invitado y no ha entrado. Se envía una vez por periodo, desde 3 días antes.
+ */
+export function sendCloseReminders(today = todayInColombia()) {
+  let sent = 0;
+  for (const c of listCompanies()) {
+    const closes = c.enrollmentClosesAt;
+    if (c.status !== "activa" || !closes || isEnrollmentClosed(c) || c.closeReminderSentFor === closes) continue;
+    const left = daysBetween(today, closes);
+    if (left < 0 || left > REMINDER_DAYS_BEFORE_CLOSE) continue;
+    const enrolled = enrolledCount(c.id);
+    const next = nextTier(enrolled, c.tiers);
+    const push = next ? ` Si se inscriben ${next.missing} personas más, el descuento sube al ${next.tier.discountPct} % para todos.` : "";
+    const when = left === 0 ? "hoy" : left === 1 ? "mañana" : `en ${left} días`;
+    let mine = 0;
+    for (const m of membersOf(c.id)) {
+      const hi = `Hola${m.name ? ` ${m.name}` : ""},`;
+      if (m.status === "invitado") {
+        sendMessage({
+          to: m.email,
+          channel: "email",
+          kind: "transaccional",
+          subject: `La inscripción al beneficio de ${c.name} cierra ${when}`,
+          body: `${hi} aún puedes unirte al seguro de carro o moto con tarifa corporativa de ${c.name}. Entra con este correo en /empresas/${c.slug}.${push}`,
+        });
+        mine++;
+      } else if ((m.status === "aprobado" || m.status === "pendiente") && !m.selection) {
+        sendMessage({
+          to: m.email,
+          channel: "email",
+          kind: "transaccional",
+          subject: `Elige tu plan: la inscripción de ${c.name} cierra ${when}`,
+          body: `${hi} todavía no eliges tu plan del beneficio de ${c.name}. Cotiza y elige en /empresas/${c.slug} antes del cierre.${push}`,
+        });
+        mine++;
+      }
+    }
+    c.closeReminderSentFor = closes;
+    sent += mine;
+    companyAudit(c.id, "Recordatorio automático", "Envió el recordatorio de cierre", `${mine} correos`);
+  }
+  return { sent };
+}
+
+/** Anuncios activos para los empleados de la empresa. */
+export const companyCampaigns = (companyId: string) =>
+  [...db().campaigns.values()].filter((c) => c.active && c.companyId === companyId);
+
+/** Embudo de la empresa: de la invitación a la póliza confirmada. */
+export function companyFunnel(companyId: string) {
+  const members = membersOf(companyId);
+  const confirmed = [...db().orders.values()].filter(
+    (o) => o.company?.id === companyId && (o.status === "aprobada" || o.status === "emitida"),
+  ).length;
+  return {
+    invited: members.filter((m) => m.source === "csv").length,
+    pending: members.filter((m) => m.status === "pendiente").length,
+    approved: members.filter((m) => m.status === "aprobado").length,
+    chose: members.filter((m) => m.status === "aprobado" && m.selection).length,
+    confirmed,
+  };
+}

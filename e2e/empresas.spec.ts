@@ -27,6 +27,8 @@ test("el empleado se une con su correo, cotiza con la tarifa de su empresa y eli
   await expect(page).toHaveURL(/\/empresas\/andina-logistica$/);
   await page.getByRole("button", { name: "Unirme" }).click();
   await expect(page.getByText("Pendiente de aprobación")).toBeVisible();
+  // Anuncios de la empresa, solo para sus empleados.
+  await expect(page.getByRole("heading", { name: "Más beneficios para ti" })).toBeVisible();
 
   await page.getByRole("link", { name: "Cotizar mi carro" }).click();
   await expect(page.getByText("Tarifa de tu empresa")).toBeVisible();

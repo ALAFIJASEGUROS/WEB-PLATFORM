@@ -270,7 +270,7 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-24.9 | Como empleado quiero conocer y confirmar mi precio final al cierre del periodo | ✅ | M | V1 | 5 |
 | HU-24.10 | Como plataforma quiero cobrar según el modelo de pago (empresa, empleado o copago) | ✅ (Wompi real y texto de nómina: Dep) | M | V1 | 8 |
 | HU-24.11 | Como admin de la empresa quiero marcar el retiro de un empleado | ✅ | S | V1 | 2 |
-| HU-24.12 | Como plataforma quiero campañas y correos segmentados por empresa | ⬜ | S | V2 | 3 |
+| HU-24.12 | Como plataforma quiero campañas y correos segmentados por empresa | ✅ | S | V2 | 3 |
 | HU-24.13 | Como negocio quiero un piloto con 1 o 2 empresas | ⬜ Dep (Bolívar, Supabase, Wompi) | M | V2 | 5 |
 
 ---
