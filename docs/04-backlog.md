@@ -126,7 +126,7 @@ Los criterios de aceptación van en formato verificable. Las historias ✅ conse
 | --- | --- | --- | --- | --- | --- |
 | HU-11.1 | Como usuario quiero ver ofertas solo si las autorizo, y retirar ese permiso | ✅ | M | MVP | 2 |
 | HU-11.2 | Como admin quiero crear y pausar campañas segmentadas por tipo de vehículo | ✅ | S | MVP | 3 |
-| HU-11.3 | Como aseguradora quiero un portal propio para publicar campañas y ver métricas | ⬜ | C | V2 | 13 |
+| HU-11.3 | Como aseguradora quiero un portal propio para publicar campañas y ver métricas | ✅ (campañas con revisión y métricas; acceso por variable de entorno) | C | V2 | 13 |
 
 ## E12 · Backoffice y analítica
 | ID | Historia | Estado | Prio | Rel | Pts |

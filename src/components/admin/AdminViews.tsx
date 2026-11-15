@@ -309,6 +309,7 @@ export function CampaignList({ campaigns, action }: { campaigns: AdminSnapshot["
           <div className="flex-1">
             <p className="font-semibold text-heading">{c.title}</p>
             <p className="text-sm text-muted">{c.sponsor} · audiencia: {c.audience}</p>
+            {c.pendingReview && <p className="text-sm font-semibold text-sun-ink">Creada por la aseguradora: revísala y actívala para publicarla.</p>}
           </div>
           {action ? action(c) : <Badge tone={c.active ? "mint" : "neutral"}>{c.active ? "Activa" : "Pausada"}</Badge>}
         </Card>

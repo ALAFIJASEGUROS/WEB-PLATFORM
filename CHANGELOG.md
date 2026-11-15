@@ -6,26 +6,21 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 [docs/versionamiento.md](docs/versionamiento.md).
 
 ## [No publicado]
+
+## [0.16.0] - 2026-11-15 · Seguros Bolívar y beneficio para empleados
 ### Agregado
+- Portal de aseguradoras (`/aliados`): con acceso por correo (`INSURER_PORTAL_USERS`, `correo:aseguradora`), la aseguradora ve sus métricas en la plataforma (resultados vistos, ofertas elegidas, pólizas pagadas y vigentes, conversión, prima emitida y por plan, pólizas por beneficio de empresas), la salud de su integración y sus campañas con clics. Puede proponer campañas, que quedan en revisión hasta que SeguAlaFija las active en `/admin`, y pausar las suyas ya aprobadas. Los clics en campañas se registran (`campana_clic`).
 - Beneficio para empleados, fase 5 (anuncios y comunicaciones):
   - Campañas solo para los empleados de una empresa: se crean en `/admin` y se ven en el portal ("Más beneficios para ti") y en las ofertas de sus empleados vinculados.
   - Recordatorio automático antes del cierre de la inscripción (una vez por periodo, desde 3 días antes) a quien no ha elegido plan y a los invitados que no han entrado, con cuántos faltan para el siguiente tramo.
   - Embudo por empresa (invitados, pendientes, aprobados, eligieron plan, confirmaron) en `/admin` y en el panel de la empresa.
 - Lista de verificación para el piloto en `docs/empresas.md`.
-
-### Agregado
 - Beneficio para empleados, fase 4 (cierre, cobro, emisión y retiro):
   - Cierre de la inscripción: fija el tramo con los inscritos de ese día, calcula el precio final de cada plan elegido y avisa a cada empleado. Lo ejecuta el cron diario cuando llega la fecha o el admin de la empresa con "Cerrar la inscripción ahora". Una fecha de cierre nueva abre otro periodo.
   - Confirmar y pagar desde el portal: el checkout en modo beneficio muestra la prima con tarifa corporativa, lo que paga la empresa y la parte del empleado, solo con pago anual. El empleado paga su parte con Wompi o autoriza el descuento por nómina (texto de autorización versionado, en borrador hasta la revisión legal). Si la empresa paga todo, solo confirma.
   - Las compras sin pago en línea se aprueban tras la aceptación con código y se emiten con el flujo normal.
   - Reporte "Cobro a la empresa" (CSV) con la parte de la empresa de cada póliza confirmada.
   - Retiro de empleados desde el panel: la póliza sigue vigente hasta el vencimiento y se le avisa por correo.
-
-### Cambiado
-- El reporte para nómina y el ahorro del equipo usan el precio final cuando la inscripción ya cerró.
-- El panel de la empresa tiene margen inferior en el celular para que la barra de navegación no tape el final.
-
-### Agregado
 - Beneficio para empleados, fase 3 (panel de la empresa en `/empresas/[slug]/admin`):
   - Acceso con roles administrador y solo lectura; los asigna SeguAlaFija en la sección "Empresas" de `/admin`.
   - Resumen: inscritos, pendientes, invitados sin entrar, tramo actual y siguiente, y ahorro anual del equipo.
@@ -34,46 +29,21 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
   - Configurar quién paga, el aporte del copago, el cierre de la inscripción y los planes habilitados.
   - Tabla de empleados (sin placa, fecha de nacimiento ni respuestas del cuestionario), reporte para nómina en CSV y bitácora de la empresa.
   - El portal del empleado enlaza el panel a quien lo administra, y los invitados ven "Aceptar la invitación".
-
-### Agregado
 - Beneficio para empleados, fase 2 (portal del empleado):
   - Portal `/empresas/[slug]` con el logo de la empresa: quién paga, planes disponibles, inscritos y avance hacia el siguiente tramo, y fecha de cierre de la inscripción.
   - Vinculación con el correo corporativo (dominio de la empresa) o con el código de la empresa (también por enlace `?codigo=`); queda pendiente de aprobación. Si la empresa invitó al correo, la vinculación se asocia a la cuenta.
   - Cotizar como empleado (`/cotizar/auto?empresa=…`): solo los planes que habilitó la empresa, con la tarifa del tramo actual y un aviso con el tramo siguiente. En resultados el botón es "Elegir este plan": la elección se guarda y se paga al cierre (fase 4).
   - El portal muestra el plan elegido, el precio estimado, la parte del empleado en copago y el precio cerca del siguiente tramo. "Mi cuenta" muestra el estado del beneficio.
-
-### Cambiado
-- Después de entrar con el código por correo, la redirección conserva parámetros simples de la ruta interna (p. ej. el código de la empresa).
-
-### Corregido
-- Dos enlaces internos a `/empresas` usaban `<a>` en vez de `Link`.
-
-### Agregado
 - Seguro como beneficio para empleados, fase 1 ([docs/empresas.md](docs/empresas.md)):
   - Página `/empresas` para captar empresas: cómo funciona, calculadora de ahorro por tramos, quién paga, preguntas frecuentes y formulario "Quiero el beneficio para mi empresa", que llega a la bandeja de oportunidades como "Beneficio empleados".
   - Sección "Empresas" en el admin: crear y editar empresas con logo, dominios de correo, código de vinculación, quién paga (empresa, empleado o copago), planes habilitados y tramos de precio; ver inscritos, pendientes, tramo actual y cuántos faltan para el siguiente.
   - Tarifa corporativa por tramos (simulados: 5 % desde 10 inscritos hasta 14 % desde 100) como regla del motor de descuentos. No se acumula con otras promociones de la aseguradora (gana la más favorable y, si empatan, la corporativa) y respeta el tope global.
   - Empresa de demostración "Andina Logística (demo)" con 18 inscritos y 4 pendientes.
-
-### Agregado
 - Retomar la cotización: el avance del cuestionario se guarda en el navegador por 7 días. Al volver aparece "Tienes una cotización sin terminar" con el vehículo y el paso, y las opciones Retomar o Empezar de nuevo. Se borra al terminar.
 - Analítica del cuestionario: cada paso visto se registra (`paso_cuestionario`) y el embudo del admin muestra hasta qué paso llegan las sesiones y cuántas se pierden en cada uno. También se mide cuántos retoman (`cotizacion_retomada`).
-
-### Agregado
 - Resultados: "¿Qué ganas con el plan superior?" muestra el costo extra al año y al mes de cada salto de plan y lo que suma (coberturas, deducible, responsabilidad civil y asistencias).
 - La vigencia del precio se ve en la tarjeta de cada oferta y en el resumen del checkout ("Precio válido hasta el 29 de noviembre").
 - Si la emisión no sale al primer intento, el cliente recibe un solo correo avisando que el pago está aprobado y la póliza va en camino; la página de espera explica el tiempo normal, a qué correo llega y que no debe volver a pagar.
-
-### Corregido
-- El nombre del vehículo ya no repite la marca ("Mazda 2 2022" en lugar de "Mazda Mazda 2 2022") en resultados, perfil, checkout, póliza, correos y admin.
-- Con una sola opción, los títulos dicen "1 opción"; si la aseguradora no responde y no hay más opciones, el aviso invita a intentar de nuevo en vez de decir "mostramos las demás".
-
-### Cambiado
-- Por ahora la plataforma solo ofrece Seguros Bolívar: cotización, resultados, condicionados, calificación, defensor del consumidor y textos del sitio. SURA queda definida en el código (inactiva) para reactivarla. El filtro por aseguradora en resultados solo aparece cuando hay más de una.
-- La regla de descuento de ejemplo de SURA se reemplaza por "Tarifa digital Bolívar" (carros, 5 %).
-- El indicador de afinidad muestra solo el puntaje dentro del círculo y la palabra "afinidad" debajo.
-
-### Agregado
 - Contrato de adaptador de aseguradoras v2 (`ADAPTER_CONTRACT_VERSION = 2.0.0`): `issue` devuelve un estado (`emitida`, `pendiente`, `requiere_inspeccion` o `rechazada`), más `getIssueStatus`, `getPolicyDocument`, `healthcheck` opcional y capacidades por aseguradora (vigencia de la cotización, emisión asíncrona, inspección, documento).
 - Tests de contrato reutilizables (`src/insurers/contract.suite.ts`) que debe pasar todo adaptador, simulado o real.
 - Adaptador HTTP de Seguros Bolívar con modos `mock`, `sandbox` y `prod` (`INSURER_BOLIVAR_MODE`): token OAuth2, clave de idempotencia, clasificación de errores y catálogos de coberturas. El formato de la API es provisional hasta recibir la especificación.
@@ -84,11 +54,21 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 - Plan de trabajo para integrar Seguros Bolívar ([docs/bolivar.md](docs/bolivar.md)) y épica HU-23 en el backlog.
 
 ### Cambiado
+- El reporte para nómina y el ahorro del equipo usan el precio final cuando la inscripción ya cerró.
+- El panel de la empresa tiene margen inferior en el celular para que la barra de navegación no tape el final.
+- Después de entrar con el código por correo, la redirección conserva parámetros simples de la ruta interna (p. ej. el código de la empresa).
+- Por ahora la plataforma solo ofrece Seguros Bolívar: cotización, resultados, condicionados, calificación, defensor del consumidor y textos del sitio. SURA queda definida en el código (inactiva) para reactivarla. El filtro por aseguradora en resultados solo aparece cuando hay más de una.
+- La regla de descuento de ejemplo de SURA se reemplaza por "Tarifa digital Bolívar" (carros, 5 %).
+- El indicador de afinidad muestra solo el puntaje dentro del círculo y la palabra "afinidad" debajo.
 - Un rechazo de suscripción marca la orden en error de inmediato, sin agotar los reintentos. Una emisión pendiente se completa en el siguiente intento con la misma clave de idempotencia.
 - La caché de cotizaciones guarda por aseguradora: si una falla, se conserva lo que respondieron las demás y solo se vuelve a consultar la que falló.
 - Las aseguradoras simuladas aceptan placas de prueba `REC*` (rechazo) y `PEN*` (emisión pendiente).
 
 ### Corregido
+- Las dos campañas de ejemplo de Bolívar compartían el mismo id y una reemplazaba a la otra.
+- Dos enlaces internos a `/empresas` usaban `<a>` en vez de `Link`.
+- El nombre del vehículo ya no repite la marca ("Mazda 2 2022" en lugar de "Mazda Mazda 2 2022") en resultados, perfil, checkout, póliza, correos y admin.
+- Con una sola opción, los títulos dicen "1 opción"; si la aseguradora no responde y no hay más opciones, el aviso invita a intentar de nuevo en vez de decir "mostramos las demás".
 - La cotización simulada no respetaba una señal de cancelación que ya llegaba abortada.
 
 ## [0.15.0] - 2026-10-13 · Sprint 13 (crecimiento, carro y moto)
@@ -248,7 +228,8 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 ### Agregado
 - Cotización por placa, motor de recomendación explicable, adaptadores simulados de SURA y Seguros Bolívar, resultados y comparador.
 
-[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.15.0...HEAD
+[No publicado]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/ALAFIJASEGUROS/WEB-PLATFORM/compare/v0.12.1...v0.13.0

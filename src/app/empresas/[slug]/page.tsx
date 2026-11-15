@@ -15,6 +15,7 @@ import {
 } from "@/domain/companies";
 import { findOrderByReference } from "@/server/orders";
 import { ConfirmBenefitButton } from "@/components/benefit/ConfirmBenefitButton";
+import { CampaignLink } from "@/components/CampaignLink";
 import { formatCOP, formatDayMonth } from "@/domain/labels";
 import { ACTIVE_CONFIGS } from "@/insurers/mock/insurers";
 import { getCurrentUser } from "@/server/auth";
@@ -166,11 +167,9 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">{c.sponsor}</p>
                 <h3 className="font-bold text-heading">{c.title}</h3>
                 <p className="text-sm text-ink">{c.body}</p>
-                {c.ctaUrl.startsWith("/") ? (
-                  <ButtonLink href={c.ctaUrl} variant="secondary" className="min-h-10 px-4 text-sm">{c.ctaLabel}</ButtonLink>
-                ) : (
-                  <a href={c.ctaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center text-sm font-semibold text-brand hover:underline">{c.ctaLabel}</a>
-                )}
+                <CampaignLink campaignId={c.id} href={c.ctaUrl} className="inline-flex min-h-10 items-center text-sm font-semibold text-brand hover:underline">
+                  {c.ctaLabel}
+                </CampaignLink>
               </Card>
             ))}
           </section>

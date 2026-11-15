@@ -19,6 +19,6 @@ export default defineConfig({
     port: PORT,
     timeout: 300_000,
     reuseExistingServer: !process.env.CI,
-    env: { SESSION_SECRET: "e2e-secret", ADMIN_EMAILS: "admin@e2e.test:admin" },
+    env: { SESSION_SECRET: "e2e-secret", ADMIN_EMAILS: "admin@e2e.test:admin", INSURER_PORTAL_USERS: "aliado@bolivar-demo.co:bolivar" },
   },
 });
