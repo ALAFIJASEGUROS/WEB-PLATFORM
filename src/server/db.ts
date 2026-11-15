@@ -178,6 +178,8 @@ export interface Campaign {
   ctaLabel: string;
   ctaUrl: string;
   audience: VehicleType | "todos";
+  /** Solo para los empleados de esta empresa (beneficio para empleados). */
+  companyId?: string;
   active: boolean;
   createdAt: string;
 }
@@ -293,6 +295,18 @@ function seed(db: Db) {
     });
   }
   const campaigns: Campaign[] = [
+    {
+      id: "c-andina-1",
+      sponsor: "Andina Logística (demo)",
+      title: "Revisión técnico-mecánica con 20 % de descuento",
+      body: "Para el equipo de Andina: agenda tu revisión en los talleres aliados con descuento. (Contenido de demostración)",
+      ctaLabel: "Conocer talleres",
+      ctaUrl: "/ayuda",
+      audience: "todos",
+      companyId: "demo-andina",
+      active: true,
+      createdAt: now,
+    },
     {
       id: "c-bolivar-1",
       sponsor: "Seguros Bolívar",

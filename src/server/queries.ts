@@ -21,8 +21,17 @@ export function userReminders(userId: string) {
 export function campaignsFor(user: User): Campaign[] {
   if (!user.marketingConsent) return [];
   const types = new Set(userVehicles(user.id).map((v) => v.type));
+  // Anuncios de una empresa: solo para sus empleados vinculados.
+  const companies = new Set(
+    [...db().memberships.values()]
+      .filter((m) => (m.userId === user.id || m.email === user.email) && (m.status === "aprobado" || m.status === "pendiente"))
+      .map((m) => m.companyId),
+  );
   return [...db().campaigns.values()].filter(
-    (c) => c.active && (c.audience === "todos" || types.size === 0 || types.has(c.audience)),
+    (c) =>
+      c.active &&
+      (!c.companyId || companies.has(c.companyId)) &&
+      (c.audience === "todos" || types.size === 0 || types.has(c.audience)),
   );
 }
 

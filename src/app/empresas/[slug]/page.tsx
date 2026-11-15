@@ -18,7 +18,7 @@ import { ConfirmBenefitButton } from "@/components/benefit/ConfirmBenefitButton"
 import { formatCOP, formatDayMonth } from "@/domain/labels";
 import { ACTIVE_CONFIGS } from "@/insurers/mock/insurers";
 import { getCurrentUser } from "@/server/auth";
-import { companyRole, emailMatchesCompany, enrolledCount, findCompanyBySlug, membershipFor } from "@/server/companies";
+import { companyCampaigns, companyRole, emailMatchesCompany, enrolledCount, findCompanyBySlug, membershipFor } from "@/server/companies";
 import { LoginForm } from "@/components/account/LoginForm";
 import { ActionForm } from "@/components/account/ActionForm";
 import { Badge, ButtonLink, Card, Field, inputClass, SimulatedDataNotice } from "@/components/ui";
@@ -47,6 +47,8 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
   const pct = effectiveDiscountPct(company, enrolled);
   const next = closed ? null : nextTier(enrolled, company.tiers);
   const plans = enabledPlans(company);
+  // Anuncios de la empresa: solo para quien está vinculado.
+  const campaigns = membership && (membership.status === "aprobado" || membership.status === "pendiente") ? companyCampaigns(company.id) : [];
   const types = [...new Set(plans.map((p) => p.vehicleType))];
   const first = company.tiers[0];
   const goal = next?.tier.minEmployees ?? enrolled;
@@ -154,6 +156,24 @@ export default async function Page({ params, searchParams }: PageProps<"/empresa
             justChose={eleccion === "ok"}
             nextPct={next?.tier.discountPct ?? null}
           />
+        )}
+
+        {campaigns.length > 0 && (
+          <section aria-labelledby="beneficios" className="space-y-3">
+            <h2 id="beneficios" className="font-bold text-heading">Más beneficios para ti</h2>
+            {campaigns.map((c) => (
+              <Card key={c.id} className="space-y-2 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">{c.sponsor}</p>
+                <h3 className="font-bold text-heading">{c.title}</h3>
+                <p className="text-sm text-ink">{c.body}</p>
+                {c.ctaUrl.startsWith("/") ? (
+                  <ButtonLink href={c.ctaUrl} variant="secondary" className="min-h-10 px-4 text-sm">{c.ctaLabel}</ButtonLink>
+                ) : (
+                  <a href={c.ctaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center text-sm font-semibold text-brand hover:underline">{c.ctaLabel}</a>
+                )}
+              </Card>
+            ))}
+          </section>
         )}
       </div>
       <Footer />

@@ -17,7 +17,7 @@ import {
 import { formatCOP } from "@/domain/labels";
 import { ACTIVE_CONFIGS } from "@/insurers/mock/insurers";
 import { getCurrentUser } from "@/server/auth";
-import { companyAuditFor, companyRole, findCompanyBySlug, membersOf } from "@/server/companies";
+import { companyAuditFor, companyFunnel, companyRole, findCompanyBySlug, membersOf } from "@/server/companies";
 import { LoginForm } from "@/components/account/LoginForm";
 import { ActionForm } from "@/components/account/ActionForm";
 import { Badge, Card, Field, inputClass } from "@/components/ui";
@@ -69,6 +69,7 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
   const pct = effectiveDiscountPct(company, enrolled);
   const next = closed ? null : nextTier(enrolled, company.tiers);
   const pending = members.filter((m) => m.status === "pendiente");
+  const funnel = companyFunnel(company.id);
   const chosen = members.filter((m) => m.status === "aprobado" && m.selection).length;
 
   const kpis = [
@@ -78,6 +79,8 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
     [closed ? "Tramo fijado" : "Tramo actual", pct ? `${pct} %` : "Sin tramo"],
     ["Siguiente tramo", closed ? "Inscripción cerrada" : next ? `${next.tier.discountPct} % · faltan ${next.missing}` : "Máximo"],
     ["Ahorro anual del equipo", formatCOP(teamSavings(members))],
+    ["Eligieron plan", `${chosen} de ${enrolled}`],
+    ["Pólizas confirmadas", String(funnel.confirmed)],
   ];
 
   return (
@@ -99,7 +102,7 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
         </div>
       </header>
 
-      <section aria-label="Resumen" className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <section aria-label="Resumen" className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {kpis.map(([label, value]) => (
           <Card key={label} className="p-4">
             <p className="text-sm text-muted">{label}</p>
@@ -108,7 +111,7 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
         ))}
       </section>
       <p className="-mt-4 text-sm text-muted">
-        {chosen} de {enrolled} inscritos ya eligieron plan. {PAYMENT_MODEL_LABELS[company.paymentModel]}
+        {PAYMENT_MODEL_LABELS[company.paymentModel]}
         {company.paymentModel === "copago" && company.copayAmount ? ` (${formatCOP(company.copayAmount)} al año por persona)` : ""}.
       </p>
 

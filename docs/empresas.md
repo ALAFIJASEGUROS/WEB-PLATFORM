@@ -150,15 +150,33 @@ el módulo de renovaciones ya cotiza a precio individual.
 
 | # | Tarea | Entregable |
 |---|---|---|
-| 5.1 | Campañas dentro del portal con audiencia por empresa | Campañas segmentadas |
-| 5.2 | Correos: invitación, aprobación, recordatorio antes del cierre ("faltan 5 inscritos para el siguiente tramo") y precio final | Plantillas |
-| 5.3 | Embudo por empresa en el admin de la plataforma: invitados, inscritos, aprobados, emitidos | Métricas |
-| 5.4 | (Si se decide cobrar a la empresa) facturación | Depende de 0.2 |
+| 5.1 | ✅ Campañas dentro del portal con audiencia por empresa | Campañas segmentadas |
+| 5.2 | ✅ Correos: invitación, aprobación, recordatorio antes del cierre ("faltan 5 inscritos para el siguiente tramo") y precio final | Plantillas |
+| 5.3 | ✅ Embudo por empresa en el admin de la plataforma: invitados, inscritos, aprobados, emitidos | Métricas |
+| 5.4 | ⏸️ (Si se decide cobrar a la empresa) facturación | Depende de 0.2: hoy el supuesto es solo comisión |
+
+**Cómo quedó la fase 5:** las campañas del admin pueden dirigirse a los empleados de una empresa; se ven en el portal
+("Más beneficios para ti") y en las ofertas de "Mi cuenta" de sus empleados vinculados. El cron de recordatorios envía,
+una vez por periodo y desde 3 días antes del cierre, un correo a quien no ha elegido plan y a los invitados que no han
+entrado, con cuántos faltan para el siguiente tramo. La invitación, la aprobación, el rechazo, el precio final, la
+demora de emisión y el retiro ya tenían su correo desde las fases 2 a 4. El embudo por empresa (invitados, pendientes,
+aprobados, eligieron plan, confirmaron) está en `/admin` y en el panel de la empresa.
 
 ### Fase 6: piloto
 
-Con 1 o 2 empresas, cuando estén el convenio con Bolívar, Supabase y Wompi en producción. Criterio de éxito
-propuesto: al menos 30 % de los empleados invitados se inscriben en el primer periodo.
+Con 1 o 2 empresas. Criterio de éxito propuesto: al menos 30 % de los empleados invitados se inscriben en el primer
+periodo. El código está listo; el piloto depende de terceros:
+
+| # | Antes del piloto | Quién | Estado |
+|---|---|---|---|
+| 6.1 | Tarifa corporativa y tramos reales con Bolívar; reemplazar `DEFAULT_TIERS` en la empresa piloto | Negocio | Pendiente |
+| 6.2 | Supabase: guardar empresas, vinculaciones, órdenes y bitácora (hoy en memoria, HU-09.6) | Tecnología | Pendiente |
+| 6.3 | Wompi en producción para la parte del empleado (HU-07.2) | Negocio y tecnología | Pendiente |
+| 6.4 | Resend para los correos reales (HU-10.5) | Tecnología | Pendiente |
+| 6.5 | Texto definitivo de la autorización de descuento por nómina (`CONSENTS.payroll`, hoy borrador) | Legal | Pendiente |
+| 6.6 | Proceso de cobro a la empresa con el CSV "Cobro a la empresa" (factura o cuenta de cobro mensual) | Negocio | Pendiente |
+| 6.7 | Crear la empresa piloto en `/admin` con su logo, dominios, administradores, planes y fecha de cierre | Negocio | Listo para hacerse |
+| 6.8 | Quitar la empresa de demostración "Andina Logística (demo)" del arranque en producción | Tecnología | Pendiente |
 
 ## Dependencias
 

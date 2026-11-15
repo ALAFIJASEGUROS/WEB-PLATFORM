@@ -7,6 +7,13 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 ### Agregado
+- Beneficio para empleados, fase 5 (anuncios y comunicaciones):
+  - Campañas solo para los empleados de una empresa: se crean en `/admin` y se ven en el portal ("Más beneficios para ti") y en las ofertas de sus empleados vinculados.
+  - Recordatorio automático antes del cierre de la inscripción (una vez por periodo, desde 3 días antes) a quien no ha elegido plan y a los invitados que no han entrado, con cuántos faltan para el siguiente tramo.
+  - Embudo por empresa (invitados, pendientes, aprobados, eligieron plan, confirmaron) en `/admin` y en el panel de la empresa.
+- Lista de verificación para el piloto en `docs/empresas.md`.
+
+### Agregado
 - Beneficio para empleados, fase 4 (cierre, cobro, emisión y retiro):
   - Cierre de la inscripción: fija el tramo con los inscritos de ese día, calcula el precio final de cada plan elegido y avisa a cada empleado. Lo ejecuta el cron diario cuando llega la fecha o el admin de la empresa con "Cerrar la inscripción ahora". Una fecha de cierre nueva abre otro periodo.
   - Confirmar y pagar desde el portal: el checkout en modo beneficio muestra la prima con tarifa corporativa, lo que paga la empresa y la parte del empleado, solo con pago anual. El empleado paga su parte con Wompi o autoriza el descuento por nómina (texto de autorización versionado, en borrador hasta la revisión legal). Si la empresa paga todo, solo confirma.
