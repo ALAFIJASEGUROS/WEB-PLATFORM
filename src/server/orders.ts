@@ -25,6 +25,8 @@ import { eligibility } from "@/recommendation/scoring";
 import { transition } from "./order-state";
 import { adminRoles } from "./admin";
 import { withDiscounts } from "./discounts";
+import { findCompanyBySlug, membershipFor, quoteAsEmployee } from "./companies";
+import { isEnrollmentClosed, splitPremium } from "@/domain/companies";
 import { recordReferralReward, resolveReferral, voidReferralReward } from "./referrals";
 
 export class CheckoutError extends Error {}
@@ -51,6 +53,7 @@ export async function createOrder(
   const [insurerId] = input.offerId.split(":");
   const adapter = getAdapter(insurerId);
   if (!adapter) throw new CheckoutError("Aseguradora no disponible.");
+  if (input.company) return createCompanyOrder(input, input.company, userId, ctx);
   // Código de invitación: válido si existe y no es de quien compra.
   const referral = resolveReferral(input.referralCode, input.policyholder.email);
   let offers;
@@ -97,6 +100,92 @@ export async function createOrder(
     ...(referral && { referral }),
   };
   db().orders.set(order.id, order);
+  return order;
+}
+
+/**
+ * Compra con el beneficio de la empresa: solo al cerrar la inscripción, con el
+ * plan elegido y su precio final. El empleado paga su parte (Wompi o nómina) y
+ * la de la empresa va al cobro mensual.
+ */
+async function createCompanyOrder(
+  input: CheckoutInput,
+  benefit: NonNullable<CheckoutInput["company"]>,
+  userId: string | undefined,
+  ctx: { ip?: string; userAgent?: string },
+) {
+  const user = userId ? db().users.get(userId) : undefined;
+  const company = findCompanyBySlug(benefit.slug);
+  if (!user || !company) throw new CheckoutError("Entra con tu cuenta para confirmar el beneficio de tu empresa.");
+  const membership = membershipFor(company.id, user);
+  if (membership?.status !== "aprobado") throw new CheckoutError("Tu vinculación a la empresa no está aprobada.");
+  if (!isEnrollmentClosed(company)) throw new CheckoutError("El precio final se confirma al cierre de la inscripción.");
+  const selection = membership.selection;
+  if (!selection || selection.offerId !== input.offerId) throw new CheckoutError("Confirma el plan que elegiste en el portal de tu empresa.");
+  if (input.paymentPlan !== "anual") throw new CheckoutError("Con el beneficio de tu empresa el pago es anual.");
+  if (selection.orderReference) {
+    const prev = findOrderByReference(selection.orderReference);
+    if (prev && prev.status !== "rechazada") throw new CheckoutError("Ya confirmaste este plan.");
+  }
+
+  let offers;
+  try {
+    offers = (await quoteAsEmployee(company, membership, input.quote)).offers;
+  } catch {
+    throw new CheckoutError("La aseguradora no respondió. Intenta de nuevo.");
+  }
+  const offer = offers.find((o) => o.id === input.offerId);
+  if (!offer) throw new CheckoutError("El plan ya no está disponible para tu empresa.");
+  const notEligible = eligibility(offer, input.quote.answers, input.quote.vehicle);
+  if (notEligible) throw new CheckoutError(`Este plan no aplica para ti: ${notEligible}`);
+  const kyc = validateKyc(getAdapter(offer.insurerId)!.regulatory.kycFields, input.kyc ?? {});
+  if (!kyc.ok) throw new CheckoutError("Completa las preguntas de conocimiento del cliente.");
+
+  const { companyPart, employeePart } = splitPremium(company, offer.annualPremium);
+  if (input.expectedAmount !== undefined && input.expectedAmount !== employeePart) {
+    throw new PriceChangedError(input.expectedAmount, employeePart);
+  }
+  const payroll = benefit.payroll && employeePart > 0 && company.paymentModel !== "empresa";
+  const channel = employeePart === 0 ? "empresa" : payroll ? "nomina" : "wompi";
+  const createdAt = new Date().toISOString();
+  const order: Order = {
+    id: newId(),
+    reference: `SAF-${Date.now().toString(36).toUpperCase()}-${randomToken(3).toUpperCase()}`,
+    createdAt,
+    status: "pendiente",
+    history: [{ status: "pendiente", at: createdAt }],
+    quote: input.quote,
+    offer,
+    paymentPlan: "anual",
+    amountInCents: (channel === "wompi" ? employeePart : 0) * 100,
+    policyholder: { ...input.policyholder, email: input.policyholder.email.toLowerCase() },
+    consents: input.consents,
+    provider: channel === "wompi" ? paymentProvider().id : channel,
+    accessToken: randomToken(),
+    userId,
+    analyticsSid: input.analyticsSid,
+    kyc: kyc.clean,
+    consentEvidence: [
+      ...(["terms", "dataProcessing", "marketing"] as const).map((k) => consentRecord(k, input.consents[k], "checkout-empresa", ctx)),
+      ...(payroll ? [consentRecord("payroll", true, "checkout-empresa", ctx)] : []),
+    ],
+    company: { id: company.id, slug: company.slug, membershipId: membership.id, companyPart, employeePart, channel },
+  };
+  db().orders.set(order.id, order);
+  selection.orderReference = order.reference;
+  return order;
+}
+
+/**
+ * Tras la aceptación, las compras del beneficio que no pasan por la pasarela
+ * (paga la empresa o descuento por nómina) quedan aprobadas y se emiten.
+ */
+export async function approveWithoutGateway(order: Order) {
+  if (!order.company || order.company.channel === "wompi") throw new CheckoutError("Esta compra se paga en la pasarela.");
+  if (order.status !== "pendiente") return order;
+  if (!transition(order, "aprobada", order.company.channel === "nomina" ? "Descuento por nómina autorizado" : "Paga la empresa")) return order;
+  enqueueIssuance(order);
+  await processIssuance(order.id);
   return order;
 }
 

@@ -60,7 +60,7 @@ export const checkoutSchema = z.object({
   /** Código de invitación guardado al llegar con ?ref= (se valida en el servidor). */
   referralCode: z.string().max(12).optional(),
   /** Valor (COP) que vio el usuario; si la tarifa cambió, se le pide confirmar. */
-  expectedAmount: z.number().int().positive().max(1_000_000_000).optional(),
+  expectedAmount: z.number().int().min(0).max(1_000_000_000).optional(),
   policyholder: policyholderSchema,
   /** Respuestas de conocimiento del cliente; se validan contra la aseguradora. */
   kyc: z
@@ -72,6 +72,14 @@ export const checkoutSchema = z.object({
     dataProcessing: z.literal(true),
     marketing: z.boolean(),
   }),
+  /** Compra con el beneficio de la empresa del empleado (al cierre de la inscripción). */
+  company: z
+    .object({
+      slug: z.string().min(1).max(40),
+      /** El empleado autoriza que su parte se descuente de su nómina. */
+      payroll: z.boolean().default(false),
+    })
+    .optional(),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;

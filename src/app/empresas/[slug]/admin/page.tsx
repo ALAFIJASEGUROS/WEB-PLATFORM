@@ -6,9 +6,11 @@ import {
   MEMBERSHIP_STATUS_LABELS,
   nextTier,
   PAYMENT_MODEL_LABELS,
+  effectiveDiscountPct,
+  isEnrollmentClosed,
+  selectionPremium,
   splitPremium,
   teamSavings,
-  tierFor,
   type Company,
   type MembershipStatus,
 } from "@/domain/companies";
@@ -20,7 +22,7 @@ import { LoginForm } from "@/components/account/LoginForm";
 import { ActionForm } from "@/components/account/ActionForm";
 import { Badge, Card, Field, inputClass } from "@/components/ui";
 import { DecisionForm } from "@/components/benefit/DecisionForm";
-import { decideAction, inviteAction, programAction } from "./actions";
+import { closeEnrollmentAction, decideAction, inviteAction, programAction, retireAction } from "./actions";
 
 export const metadata: Metadata = { title: "Panel de la empresa", robots: { index: false } };
 
@@ -63,8 +65,9 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
   const members = membersOf(company.id);
   const count = (s: MembershipStatus) => members.filter((m) => m.status === s).length;
   const enrolled = count("aprobado");
-  const tier = tierFor(enrolled, company.tiers);
-  const next = nextTier(enrolled, company.tiers);
+  const closed = isEnrollmentClosed(company);
+  const pct = effectiveDiscountPct(company, enrolled);
+  const next = closed ? null : nextTier(enrolled, company.tiers);
   const pending = members.filter((m) => m.status === "pendiente");
   const chosen = members.filter((m) => m.status === "aprobado" && m.selection).length;
 
@@ -72,13 +75,13 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
     ["Inscritos", String(enrolled)],
     ["Pendientes", String(pending.length)],
     ["Invitados sin entrar", String(count("invitado"))],
-    ["Tramo actual", tier ? `${tier.discountPct} %` : "Sin tramo"],
-    ["Siguiente tramo", next ? `${next.tier.discountPct} % · faltan ${next.missing}` : "Máximo"],
+    [closed ? "Tramo fijado" : "Tramo actual", pct ? `${pct} %` : "Sin tramo"],
+    ["Siguiente tramo", closed ? "Inscripción cerrada" : next ? `${next.tier.discountPct} % · faltan ${next.missing}` : "Máximo"],
     ["Ahorro anual del equipo", formatCOP(teamSavings(members))],
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-4 py-6">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 pb-28 pt-6 md:pb-10">
       <Link href={`/empresas/${company.slug}`} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading">
         <ArrowLeft className="size-4" aria-hidden /> Portal del empleado
       </Link>
@@ -109,6 +112,33 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
         {company.paymentModel === "copago" && company.copayAmount ? ` (${formatCOP(company.copayAmount)} al año por persona)` : ""}.
       </p>
 
+      <section aria-labelledby="cierre" className="space-y-3">
+        <h2 id="cierre" className="text-lg font-bold text-heading">Cierre de la inscripción</h2>
+        <Card className="space-y-3 p-5 text-sm">
+          {closed ? (
+            <p className="text-ink">
+              Cerró el {company.lockedTier!.closedAt.slice(0, 10)} con <strong>{company.lockedTier!.enrolled} inscritos</strong> y{" "}
+              <strong>{company.lockedTier!.discountPct ? `${company.lockedTier!.discountPct} % de descuento` : "sin descuento"}</strong>. Cada empleado ya
+              puede confirmar su plan con el precio final. Para abrir un nuevo periodo, define otra fecha de cierre en el programa.
+            </p>
+          ) : company.enrollmentClosesAt ? (
+            <>
+              <p className="text-ink">
+                Cierra automáticamente el <strong>{company.enrollmentClosesAt}</strong>. Ese día se fija el tramo con los inscritos de ese momento y
+                se avisa a cada empleado su precio final.
+              </p>
+              {canEdit && (
+                <ActionForm action={closeEnrollmentAction.bind(null, company.slug)} submitLabel="Cerrar la inscripción ahora" resetOnSuccess={false} className="space-y-2">
+                  <p className="text-xs text-muted">Después de cerrar, los nuevos inscritos no cambian el tramo de este periodo.</p>
+                </ActionForm>
+              )}
+            </>
+          ) : (
+            <p className="text-muted">Define la fecha de cierre en el programa para poder cerrar la inscripción.</p>
+          )}
+        </Card>
+      </section>
+
       <section aria-labelledby="pendientes" className="space-y-3">
         <h2 id="pendientes" className="text-lg font-bold text-heading">Vinculaciones por aprobar</h2>
         <Card>
@@ -126,9 +156,14 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
       <section aria-labelledby="empleados" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="empleados" className="text-lg font-bold text-heading">Empleados</h2>
-          <a href={`/api/empresas/${company.slug}/reporte`} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft">
-            <Download className="size-4" aria-hidden /> Reporte para nómina (CSV)
-          </a>
+          <div className="flex flex-wrap gap-1">
+            <a href={`/api/empresas/${company.slug}/reporte`} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft">
+              <Download className="size-4" aria-hidden /> Reporte para nómina (CSV)
+            </a>
+            <a href={`/api/empresas/${company.slug}/cobro`} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft">
+              <Download className="size-4" aria-hidden /> Cobro a la empresa (CSV)
+            </a>
+          </div>
         </div>
         <div className="overflow-x-auto rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)]">
           <table className="w-full min-w-[40rem] text-sm">
@@ -140,6 +175,7 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
                 <th scope="col" className="p-3">Plan</th>
                 <th scope="col" className="p-3 text-right">Prima anual</th>
                 <th scope="col" className="p-3 text-right">Paga el empleado</th>
+                {canEdit && <th scope="col" className="p-3"><span className="sr-only">Acciones</span></th>}
               </tr>
             </thead>
             <tbody>
@@ -151,8 +187,19 @@ export default async function Page({ params }: PageProps<"/empresas/[slug]/admin
                   </th>
                   <td className="p-3"><Badge tone={STATUS_TONE[m.status]}>{MEMBERSHIP_STATUS_LABELS[m.status]}</Badge></td>
                   <td className="p-3">{m.selection ? `${m.selection.planName} · ${m.selection.vehicleType === "auto" ? "carro" : "moto"}` : <span className="text-muted">Sin elegir</span>}</td>
-                  <td className="p-3 text-right tabular-nums">{m.selection ? formatCOP(m.selection.estimatedPremium) : "—"}</td>
-                  <td className="p-3 text-right tabular-nums">{m.selection ? formatCOP(splitPremium(company, m.selection.estimatedPremium).employeePart) : "—"}</td>
+                  <td className="p-3 text-right tabular-nums">{m.selection ? formatCOP(selectionPremium(m.selection)) : "—"}</td>
+                  <td className="p-3 text-right tabular-nums">{m.selection ? formatCOP(splitPremium(company, selectionPremium(m.selection)).employeePart) : "—"}</td>
+                  {canEdit && (
+                    <td className="p-3 text-right">
+                      {(m.status === "aprobado" || m.status === "pendiente" || m.status === "invitado") && (
+                        <form action={retireAction.bind(null, company.slug, m.id)}>
+                          <button type="submit" className="min-h-10 rounded-full px-3 text-sm font-semibold text-coral-ink hover:bg-coral-soft" aria-label={`Retirar a ${m.name ?? m.email}`}>
+                            Retirar
+                          </button>
+                        </form>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

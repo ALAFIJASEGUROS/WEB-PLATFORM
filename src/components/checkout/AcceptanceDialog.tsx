@@ -16,6 +16,7 @@ export function AcceptanceDialog({
   demoCode,
   onAccepted,
   onCancel,
+  confirmLabel = "Aceptar y pagar",
 }: {
   email: string;
   reference: string;
@@ -23,6 +24,8 @@ export function AcceptanceDialog({
   demoCode?: string;
   onAccepted: (redirectUrl: string) => void;
   onCancel: () => void;
+  /** "Aceptar" cuando no hay pago en línea (beneficio que paga la empresa o por nómina). */
+  confirmLabel?: string;
 }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +77,7 @@ export function AcceptanceDialog({
         </Field>
         <div className="grid grid-cols-2 gap-2">
           <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>Volver</Button>
-          <Button type="submit" disabled={busy || code.length !== 6}>{busy ? "Verificando…" : "Aceptar y pagar"}</Button>
+          <Button type="submit" disabled={busy || code.length !== 6}>{busy ? "Verificando…" : confirmLabel}</Button>
         </div>
       </form>
     </div>

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { companyProgramSchema, parseEmployeeList } from "@/domain/companies";
-import { decideMemberships, inviteEmployees, updateProgram } from "@/server/companies";
+import { closeEnrollment, CompanyError, decideMemberships, inviteEmployees, retireMember, updateProgram } from "@/server/companies";
 import { companyAdminSession } from "@/server/company-admin";
 import type { FormState } from "../../../cuenta/actions";
 
@@ -70,4 +70,30 @@ export async function programAction(slug: string, _: FormState, form: FormData):
   revalidatePath(`/empresas/${slug}/admin`);
   revalidatePath(`/empresas/${slug}`);
   return { ok: true, message: "Programa actualizado." };
+}
+
+/** Cierra la inscripción ahora (sin esperar al cron): fija el tramo y los precios finales. */
+export async function closeEnrollmentAction(slug: string): Promise<FormState> {
+  const s = await adminOrError(slug);
+  if (!s) return { error: "No tienes permiso para cerrar la inscripción." };
+  try {
+    const r = await closeEnrollment(s.company, s.user.email);
+    revalidatePath(`/empresas/${slug}/admin`);
+    revalidatePath(`/empresas/${slug}`);
+    return {
+      ok: true,
+      message: `Inscripción cerrada con ${r.enrolled} inscritos${r.discountPct ? ` y ${r.discountPct} % de descuento` : ""}. Avisamos a ${r.priced} ${r.priced === 1 ? "persona" : "personas"} su precio final.`,
+    };
+  } catch (e) {
+    if (e instanceof CompanyError) return { error: e.message };
+    throw e;
+  }
+}
+
+/** Retira a un empleado: su póliza sigue hasta el vencimiento. */
+export async function retireAction(slug: string, membershipId: string) {
+  const s = await adminOrError(slug);
+  if (!s) return;
+  retireMember(s.company, membershipId, s.user.email);
+  revalidatePath(`/empresas/${slug}/admin`);
 }

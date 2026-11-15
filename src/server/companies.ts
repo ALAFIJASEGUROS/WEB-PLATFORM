@@ -2,6 +2,8 @@ import "server-only";
 import {
   canQuoteAsEmployee,
   companyDiscountRule,
+  effectiveDiscountPct,
+  isEnrollmentClosed,
   nextTier,
   normalizeTiers,
   parseCompanyAdmins,
@@ -9,6 +11,7 @@ import {
   slugify,
   tierFor,
   type Company,
+  splitPremium,
   type companyProgramSchema,
   type CompanyQuoteContext,
   type CompanyRole,
@@ -17,7 +20,7 @@ import {
   type Membership,
   type MembershipSelection,
 } from "@/domain/companies";
-import { vehicleName } from "@/domain/labels";
+import { formatCOP, vehicleName } from "@/domain/labels";
 import { quoteWithCache } from "@/insurers/cache";
 import { applyDiscounts, type DiscountContext } from "@/domain/discounts";
 import { todayInColombia } from "@/domain/holidays";
@@ -207,16 +210,19 @@ export function joinCompany(company: Company, user: Pick<User, "id" | "email" | 
 
 export function companyQuoteContext(company: Company, membership: Membership): CompanyQuoteContext {
   const enrolled = enrolledCount(company.id);
-  const tier = tierFor(enrolled, company.tiers);
-  const next = nextTier(enrolled, company.tiers);
+  const closed = isEnrollmentClosed(company);
+  const next = closed ? null : nextTier(enrolled, company.tiers);
   return {
     slug: company.slug,
     name: company.name,
     membershipStatus: membership.status,
-    enrolled,
-    tierPct: tier?.discountPct ?? null,
+    enrolled: closed ? company.lockedTier!.enrolled : enrolled,
+    tierPct: effectiveDiscountPct(company, enrolled),
     next: next ? { pct: next.tier.discountPct, missing: next.missing } : null,
     ...(company.enrollmentClosesAt && { enrollmentClosesAt: company.enrollmentClosesAt }),
+    closed,
+    paymentModel: company.paymentModel,
+    ...(company.copayAmount && { copayAmount: company.copayAmount }),
   };
 }
 
@@ -245,9 +251,11 @@ export async function choosePlan(company: Company, membership: Membership, req: 
     vehicleLabel: `${vehicleName(v.brand, v.model)} ${v.year}${v.plate ? ` · ${v.plate}` : ""}`,
     listPremium: offer.listPremium ?? offer.annualPremium,
     estimatedPremium: offer.annualPremium,
-    tierPct: tierFor(enrolledCount(company.id), company.tiers)?.discountPct ?? null,
+    tierPct: effectiveDiscountPct(company, enrolledCount(company.id)),
     quote: req,
     at: new Date().toISOString(),
+    // Si la inscripción ya cerró (llegó tarde o la aprobaron después), el precio ya es el final.
+    ...(isEnrollmentClosed(company) && { finalPremium: offer.annualPremium, finalizedAt: new Date().toISOString() }),
   };
   return membership.selection;
 }
@@ -356,4 +364,112 @@ export function updateProgram(company: Company, input: z.output<typeof companyPr
     "Actualizó el programa",
     `${company.paymentModel}${company.copayAmount ? ` (${company.copayAmount})` : ""} · ${company.allowedPlanCodes.length || "todos los"} planes${company.enrollmentClosesAt ? ` · cierre ${company.enrollmentClosesAt}` : ""}`,
   );
+}
+
+// ── Cierre, cobro y retiro (fase 4) ───────────────────────────────────────
+
+/**
+ * Cierra la inscripción del periodo vigente: fija el tramo con los inscritos de
+ * hoy, recalcula el precio final de cada plan elegido y avisa a cada empleado.
+ */
+export async function closeEnrollment(company: Company, actor: string) {
+  if (!company.enrollmentClosesAt) throw new CompanyError("Primero define la fecha de cierre de la inscripción.");
+  if (isEnrollmentClosed(company)) throw new CompanyError("La inscripción de este periodo ya está cerrada.");
+  const enrolled = enrolledCount(company.id);
+  company.lockedTier = {
+    discountPct: tierFor(enrolled, company.tiers)?.discountPct ?? null,
+    enrolled,
+    closedAt: new Date().toISOString(),
+    periodEnd: company.enrollmentClosesAt,
+  };
+  let priced = 0;
+  let unavailable = 0;
+  for (const m of membersOf(company.id)) {
+    if (m.status !== "aprobado" || !m.selection) continue;
+    const s = m.selection;
+    const offer = (await quoteAsEmployee(company, m, s.quote).catch(() => null))?.offers.find((o) => o.id === s.offerId);
+    if (!offer) {
+      unavailable++;
+      sendMessage({
+        to: m.email,
+        channel: "email",
+        kind: "transaccional",
+        subject: `Elige de nuevo tu plan del beneficio de ${company.name}`,
+        body: `El plan ${s.planName} ya no está disponible en el beneficio de ${company.name}. Entra a /empresas/${company.slug} para elegir otro.`,
+      });
+      continue;
+    }
+    s.finalPremium = offer.annualPremium;
+    s.finalizedAt = new Date().toISOString();
+    priced++;
+    const { employeePart } = splitPremium(company, offer.annualPremium);
+    sendMessage({
+      to: m.email,
+      channel: "email",
+      kind: "transaccional",
+      subject: `Tu precio final del beneficio de ${company.name}`,
+      body: [
+        `Hola${m.name ? ` ${m.name}` : ""}, cerró la inscripción con ${enrolled} inscritos${company.lockedTier.discountPct ? ` y un descuento del ${company.lockedTier.discountPct} %` : ""}.`,
+        `Tu ${s.planName} queda en ${formatCOP(offer.annualPremium)} al año${employeePart !== offer.annualPremium ? `; tu parte es ${formatCOP(employeePart)}` : ""}.`,
+        `Confirma${employeePart > 0 ? " y paga" : ""} en /empresas/${company.slug} para que emitamos tu póliza.`,
+      ].join("\n\n"),
+    });
+  }
+  companyAudit(
+    company.id,
+    actor,
+    "Cerró la inscripción",
+    `${enrolled} inscritos · ${company.lockedTier.discountPct ? `${company.lockedTier.discountPct} %` : "sin descuento"} · ${priced} precios finales${unavailable ? ` · ${unavailable} deben elegir otro plan` : ""}`,
+  );
+  return { enrolled, priced, unavailable, discountPct: company.lockedTier.discountPct };
+}
+
+/** Cierra las inscripciones cuya fecha ya llegó. Lo llama el cron diario. */
+export async function closeDueEnrollments(today = todayInColombia()) {
+  let closed = 0;
+  for (const c of listCompanies()) {
+    if (c.status !== "activa" || !c.enrollmentClosesAt || c.enrollmentClosesAt > today || isEnrollmentClosed(c)) continue;
+    await closeEnrollment(c, "Cierre automático");
+    closed++;
+  }
+  return { closed };
+}
+
+/**
+ * Retira a un empleado del programa. Su póliza sigue vigente hasta el
+ * vencimiento y al renovar se cotiza a precio individual.
+ */
+export function retireMember(company: Company, membershipId: string, actor: string) {
+  const m = db().memberships.get(membershipId);
+  if (!m || m.companyId !== company.id) throw new CompanyError("No encontramos a esa persona en la empresa.");
+  if (m.status === "retirado") return m;
+  m.status = "retirado";
+  m.decidedAt = new Date().toISOString();
+  m.decidedBy = actor;
+  sendMessage({
+    to: m.email,
+    channel: "email",
+    kind: "transaccional",
+    subject: `Saliste del beneficio de seguro de ${company.name}`,
+    body: `Hola${m.name ? ` ${m.name}` : ""}, ya no haces parte del beneficio de ${company.name}. Si tienes una póliza, sigue vigente hasta su vencimiento; al renovar te mostraremos el precio individual.`,
+  });
+  companyAudit(company.id, actor, "Retiró a un empleado", m.email);
+  return m;
+}
+
+/** Cobro mensual a la empresa: su parte de cada póliza pagada o emitida. */
+export function companyChargeRows(company: Company) {
+  return [...db().orders.values()]
+    .filter((o) => o.company?.id === company.id && o.company.companyPart > 0 && (o.status === "aprobada" || o.status === "emitida"))
+    .map((o) => ({
+      reference: o.reference,
+      date: o.createdAt.slice(0, 10),
+      name: `${o.policyholder.firstName} ${o.policyholder.lastName}`,
+      email: o.policyholder.email,
+      plan: o.offer.planName,
+      annual: o.offer.annualPremium,
+      companyPart: o.company!.companyPart,
+      employeePart: o.company!.employeePart,
+      channel: o.company!.channel,
+    }));
 }

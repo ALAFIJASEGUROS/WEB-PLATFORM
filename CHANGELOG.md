@@ -7,6 +7,18 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 ### Agregado
+- Beneficio para empleados, fase 4 (cierre, cobro, emisión y retiro):
+  - Cierre de la inscripción: fija el tramo con los inscritos de ese día, calcula el precio final de cada plan elegido y avisa a cada empleado. Lo ejecuta el cron diario cuando llega la fecha o el admin de la empresa con "Cerrar la inscripción ahora". Una fecha de cierre nueva abre otro periodo.
+  - Confirmar y pagar desde el portal: el checkout en modo beneficio muestra la prima con tarifa corporativa, lo que paga la empresa y la parte del empleado, solo con pago anual. El empleado paga su parte con Wompi o autoriza el descuento por nómina (texto de autorización versionado, en borrador hasta la revisión legal). Si la empresa paga todo, solo confirma.
+  - Las compras sin pago en línea se aprueban tras la aceptación con código y se emiten con el flujo normal.
+  - Reporte "Cobro a la empresa" (CSV) con la parte de la empresa de cada póliza confirmada.
+  - Retiro de empleados desde el panel: la póliza sigue vigente hasta el vencimiento y se le avisa por correo.
+
+### Cambiado
+- El reporte para nómina y el ahorro del equipo usan el precio final cuando la inscripción ya cerró.
+- El panel de la empresa tiene margen inferior en el celular para que la barra de navegación no tape el final.
+
+### Agregado
 - Beneficio para empleados, fase 3 (panel de la empresa en `/empresas/[slug]/admin`):
   - Acceso con roles administrador y solo lectura; los asigna SeguAlaFija en la sección "Empresas" de `/admin`.
   - Resumen: inscritos, pendientes, invitados sin entrar, tramo actual y siguiente, y ahorro anual del equipo.

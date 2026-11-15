@@ -132,10 +132,19 @@ copago, el cierre de la inscripción y los planes; los tramos y dominios siguen 
 
 | # | Tarea | Entregable |
 |---|---|---|
-| 4.1 | Cierre del periodo: fijar el tramo, recalcular precios y avisar a cada empleado su precio final | Cierre automático con cron |
-| 4.2 | Cobro según el modelo: el empleado paga con Wompi (o autoriza el descuento por nómina); la parte de la empresa queda en un reporte de cobro mensual | Órdenes con dos partes |
-| 4.3 | Emisión por empleado con el flujo actual (reintentos, demora, rechazo) | Pólizas emitidas |
-| 4.4 | Retiro de empleados: el admin lo marca retirado, la póliza sigue hasta el vencimiento y renueva a precio individual | Flujo de retiro |
+| 4.1 | ✅ Cierre del periodo: fijar el tramo, recalcular precios y avisar a cada empleado su precio final | Cierre automático con cron |
+| 4.2 | ✅ Cobro según el modelo: el empleado paga con Wompi (o autoriza el descuento por nómina); la parte de la empresa queda en un reporte de cobro mensual | Órdenes con dos partes |
+| 4.3 | ✅ Emisión por empleado con el flujo actual (reintentos, demora, rechazo) | Pólizas emitidas |
+| 4.4 | ✅ Retiro de empleados: el admin lo marca retirado, la póliza sigue hasta el vencimiento y renueva a precio individual | Flujo de retiro |
+
+**Cómo quedó la fase 4:** el cierre fija el tramo en `lockedTier` (rige mientras la fecha de cierre no cambie; una
+fecha nueva abre otro periodo) y calcula el precio final de cada plan elegido. Lo ejecuta el cron diario de
+conciliación cuando llega la fecha, o el admin de la empresa con "Cerrar la inscripción ahora". El empleado confirma en
+el checkout de siempre, en modo beneficio: solo pago anual, ve el reparto y paga su parte con Wompi o autoriza el
+descuento por nómina. Si su parte es cero o eligió nómina, la orden se aprueba tras la aceptación con código, sin
+pasarela, y se emite con el flujo normal. La parte de la empresa sale en el CSV "Cobro a la empresa". El texto de
+autorización de nómina es un **borrador** hasta la revisión legal (0.3). El retiro deja la póliza vigente; al renovar,
+el módulo de renovaciones ya cotiza a precio individual.
 
 ### Fase 5: anuncios y comunicaciones
 

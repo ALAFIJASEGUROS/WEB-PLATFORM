@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { baseUrl } from "@/server/auth";
-import { CheckoutError, confirmAcceptance } from "@/server/orders";
+import { approveWithoutGateway, CheckoutError, confirmAcceptance } from "@/server/orders";
 import { paymentProvider, providerById } from "@/server/payments";
 
 const schema = z.object({
@@ -19,6 +19,11 @@ export async function POST(request: Request) {
       ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
+    // Beneficio de empresa sin pago en línea (paga la empresa o descuento por nómina).
+    if (order.company && order.company.channel !== "wompi") {
+      await approveWithoutGateway(order);
+      return Response.json({ redirectUrl: `/pago/resultado?ref=${encodeURIComponent(order.reference)}&t=${encodeURIComponent(order.accessToken)}` });
+    }
     // La orden se cobra con la pasarela que quedó registrada al crearla; si ya
     // no está configurada, con la predeterminada.
     const provider = providerById(order.provider) ?? paymentProvider();

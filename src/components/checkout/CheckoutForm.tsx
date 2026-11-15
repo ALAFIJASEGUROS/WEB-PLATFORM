@@ -11,6 +11,8 @@ import Link from "next/link";
 import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { policyholderSchema, type Policyholder } from "@/domain/schemas";
 import { formatCOP, formatDayMonth, vehicleName } from "@/domain/labels";
+import { splitPremium } from "@/domain/companies";
+import { CONSENTS } from "@/domain/consents";
 import { Term } from "@/components/Term";
 import { useHydrated, useQuoteRequest, useQuoteResponse } from "@/lib/quote-store";
 import { Button, ButtonLink, Card, Field, InsurerLogo, SimulatedDataNotice, inputClass } from "@/components/ui";
@@ -53,6 +55,7 @@ export function CheckoutForm({
   const [serverError, setServerError] = useState<string | null>(null);
   /** Precio revalidado por el servidor cuando cambió desde la cotización. */
   const [repriced, setRepriced] = useState<{ plan: "anual" | "mensual"; amount: number } | null>(null);
+  const [payroll, setPayroll] = useState(false);
 
   if (!hydrated) return <div className="min-h-[60vh]" aria-busy />;
 
@@ -107,7 +110,8 @@ export function CheckoutForm({
         analyticsSid: analyticsSessionId(),
         quote: request!,
         offerId,
-        paymentPlan: plan,
+        paymentPlan: benefit ? "anual" : plan,
+        ...(benefit && { company: { slug: benefit.slug, payroll: benefit.payrollAllowed && payroll } }),
         expectedAmount: amount,
         policyholder: parsed.data,
         consents: { terms, dataProcessing: data, marketing },
@@ -128,17 +132,29 @@ export function CheckoutForm({
     }
   }
 
-  const quoted = plan === "anual" ? offer.annualPremium : offer.monthlyPremium;
-  const amount = repriced?.plan === plan ? repriced.amount : quoted;
+  // Beneficio de empresa (al cierre de la inscripción): pago anual de la parte del empleado.
+  const company = response?.company;
+  const benefit =
+    company?.closed && company.membershipStatus === "aprobado"
+      ? (() => {
+          const split = splitPremium(company, offer.annualPremium);
+          return { ...split, slug: company.slug, name: company.name, payrollAllowed: split.employeePart > 0 && company.paymentModel !== "empresa" };
+        })()
+      : null;
+  const noGateway = !!benefit && (benefit.employeePart === 0 || (benefit.payrollAllowed && payroll));
+  const quoted = benefit ? benefit.employeePart : plan === "anual" ? offer.annualPremium : offer.monthlyPremium;
+  const amount = repriced && (benefit || repriced.plan === plan) ? repriced.amount : quoted;
+  const payNow = noGateway ? 0 : amount;
+  const submitLabel = noGateway ? "Confirmar" : "Pagar con Wompi";
   const v = request.vehicle;
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-28 pt-6 md:pb-6">
-      <Link href="/resultados" className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading">
-        <ArrowLeft className="size-4" aria-hidden /> Volver a opciones
+      <Link href={benefit ? `/empresas/${benefit.slug}` : "/resultados"} className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted hover:text-heading">
+        <ArrowLeft className="size-4" aria-hidden /> {benefit ? "Volver al beneficio" : "Volver a opciones"}
       </Link>
-      <h1 className="text-2xl font-extrabold tracking-tight text-heading">Compra tu seguro</h1>
-      <p className="mt-1 text-muted">No necesitas crear cuenta. Te enviamos la póliza a tu correo.</p>
+      <h1 className="text-2xl font-extrabold tracking-tight text-heading">{benefit ? `Confirma tu seguro con ${benefit.name}` : "Compra tu seguro"}</h1>
+      <p className="mt-1 text-muted">{benefit ? "Precio final de la tarifa corporativa. Te enviamos la póliza a tu correo." : "No necesitas crear cuenta. Te enviamos la póliza a tu correo."}</p>
 
       {acceptance && (
         <AcceptanceDialog
@@ -148,6 +164,7 @@ export function CheckoutForm({
           demoCode={acceptance.demoCode}
           onAccepted={goToPayment}
           onCancel={() => setAcceptance(null)}
+          confirmLabel={noGateway ? "Aceptar" : undefined}
         />
       )}
       <form onSubmit={submit} noValidate className="mt-6 grid gap-6 md:grid-cols-[1fr_340px]">
@@ -193,6 +210,27 @@ export function CheckoutForm({
             </div>
           </Card>
 
+          {benefit ? (
+            <Card className="space-y-3 p-5" role="region" aria-labelledby="benefit-pay">
+              <h2 id="benefit-pay" className="font-bold text-heading">Cómo se paga</h2>
+              <dl className="space-y-1 text-sm">
+                <div className="flex justify-between gap-2"><dt className="text-muted">Prima anual con la tarifa corporativa</dt><dd className="font-semibold">{formatCOP(offer.annualPremium)}</dd></div>
+                {benefit.companyPart > 0 && (
+                  <div className="flex justify-between gap-2"><dt className="text-muted">Paga {benefit.name}</dt><dd className="font-semibold text-mint">−{formatCOP(benefit.companyPart)}</dd></div>
+                )}
+                <div className="flex justify-between gap-2 border-t border-line pt-1"><dt className="font-semibold text-heading">Tu parte</dt><dd className="font-bold text-heading">{formatCOP(benefit.employeePart)}</dd></div>
+              </dl>
+              {benefit.payrollAllowed && (
+                <label className="flex gap-3 rounded-2xl border-2 border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft">
+                  <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-brand" checked={payroll} onChange={(e) => setPayroll(e.target.checked)} />
+                  <span>
+                    <span className="block font-semibold text-heading">Pagar mi parte por nómina ({formatCOP(Math.round(benefit.employeePart / 12))} al mes)</span>
+                    {CONSENTS.payroll.text}
+                  </span>
+                </label>
+              )}
+            </Card>
+          ) : (
           <Card className="space-y-3 p-5">
             <fieldset>
               <legend className="mb-3 font-bold text-heading">¿Cómo quieres pagar?</legend>
@@ -215,6 +253,7 @@ export function CheckoutForm({
               <p className="text-sm text-muted">Hoy pagas la primera cuota. Te recordamos cada mes antes del siguiente pago.</p>
             )}
           </Card>
+          )}
 
           {kycFieldsFor(offer.insurerId).length > 0 && (
             <Card className="space-y-4 p-5" role="region" aria-labelledby="kyc-title">
@@ -304,12 +343,15 @@ export function CheckoutForm({
             </dl>
             <div className="border-t border-line pt-4">
               <p className="text-sm text-muted">Pagas hoy</p>
-              <p className="text-3xl font-extrabold tracking-tight text-heading">{formatCOP(amount)}</p>
+              <p className="text-3xl font-extrabold tracking-tight text-heading">{formatCOP(payNow)}</p>
+              {benefit && noGateway && benefit.employeePart > 0 && (
+                <p className="text-sm text-muted">Tu parte se descuenta de tu nómina.</p>
+              )}
             </div>
             {serverError && <p role="alert" className="rounded-xl bg-coral-soft p-3 text-sm text-coral">{serverError}</p>}
             <Button type="submit" className="hidden w-full md:inline-flex" disabled={submitting}>
               <Lock className="size-4" aria-hidden />
-              {submitting ? "Redirigiendo…" : "Pagar con Wompi"}
+              {submitting ? "Redirigiendo…" : submitLabel}
             </Button>
             <p className="flex items-center gap-2 text-xs text-muted">
               <ShieldCheck className="size-4 text-mint" aria-hidden />
@@ -326,12 +368,12 @@ export function CheckoutForm({
           {serverError && <p role="alert" className="mb-2 rounded-xl bg-coral-soft p-2 text-xs text-coral">{serverError}</p>}
           <div className="flex items-center gap-3">
             <div className="min-w-0">
-              <p className="text-xs text-muted">{plan === "anual" ? "Pago anual" : "Primera cuota"}</p>
-              <p className="text-lg font-extrabold leading-tight text-heading">{formatCOP(amount)}</p>
+              <p className="text-xs text-muted">{benefit ? "Pagas hoy" : plan === "anual" ? "Pago anual" : "Primera cuota"}</p>
+              <p className="text-lg font-extrabold leading-tight text-heading">{formatCOP(payNow)}</p>
             </div>
             <Button type="submit" className="flex-1" disabled={submitting}>
               <Lock className="size-4" aria-hidden />
-              {submitting ? "Redirigiendo…" : "Pagar"}
+              {submitting ? "Redirigiendo…" : noGateway ? "Confirmar" : "Pagar"}
             </Button>
           </div>
         </div>

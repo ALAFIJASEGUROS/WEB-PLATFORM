@@ -34,6 +34,15 @@ export const DEFAULT_TIERS: VolumeTier[] = [
 
 export type CompanyStatus = "activa" | "pausada";
 
+/** Resultado del cierre de un periodo de inscripción. */
+export interface LockedTier {
+  discountPct: number | null;
+  enrolled: number;
+  closedAt: string;
+  /** Fecha de cierre del periodo que se cerró (la de `enrollmentClosesAt` en ese momento). */
+  periodEnd: string;
+}
+
 /** Rol en el panel de la empresa: administrador (aprueba y configura) o solo lectura. */
 export type CompanyRole = "admin" | "lectura";
 export interface CompanyAdmin {
@@ -63,6 +72,8 @@ export interface Company {
   admins: CompanyAdmin[];
   /** Cierre del periodo de inscripción actual (fecha ISO). Al cerrar se fija el tramo. */
   enrollmentClosesAt?: string;
+  /** Tramo fijado al cerrar la inscripción (fase 4). Rige mientras `periodEnd` sea el cierre vigente. */
+  lockedTier?: LockedTier;
   status: CompanyStatus;
   createdAt: string;
   /** Datos de demostración, no una empresa real. */
@@ -91,6 +102,11 @@ export interface MembershipSelection {
   /** Datos para volver a cotizar al cierre; la empresa no los ve. */
   quote: QuoteRequest;
   at: string;
+  /** Prima con el tramo fijado al cierre; el empleado confirma y paga este valor. */
+  finalPremium?: number;
+  finalizedAt?: string;
+  /** Orden de compra creada al confirmar (referencia SAF-…). */
+  orderReference?: string;
 }
 
 /** Vinculación de un empleado a una empresa. */
@@ -126,6 +142,10 @@ export interface CompanyQuoteContext {
   tierPct: number | null;
   next: { pct: number; missing: number } | null;
   enrollmentClosesAt?: string;
+  /** La inscripción cerró: el precio ya es el final. */
+  closed: boolean;
+  paymentModel: PaymentModel;
+  copayAmount?: number;
 }
 
 /** Un empleado puede cotizar y elegir plan mientras su vinculación esté pendiente o aprobada. */
@@ -164,9 +184,20 @@ export function estimatedSavings(enrolled: number, averagePremium: number, tiers
  * Regla de descuento de la tarifa corporativa para el tramo actual. Se suma a
  * las demás reglas y respeta el tope global del motor de descuentos.
  */
+/** La inscripción del periodo vigente ya cerró y el tramo quedó fijo. */
+export const isEnrollmentClosed = (c: Pick<Company, "lockedTier" | "enrollmentClosesAt">) =>
+  !!c.lockedTier && c.lockedTier.periodEnd === c.enrollmentClosesAt;
+
+/** Descuento vigente: el fijado al cierre o, con la inscripción abierta, el del tramo actual. */
+export function effectiveDiscountPct(company: Company, enrolled: number): number | null {
+  if (isEnrollmentClosed(company)) return company.lockedTier!.discountPct;
+  return tierFor(enrolled, company.tiers)?.discountPct ?? null;
+}
+
 export function companyDiscountRule(company: Company, enrolled: number): DiscountRule | null {
-  const t = tierFor(enrolled, company.tiers);
-  if (!t || company.status !== "activa") return null;
+  const pct = effectiveDiscountPct(company, enrolled);
+  if (!pct || company.status !== "activa") return null;
+  const t = { discountPct: pct };
   return {
     id: `empresa-${company.id}`,
     insurerId: "*",
@@ -305,19 +336,23 @@ export function splitPremium(company: Pick<Company, "paymentModel" | "copayAmoun
   return { companyPart, employeePart: annual - companyPart };
 }
 
+/** Prima que se cobra: la final si ya cerró la inscripción, si no la estimada. */
+export const selectionPremium = (s: MembershipSelection) => s.finalPremium ?? s.estimatedPremium;
+
 /** Filas del reporte para nómina: empleados aprobados con plan elegido. */
 export function payrollRows(company: Company, members: Membership[]) {
   return members
     .filter((m) => m.status === "aprobado" && m.selection)
     .map((m) => {
       const s = m.selection!;
-      const { companyPart, employeePart } = splitPremium(company, s.estimatedPremium);
+      const annual = selectionPremium(s);
+      const { companyPart, employeePart } = splitPremium(company, annual);
       return {
         name: m.name ?? "",
         email: m.email,
         plan: s.planName,
         vehicle: s.vehicleType === "auto" ? "Carro" : "Moto",
-        annual: s.estimatedPremium,
+        annual,
         companyPart,
         employeePart,
         employeeMonthly: Math.round(employeePart / 12),
@@ -329,4 +364,4 @@ export function payrollRows(company: Company, members: Membership[]) {
 export const teamSavings = (members: Membership[]) =>
   members
     .filter((m) => m.status === "aprobado" && m.selection)
-    .reduce((s, m) => s + (m.selection!.listPremium - m.selection!.estimatedPremium), 0);
+    .reduce((s, m) => s + (m.selection!.listPremium - selectionPremium(m.selection!)), 0);

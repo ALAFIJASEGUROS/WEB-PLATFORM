@@ -19,6 +19,11 @@ export const CONSENTS = {
     version: "contacto-2026-10",
     text: "Autorizo que SeguAlaFija me llame o me escriba por WhatsApp para asesorarme con este seguro, en el horario que elegí. Puedo pedir que no me contacten más.",
   },
+  // Borrador: el texto definitivo depende de la revisión legal (docs/empresas.md, tarea 0.3).
+  payroll: {
+    version: "nomina-borrador-2026-11",
+    text: "Autorizo a mi empleador a descontar de mi salario, en cuotas mensuales, mi parte de la prima de este seguro y a transferirla para su pago. Puedo revocar esta autorización por escrito.",
+  },
   savedQuote: {
     version: "cotizacion-guardada-2026-10",
     text: "Autorizo que me envíen esta cotización al correo y un recordatorio si no he comprado.",
