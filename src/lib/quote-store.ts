@@ -10,6 +10,8 @@ const KEYS = {
   request: "saf:quote-request",
   response: "saf:quote-response:v3",
   compare: "saf:compare",
+  /** Empresa del empleado cuando cotiza con tarifa corporativa (/empresas/[slug]). */
+  company: "saf:quote-company",
 } as const;
 type Key = (typeof KEYS)[keyof typeof KEYS];
 
@@ -66,6 +68,13 @@ export const quoteStore = {
   },
   getCompare: () => read<string[]>(KEYS.compare) ?? EMPTY,
   setCompare: (ids: string[]) => write(KEYS.compare, ids),
+  getCompany: () => read<{ slug: string }>(KEYS.company),
+  /** Cambiar de modo (individual o empresa) invalida la cotización guardada. */
+  setCompany: (c: { slug: string } | null) => {
+    if ((read<{ slug: string }>(KEYS.company)?.slug ?? null) === (c?.slug ?? null)) return;
+    write(KEYS.response, null);
+    write(KEYS.company, c);
+  },
   clear: () => Object.values(KEYS).forEach((k) => write(k, null)),
 };
 
@@ -78,6 +87,7 @@ function useStored<T>(get: () => T, server: T): T {
 export const useQuoteRequest = () => useStored(quoteStore.getRequest, null);
 export const useQuoteResponse = () => useStored(quoteStore.getResponse, null);
 export const useCompare = () => useStored(quoteStore.getCompare, EMPTY);
+export const useQuoteCompany = () => useStored(quoteStore.getCompany, null);
 
 const noop = () => () => {};
 /** true solo en el cliente después de hidratar. */

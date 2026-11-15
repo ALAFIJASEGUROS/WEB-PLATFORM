@@ -26,12 +26,15 @@ export function OfferCard({
   onToggleCompare,
   compareDisabled,
   highlight = false,
+  choose,
 }: {
   offer: ScoredOffer;
   comparing: boolean;
   onToggleCompare: () => void;
   compareDisabled: boolean;
   highlight?: boolean;
+  /** Modo empresa: en vez de comprar, el empleado elige el plan (paga al cierre). */
+  choose?: { onChoose: () => void; busy: boolean };
 }) {
   const [open, setOpen] = useState(highlight);
   // Experimento A/B: texto del botón de compra ("Lo quiero" o con el precio).
@@ -202,14 +205,23 @@ export function OfferCard({
             >
               {comparing ? "Quitar" : "Comparar"}
             </Button>
-            <ButtonLink
-              href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}
-              onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado"), ...discountProps(offer) })}
-            >
-              {priceInButton ? `Comprar por ${formatCOP(offer.annualPremium)}` : "Lo quiero"}
-            </ButtonLink>
+            {choose ? (
+              <Button type="button" onClick={choose.onChoose} disabled={choose.busy}>
+                {choose.busy ? "Guardando…" : "Elegir este plan"}
+              </Button>
+            ) : (
+              <ButtonLink
+                href={`/checkout?oferta=${encodeURIComponent(offer.id)}`}
+                onClick={() => track("oferta_elegida", { aseguradora: offer.insurerId, plan: offer.planName, recomendado: offer.labels.includes("recomendado"), ...discountProps(offer) })}
+              >
+                {priceInButton ? `Comprar por ${formatCOP(offer.annualPremium)}` : "Lo quiero"}
+              </ButtonLink>
+            )}
           </div>
-          {highlight && (
+          {choose && (
+            <p className="mt-2 text-center text-xs text-muted">No pagas ahora: confirmas y pagas al cierre de la inscripción.</p>
+          )}
+          {!choose && highlight && (
             <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted">
               <Lock className="size-3.5 shrink-0" aria-hidden /> Pago seguro con Wompi · 5 días hábiles para arrepentirte
             </p>

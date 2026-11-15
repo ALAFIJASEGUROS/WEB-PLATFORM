@@ -254,6 +254,7 @@ function seed(db: Db) {
     copayAmount: 600_000,
     allowedPlanCodes: ["auto-esencial", "auto-plus", "moto-plus"],
     tiers: DEFAULT_TIERS,
+    enrollmentClosesAt: new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10),
     status: "activa",
     createdAt: now,
     demo: true,

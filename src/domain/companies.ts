@@ -7,6 +7,7 @@
 
 import { z } from "zod";
 import type { DiscountRule } from "./discounts";
+import type { QuoteRequest, VehicleType } from "./types";
 
 /** Quién paga la prima. En copago la empresa aporta un monto fijo por empleado al año. */
 export type PaymentModel = "empresa" | "empleado" | "copago";
@@ -51,6 +52,8 @@ export interface Company {
   /** Códigos de plan habilitados (p. ej. "auto-plus"). Vacío: todos. */
   allowedPlanCodes: string[];
   tiers: VolumeTier[];
+  /** Cierre del periodo de inscripción actual (fecha ISO). Al cerrar se fija el tramo. */
+  enrollmentClosesAt?: string;
   status: CompanyStatus;
   createdAt: string;
   /** Datos de demostración, no una empresa real. */
@@ -60,7 +63,24 @@ export interface Company {
 export type MembershipStatus = "pendiente" | "aprobado" | "rechazado" | "retirado";
 export type MembershipSource = "codigo" | "dominio" | "csv";
 
-/** Vinculación de un empleado a una empresa (se usa desde la fase 2). */
+/** Plan que el empleado eligió durante el periodo de inscripción (paga al cierre). */
+export interface MembershipSelection {
+  offerId: string;
+  planName: string;
+  insurerName: string;
+  vehicleType: VehicleType;
+  /** "Mazda 2 2022 · ABC123" */
+  vehicleLabel: string;
+  listPremium: number;
+  /** Prima con el tramo vigente al elegir. */
+  estimatedPremium: number;
+  tierPct: number | null;
+  /** Datos para volver a cotizar al cierre; la empresa no los ve. */
+  quote: QuoteRequest;
+  at: string;
+}
+
+/** Vinculación de un empleado a una empresa. */
 export interface Membership {
   id: string;
   companyId: string;
@@ -73,7 +93,30 @@ export interface Membership {
   decidedAt?: string;
   decidedBy?: string;
   reason?: string;
+  selection?: MembershipSelection;
 }
+
+export const MEMBERSHIP_STATUS_LABELS: Record<MembershipStatus, string> = {
+  pendiente: "Pendiente de aprobación",
+  aprobado: "Aprobado",
+  rechazado: "No aprobado",
+  retirado: "Retirado",
+};
+
+/** Lo que ve el empleado de su empresa al cotizar (sin datos de otros empleados). */
+export interface CompanyQuoteContext {
+  slug: string;
+  name: string;
+  membershipStatus: MembershipStatus;
+  enrolled: number;
+  tierPct: number | null;
+  next: { pct: number; missing: number } | null;
+  enrollmentClosesAt?: string;
+}
+
+/** Un empleado puede cotizar y elegir plan mientras su vinculación esté pendiente o aprobada. */
+export const canQuoteAsEmployee = (m: Pick<Membership, "status"> | null | undefined) =>
+  !!m && (m.status === "pendiente" || m.status === "aprobado");
 
 /** Ordena los tramos y descarta los inválidos o repetidos. */
 export function normalizeTiers(tiers: VolumeTier[]): VolumeTier[] {

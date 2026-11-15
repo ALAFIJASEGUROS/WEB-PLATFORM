@@ -7,6 +7,19 @@ Todos los cambios relevantes de SeguAlaFija. Formato basado en
 
 ## [No publicado]
 ### Agregado
+- Beneficio para empleados, fase 2 (portal del empleado):
+  - Portal `/empresas/[slug]` con el logo de la empresa: quién paga, planes disponibles, inscritos y avance hacia el siguiente tramo, y fecha de cierre de la inscripción.
+  - Vinculación con el correo corporativo (dominio de la empresa) o con el código de la empresa (también por enlace `?codigo=`); queda pendiente de aprobación. Si la empresa invitó al correo, la vinculación se asocia a la cuenta.
+  - Cotizar como empleado (`/cotizar/auto?empresa=…`): solo los planes que habilitó la empresa, con la tarifa del tramo actual y un aviso con el tramo siguiente. En resultados el botón es "Elegir este plan": la elección se guarda y se paga al cierre (fase 4).
+  - El portal muestra el plan elegido, el precio estimado, la parte del empleado en copago y el precio cerca del siguiente tramo. "Mi cuenta" muestra el estado del beneficio.
+
+### Cambiado
+- Después de entrar con el código por correo, la redirección conserva parámetros simples de la ruta interna (p. ej. el código de la empresa).
+
+### Corregido
+- Dos enlaces internos a `/empresas` usaban `<a>` en vez de `Link`.
+
+### Agregado
 - Seguro como beneficio para empleados, fase 1 ([docs/empresas.md](docs/empresas.md)):
   - Página `/empresas` para captar empresas: cómo funciona, calculadora de ahorro por tramos, quién paga, preguntas frecuentes y formulario "Quiero el beneficio para mi empresa", que llega a la bandeja de oportunidades como "Beneficio empleados".
   - Sección "Empresas" en el admin: crear y editar empresas con logo, dominios de correo, código de vinculación, quién paga (empresa, empleado o copago), planes habilitados y tramos de precio; ver inscritos, pendientes, tramo actual y cuántos faltan para el siguiente.

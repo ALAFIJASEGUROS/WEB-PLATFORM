@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { SimulatedDataNotice } from "@/components/ui";
@@ -19,7 +20,7 @@ export default function Page() {
           </p>
           <p className="text-sm text-muted">
             ¿Quieres ofrecer el seguro del carro o la moto personal a tus empleados?{" "}
-            <a href="/empresas" className="font-semibold text-brand hover:underline">Conoce el beneficio para empleados</a>.
+            <Link href="/empresas" className="font-semibold text-brand hover:underline">Conoce el beneficio para empleados</Link>.
           </p>
           <SimulatedDataNotice />
         </header>

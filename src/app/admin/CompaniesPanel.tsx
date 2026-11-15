@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { DEFAULT_TIERS, nextTier, PAYMENT_MODEL_LABELS, tierFor, type Company } from "@/domain/companies";
 import { formatCOP } from "@/domain/labels";
@@ -98,7 +99,7 @@ export function CompaniesPanel({ canEdit, rows }: { canEdit: boolean; rows: Comp
     <section className="space-y-3" aria-labelledby="empresas">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="empresas" className="text-lg font-bold text-heading">Empresas (beneficio para empleados)</h2>
-        <a href="/empresas" className="text-sm font-semibold text-brand hover:underline">Ver página para empresas</a>
+        <Link href="/empresas" className="text-sm font-semibold text-brand hover:underline">Ver página para empresas</Link>
       </div>
       <p className="text-sm text-muted">
         Cada empresa tiene su tarifa corporativa por tramos. El tramo se calcula con los empleados aprobados. Los tramos

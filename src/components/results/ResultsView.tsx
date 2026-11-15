@@ -4,15 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Pencil, SlidersHorizontal, Sparkles } from "lucide-react";
-import { formatCOP, PRIORITY_LABELS, vehicleName } from "@/domain/labels";
-import type { QuoteRequest } from "@/domain/types";
-import { fetchQuote } from "@/lib/api-client";
+import { formatCOP, formatDayMonth, PRIORITY_LABELS, vehicleName } from "@/domain/labels";
+import type { QuoteRequest, QuoteResponse } from "@/domain/types";
+import { ApiError, chooseCompanyPlan, fetchQuote } from "@/lib/api-client";
 import { track } from "@/lib/analytics";
 import { useExperimentExposure } from "@/lib/experiments";
 import {
   quoteStore,
   useCompare,
   useHydrated,
+  useQuoteCompany,
   useQuoteRequest,
   useQuoteResponse,
 } from "@/lib/quote-store";
@@ -34,6 +35,8 @@ export function ResultsView() {
   const hydrated = useHydrated();
   const request = useQuoteRequest();
   const data = useQuoteResponse();
+  const companyCtx = useQuoteCompany();
+  const [choosing, setChoosing] = useState<string | null>(null);
   const compare = useCompare();
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("afinidad");
@@ -47,13 +50,31 @@ export function ResultsView() {
   useEffect(() => {
     if (!request || data || error) return;
     let active = true;
-    fetchQuote(request)
+    fetchQuote(request, companyCtx?.slug)
       .then((res) => active && quoteStore.setResponse(res))
-      .catch(() => active && setError("No pudimos consultar las aseguradoras. Intenta de nuevo."));
+      .catch((e) =>
+        active &&
+        setError(
+          companyCtx && e instanceof ApiError ? e.message : "No pudimos consultar las aseguradoras. Intenta de nuevo.",
+        ),
+      );
     return () => {
       active = false;
     };
-  }, [request, data, error]);
+  }, [request, data, error, companyCtx]);
+
+  async function choosePlan(offerId: string) {
+    if (!request || !data?.company) return;
+    setChoosing(offerId);
+    try {
+      await chooseCompanyPlan(data.company.slug, request, offerId);
+      track("oferta_elegida", { tipo: "empresa", plan: offerId });
+      router.push(`/empresas/${data.company.slug}?eleccion=ok`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos guardar tu elección.");
+      setChoosing(null);
+    }
+  }
 
   // Cotización compartida por enlace (?c=...): se carga y se limpia la URL.
   const sharing = hydrated && new URLSearchParams(window.location.search).has("c");
@@ -61,7 +82,10 @@ export function ResultsView() {
     const param = new URLSearchParams(window.location.search).get("c");
     if (!param) return;
     const shared = decodeShare(param);
-    if (shared) quoteStore.setRequest(shared);
+    if (shared) {
+      quoteStore.setCompany(null);
+      quoteStore.setRequest(shared);
+    }
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
@@ -122,7 +146,10 @@ export function ResultsView() {
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <AlertCircle className="mx-auto size-10 text-coral" aria-hidden />
         <p className="mt-4 font-semibold text-heading">{error}</p>
-        <Button className="mt-6" onClick={() => setError(null)}>Reintentar</Button>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button onClick={() => setError(null)}>Reintentar</Button>
+          {companyCtx && <ButtonLink href={`/empresas/${companyCtx.slug}`} variant="secondary">Ir al portal de mi empresa</ButtonLink>}
+        </div>
       </div>
     );
   }
@@ -261,7 +288,7 @@ export function ResultsView() {
           </button>
           <ShareQuote request={request} />
           <Link
-            href={`/cotizar/${v.type}`}
+            href={`/cotizar/${v.type}${data.company ? `?empresa=${data.company.slug}` : ""}`}
             className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft"
           >
             <Pencil className="size-4" aria-hidden /> Editar
@@ -272,6 +299,8 @@ export function ResultsView() {
       <RefinePanel open={refineOpen} onClose={() => setRefineOpen(false)} request={request} response={data} />
 
       <SimulatedDataNotice />
+
+      {data.company && <CompanyPricingBanner company={data.company} />}
 
       {data.errors.map((e) => (
         <p key={e.insurerId} role="status" className="mt-3 flex gap-2 rounded-xl bg-coral-soft px-3 py-2 text-sm text-coral">
@@ -298,6 +327,7 @@ export function ResultsView() {
             comparing={compare.includes(top.id)}
             compareDisabled={compare.length >= MAX_COMPARE}
             onToggleCompare={() => toggleCompare(top.id)}
+            choose={data.company ? { onChoose: () => choosePlan(top.id), busy: choosing === top.id } : undefined}
           />
         </section>
       )}
@@ -335,6 +365,7 @@ export function ResultsView() {
               comparing={compare.includes(o.id)}
               compareDisabled={compare.length >= MAX_COMPARE}
               onToggleCompare={() => toggleCompare(o.id)}
+              choose={data.company ? { onChoose: () => choosePlan(o.id), busy: choosing === o.id } : undefined}
             />
           ))}
         {offers.length === 0 && (
@@ -382,6 +413,7 @@ export function ResultsView() {
 
 function ProfileCard({ request }: { request: QuoteRequest }) {
   const { vehicle: v, driver, answers: a } = request;
+  const company = useQuoteCompany();
   const rows = [
     ["Vehículo", `${vehicleName(v.brand, v.model)} ${v.year}`],
     ["Placa", v.plate ?? "—"],
@@ -394,7 +426,7 @@ function ProfileCard({ request }: { request: QuoteRequest }) {
     <div className="rounded-[var(--radius-card)] bg-surface p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between">
         <p className="font-bold text-heading">Tu perfil</p>
-        <Link href={`/cotizar/${v.type}`} className="text-sm font-semibold text-brand hover:underline">Editar</Link>
+        <Link href={`/cotizar/${v.type}${company ? `?empresa=${company.slug}` : ""}`} className="text-sm font-semibold text-brand hover:underline">Editar</Link>
       </div>
       <dl className="mt-3 space-y-2 text-sm">
         {rows.map(([k, val]) => (
@@ -405,5 +437,25 @@ function ProfileCard({ request }: { request: QuoteRequest }) {
         ))}
       </dl>
     </div>
+  );
+}
+
+/** Tarifa corporativa del empleado: tramo actual, siguiente y aviso si aún no está aprobado. */
+function CompanyPricingBanner({ company }: { company: NonNullable<QuoteResponse["company"]> }) {
+  return (
+    <section aria-label="Tarifa de tu empresa" className="mt-4 space-y-1 rounded-[var(--radius-card)] border border-mint/30 bg-mint-soft p-4 text-sm text-ink">
+      <p className="font-bold text-heading">
+        Tarifa corporativa de {company.name}: {company.tierPct ? `${company.tierPct} % de descuento` : "aún sin descuento"}
+      </p>
+      <p>
+        Van {company.enrolled} {company.enrolled === 1 ? "inscrito" : "inscritos"}.
+        {company.next && ` Si se inscriben ${company.next.missing} más, el descuento sube al ${company.next.pct} % y tu precio baja.`}
+        {" "}El precio final se fija al cierre de la inscripción
+        {company.enrollmentClosesAt ? ` (${formatDayMonth(company.enrollmentClosesAt)})` : ""}, según cuántos estén inscritos ese día.
+      </p>
+      {company.membershipStatus === "pendiente" && (
+        <p className="text-muted">Tu vinculación está pendiente de aprobación. Puedes elegir tu plan mientras tanto.</p>
+      )}
+    </section>
   );
 }
