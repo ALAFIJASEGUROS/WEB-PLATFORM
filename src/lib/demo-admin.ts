@@ -5,7 +5,7 @@
 
 import type { AdminOrderRow, AdminSnapshot, OrderStatus } from "@/domain/admin";
 import { DEFAULT_DISCOUNT_RULES, DEFAULT_DISCOUNT_SETTINGS } from "@/domain/discounts";
-import { FUNNEL_EVENTS } from "@/domain/events";
+import { FUNNEL_EVENTS, WIZARD_STEP_LABELS } from "@/domain/events";
 import { salesByDay } from "@/domain/sales";
 import { twoProportionPValue } from "@/domain/stats";
 import { UI_EXPERIMENTS, WEIGHT_EXPERIMENTS } from "@/recommendation/experiments";
@@ -156,6 +156,11 @@ export function demoAdminSnapshot(now = new Date(), seed = 2026): AdminSnapshot 
     byInsurer: count(issued, (o) => o.insurer),
     salesByDay: salesByDay(orders.map((o) => ({ createdAt: o.createdAt, amount: o.amount, issued: o.status === "emitida" })), 30, now),
     funnel,
+    wizardSteps: WIZARD_STEP_LABELS.map((label, i) => ({
+      label,
+      // Caída típica por paso, de quienes iniciaron a quienes completaron el cuestionario.
+      sessions: Math.round(sizes[0] * [1, 0.78, 0.66, 0.6, 0.55, 0.52][i]),
+    })),
     chosenByInsurer: count(orders, (o) => o.insurer).map(([, v]) => ["bolivar", Math.round(v / 0.52)]),
     orders,
     reconciliation: {

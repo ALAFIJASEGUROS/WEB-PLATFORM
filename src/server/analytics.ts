@@ -1,5 +1,5 @@
 import "server-only";
-import { FUNNEL_EVENTS, type AnalyticsEvent } from "@/domain/events";
+import { FUNNEL_EVENTS, WIZARD_STEP_LABELS, type AnalyticsEvent } from "@/domain/events";
 import type { Order, OrderStatus } from "./db";
 import type { DiscountImpactRow, VariantResult } from "@/domain/admin";
 import { twoProportionPValue } from "@/domain/stats";
@@ -41,6 +41,22 @@ export function funnel() {
     ...c,
     fromPrevious: i === 0 || counts[i - 1].sessions === 0 ? null : c.sessions / counts[i - 1].sessions,
   }));
+}
+
+/**
+ * Sesiones que llegaron al menos a cada paso del cuestionario (por el paso más
+ * alto que vieron), para ver en cuál abandonan.
+ */
+export function wizardSteps() {
+  const maxBySid = new Map<string, number>();
+  for (const e of events()) {
+    if (e.event !== "paso_cuestionario") continue;
+    const paso = Number(e.props.paso);
+    if (!Number.isInteger(paso) || paso < 1 || paso > WIZARD_STEP_LABELS.length) continue;
+    maxBySid.set(e.sid, Math.max(maxBySid.get(e.sid) ?? 0, paso));
+  }
+  const reached = [...maxBySid.values()];
+  return WIZARD_STEP_LABELS.map((label, i) => ({ label, sessions: reached.filter((m) => m >= i + 1).length }));
 }
 
 /** Conteo de un evento agrupado por una propiedad (p. ej. aseguradora elegida). */

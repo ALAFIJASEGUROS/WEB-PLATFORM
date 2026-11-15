@@ -3,7 +3,7 @@ import type { AdminSnapshot } from "@/domain/admin";
 import { salesByDay } from "@/domain/sales";
 import { UI_EXPERIMENTS } from "@/recommendation/experiments";
 import { auditLog } from "./admin";
-import { breakdown, discountImpact, experimentResults, funnel } from "./analytics";
+import { breakdown, discountImpact, experimentResults, funnel, wizardSteps } from "./analytics";
 import { db, type Order } from "./db";
 import { discountConfig } from "./discounts";
 import { experiments } from "./experiments";
@@ -66,6 +66,7 @@ export function buildAdminSnapshot(now = new Date()): AdminSnapshot {
     ),
     funnel: funnel(),
     chosenByInsurer: breakdown("oferta_elegida", "aseguradora"),
+    wizardSteps: wizardSteps(),
     orders: orders.map(orderRow),
     reconciliation: lastReconciliation(),
     discounts: {

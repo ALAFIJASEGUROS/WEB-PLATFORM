@@ -57,7 +57,7 @@ export function KpiCards({ kpis, byInsurer }: Pick<AdminSnapshot, "kpis" | "byIn
   );
 }
 
-export function FunnelView({ funnel, chosenByInsurer }: Pick<AdminSnapshot, "funnel" | "chosenByInsurer">) {
+export function FunnelView({ funnel, chosenByInsurer, wizardSteps = [] }: Pick<AdminSnapshot, "funnel" | "chosenByInsurer"> & Partial<Pick<AdminSnapshot, "wizardSteps">>) {
   const top = funnel[0]?.sessions ?? 0;
   return (
     <Card className="space-y-3 p-5">
@@ -74,6 +74,27 @@ export function FunnelView({ funnel, chosenByInsurer }: Pick<AdminSnapshot, "fun
           </span>
         </div>
       ))}
+      {wizardSteps.some((s) => s.sessions > 0) && (
+        <div className="space-y-2 border-t border-line pt-3">
+          <p className="text-sm font-semibold text-heading">Hasta dónde llegan en el cuestionario</p>
+          {wizardSteps.map((s, i) => {
+            const first = wizardSteps[0].sessions;
+            const lost = i > 0 ? wizardSteps[i - 1].sessions - s.sessions : 0;
+            return (
+              <div key={s.label} className="grid grid-cols-[minmax(0,12rem)_1fr_auto] items-center gap-3 text-sm">
+                <span className="text-ink">{i + 1}. {s.label}</span>
+                <span className="h-2 overflow-hidden rounded-full bg-canvas" aria-hidden>
+                  <span className="block h-full rounded-full bg-mint" style={{ width: `${first ? (s.sessions / first) * 100 : 0}%` }} />
+                </span>
+                <span className="w-28 text-right tabular-nums">
+                  <strong className="text-heading">{s.sessions}</strong>
+                  {lost > 0 && <span className="text-muted"> · −{lost}</span>}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {chosenByInsurer.length > 0 && (
         <p className="border-t border-line pt-3 text-sm text-muted">
           Ofertas elegidas por aseguradora: {chosenByInsurer.map(([k, v]) => `${k} ${v}`).join(" · ")}

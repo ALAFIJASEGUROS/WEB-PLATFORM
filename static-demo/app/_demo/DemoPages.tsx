@@ -216,7 +216,7 @@ export function AdminPage() {
 
       <section className="space-y-3" aria-labelledby="embudo">
         <SectionTitle id="embudo">Embudo de conversión</SectionTitle>
-        <FunnelView funnel={snap.funnel} chosenByInsurer={snap.chosenByInsurer} />
+        <FunnelView funnel={snap.funnel} chosenByInsurer={snap.chosenByInsurer} wizardSteps={snap.wizardSteps} />
       </section>
 
       <section className="space-y-3" aria-labelledby="conciliacion">
