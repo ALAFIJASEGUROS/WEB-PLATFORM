@@ -1,6 +1,6 @@
 import type { AdminSnapshot } from "@/domain/admin";
 import { ORDER_STATUS_LABELS } from "@/domain/admin";
-import { LEAD_STATUS_LABELS } from "@/domain/leads";
+import { LEAD_KIND_LABELS, LEAD_STATUS_LABELS } from "@/domain/leads";
 import type { CsvValue } from "@/lib/csv";
 
 // Columnas de las exportaciones a CSV (las usan la ruta del servidor y la demo estática).
@@ -61,4 +61,4 @@ export const LEAD_COLUMNS = [
 ];
 
 export const leadCsvRows = (leads: AdminSnapshot["leads"]): Record<string, CsvValue>[] =>
-  leads.map((l) => ({ ...l, kind: l.kind === "flota" ? "Flota" : "Llamada", status: LEAD_STATUS_LABELS[l.status] }));
+  leads.map((l) => ({ ...l, kind: LEAD_KIND_LABELS[l.kind], status: LEAD_STATUS_LABELS[l.status] }));

@@ -102,7 +102,7 @@ export interface DailySales {
 
 export interface AdminLeadRow {
   id: string;
-  kind: "llamada" | "flota";
+  kind: "llamada" | "flota" | "empresa";
   createdAt: string;
   name: string;
   phone: string;

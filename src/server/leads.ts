@@ -20,7 +20,7 @@ export function createLead(input: z.output<typeof leadInputSchema>, ctx: Ctx = {
     ...(email && { email: email.toLowerCase() }),
     createdAt: new Date().toISOString(),
     status: "nueva",
-    consent: consentRecord("contact", true, input.kind === "flota" ? "flotas" : "resultados", ctx),
+    consent: consentRecord("contact", true, input.kind === "flota" ? "flotas" : input.kind === "empresa" ? "empresas" : "resultados", ctx),
     history: [],
   };
   db().leads.set(lead.id, lead);
@@ -29,7 +29,12 @@ export function createLead(input: z.output<typeof leadInputSchema>, ctx: Ctx = {
       to: lead.email,
       channel: "email",
       kind: "transaccional",
-      subject: input.kind === "flota" ? "Recibimos tu solicitud para tu flota" : "Te llamaremos pronto",
+      subject:
+        input.kind === "flota"
+          ? "Recibimos tu solicitud para tu flota"
+          : input.kind === "empresa"
+            ? "Recibimos tu solicitud del beneficio para empleados"
+            : "Te llamaremos pronto",
       body: `Hola ${lead.name}, un asesor te contactará al ${lead.phone} en el horario que elegiste (${TIME_SLOTS[lead.slot]}).`,
     });
   }

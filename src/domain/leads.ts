@@ -6,7 +6,9 @@ import { formatCOP } from "./labels";
 // Oportunidades comerciales: personas que piden que las llamen y empresas que
 // piden una propuesta para su flota.
 
-export type LeadKind = "llamada" | "flota";
+export type LeadKind = "llamada" | "flota" | "empresa";
+
+export const LEAD_KIND_LABELS: Record<LeadKind, string> = { llamada: "Llamada", flota: "Flota", empresa: "Beneficio empleados" };
 export type LeadStatus = "nueva" | "contactada" | "vendida" | "perdida";
 
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
@@ -38,6 +40,14 @@ export interface LeadQuoteSummary {
   best?: { insurerName: string; planName: string; annualPremium: number };
 }
 
+/** Empresa que pide el seguro como beneficio para sus empleados. */
+export interface LeadCompanySummary {
+  company: string;
+  nit?: string;
+  employees: number;
+  role?: string;
+}
+
 export interface LeadFleetSummary {
   company: string;
   nit?: string;
@@ -58,6 +68,7 @@ export interface Lead {
   notes?: string;
   quote?: LeadQuoteSummary;
   fleet?: LeadFleetSummary;
+  benefit?: LeadCompanySummary;
   consent: ConsentRecord;
   history: { at: string; by: string; status: LeadStatus; note?: string }[];
 }
@@ -69,7 +80,7 @@ const mobile = z.string().transform((v, ctx) => {
 });
 
 export const leadInputSchema = z.object({
-  kind: z.enum(["llamada", "flota"]),
+  kind: z.enum(["llamada", "flota", "empresa"]),
   name: z.string().trim().min(3, "Escribe tu nombre.").max(80),
   phone: mobile,
   email: z.union([z.email("Correo no válido."), z.literal("")]).optional(),
@@ -93,7 +104,15 @@ export const leadInputSchema = z.object({
       plates: z.array(z.string().max(8)).max(200),
     })
     .optional(),
-});
+  benefit: z
+    .object({
+      company: z.string().trim().min(2, "Escribe el nombre de la empresa.").max(100),
+      nit: z.string().trim().max(20).optional(),
+      employees: z.number({ error: "Indica cuántos empleados tiene la empresa." }).int().min(1, "Indica cuántos empleados tiene la empresa.").max(200_000),
+      role: z.string().trim().max(60).optional(),
+    })
+    .optional(),
+}).refine((l) => l.kind !== "empresa" || !!l.benefit, { message: "Faltan los datos de la empresa.", path: ["benefit"] });
 export type LeadInput = z.input<typeof leadInputSchema>;
 
 export const savedQuoteInputSchema = z.object({
@@ -105,8 +124,10 @@ export const savedQuoteInputSchema = z.object({
 export const firstIssue = (e: z.ZodError) => e.issues[0]?.message ?? "Revisa los datos.";
 
 /** Resumen de una línea para la bandeja de oportunidades. */
-export const leadSummary = (l: Pick<Lead, "quote" | "fleet">) =>
-  l.fleet
+export const leadSummary = (l: Pick<Lead, "quote" | "fleet" | "benefit">) =>
+  l.benefit
+    ? `${l.benefit.company} · ${l.benefit.employees.toLocaleString("es-CO")} empleados${l.benefit.role ? ` · ${l.benefit.role}` : ""}`
+    : l.fleet
     ? `${l.fleet.company} · ${l.fleet.vehicles} vehículos · ${formatCOP(l.fleet.total)} al año`
     : l.quote
       ? `${l.quote.vehicle}${l.quote.best ? ` · ${l.quote.best.planName} (${l.quote.best.insurerName}) ${formatCOP(l.quote.best.annualPremium)}` : ""}`
