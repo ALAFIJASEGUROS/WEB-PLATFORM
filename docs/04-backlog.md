@@ -256,6 +256,23 @@ Funcionalidades nuevas que salen de los documentos de [investigacion/](investiga
 | HU-23.8 | Como usuario quiero descargar el PDF de mi póliza de Bolívar | ✅ (con el mock; el real: Dep convenio) | S | V1 | 3 |
 | HU-23.9 | Como negocio quiero un piloto cerrado con pólizas reales de Bolívar | ⬜ Dep (convenio, Wompi, Supabase) | M | V1 | 5 |
 
+## E24 · Seguro como beneficio para empleados ([plan](empresas.md))
+| ID | Historia | Estado | Prio | Rel | Pts |
+| --- | --- | --- | --- | --- | --- |
+| HU-24.1 | Como plataforma quiero registrar empresas con sus tramos de precio, dominios y código de vinculación | ⬜ | M | V1 | 5 |
+| HU-24.2 | Como empresa quiero una página que explique el beneficio y me deje pedirlo | ⬜ | M | V1 | 3 |
+| HU-24.3 | Como empleado quiero vincularme con un código o mi correo corporativo | ⬜ | M | V1 | 5 |
+| HU-24.4 | Como empleado quiero cotizar con los planes que habilitó mi empresa y ver el precio de mi tramo | ⬜ | M | V1 | 5 |
+| HU-24.5 | Como admin de la empresa quiero aprobar o rechazar vinculaciones | ⬜ | M | V1 | 3 |
+| HU-24.6 | Como admin de la empresa quiero configurar planes, quién paga y periodos de inscripción | ⬜ | M | V1 | 5 |
+| HU-24.7 | Como admin de la empresa quiero invitar empleados con un CSV | ⬜ | S | V1 | 3 |
+| HU-24.8 | Como admin de la empresa quiero ver inscritos, tramo, ahorro y un reporte para nómina | ⬜ | M | V1 | 5 |
+| HU-24.9 | Como empleado quiero conocer y confirmar mi precio final al cierre del periodo | ⬜ | M | V1 | 5 |
+| HU-24.10 | Como plataforma quiero cobrar según el modelo de pago (empresa, empleado o copago) | ⬜ Dep (Wompi, legal) | M | V1 | 8 |
+| HU-24.11 | Como admin de la empresa quiero marcar el retiro de un empleado | ⬜ | S | V1 | 2 |
+| HU-24.12 | Como plataforma quiero campañas y correos segmentados por empresa | ⬜ | S | V2 | 3 |
+| HU-24.13 | Como negocio quiero un piloto con 1 o 2 empresas | ⬜ Dep (Bolívar, Supabase, Wompi) | M | V2 | 5 |
+
 ---
 
 ## Sprint 3 (completado)
